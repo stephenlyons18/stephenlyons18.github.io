@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>500 - SYSTEM COMPROMISE DETECTED</title>
+  <link rel="stylesheet" href="assets/css/style.css">
+  <link rel="stylesheet" href="assets/css/terminal.css">
+  <link rel="stylesheet" href="assets/css/extended-styles.css">
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+</head>
+<body>
+  <div id="matrix-bg"></div>
+  <header>
+    <pre class="ascii-banner neon-red">
+    ███████╗██╗   ██╗███████╗████████╗███████╗███╗   ███╗     ██████╗ ██████╗ ███╗   ███╗██████╗ ██████╗  ██████╗ ███╗   ███╗██╗███████╗███████╗
+    ██╔════╝╚██╗ ██╔╝██╔════╝╚══██╔══╝██╔════╝████╗ ████║    ██╔════╝██╔═══██╗████╗ ████║██╔══██╗██╔══██╗██╔═══██╗████╗ ████║██║██╔════╝██╔════╝
+    ███████╗ ╚████╔╝ ███████╗   ██║   █████╗  ██╔████╔██║    ██║     ██║   ██║██╔████╔██║██████╔╝██████╔╝██║   ██║██╔████╔██║██║███████╗█████╗  
+    ╚════██║  ╚██╔╝  ╚════██║   ██║   ██╔══╝  ██║╚██╔╝██║    ██║     ██║   ██║██║╚██╔╝██║██╔═══╝ ██╔══██╗██║   ██║██║╚██╔╝██║██║╚════██║██╔══╝  
+    ███████║   ██║   ███████║   ██║   ███████╗██║ ╚═╝ ██║    ╚██████╗╚██████╔╝██║ ╚═╝ ██║██║     ██║  ██║╚██████╔╝██║ ╚═╝ ██║██║███████║███████╗
+    ╚══════╝   ╚═╝   ╚══════╝   ╚═╝   ╚══════╝╚═╝     ╚═╝     ╚═════╝ ╚═════╝ ╚═╝     ╚═╝╚═╝     ╚═╝  ╚═╝ ╚═════╝ ╚═╝     ╚═╝╚═╝╚══════╝╚══════╝
+    </pre>
+  </header>
+  
+  <main class="error-main">
+    <section class="error-container">
+      <div class="error-code">
+        <span class="giant-500 neon-red">500</span>
+        <h1 class="glow neon-red">CRITICAL SYSTEM FAILURE</h1>
+      </div>
+      
+      <div class="error-message">
+        <pre class="terminal-output">
+CRITICAL ALERT: Potential system compromise detected
+Threat Level: MAXIMUM
+Response Team: ACTIVATED
+Incident ID: INC-2025-0826-001
+
+ANOMALY DETECTED:
+- Unexpected server behavior patterns
+- Memory corruption signatures found
+- Possible APT (Advanced Persistent Threat) activity
+- Database integrity compromised
+- Firewall rules modified without authorization
+
+AUTOMATED RESPONSE INITIATED:
+[ACTIVE] Isolating affected systems
+[ACTIVE] Capturing network traffic for analysis
+[ACTIVE] Creating forensic snapshots
+[ACTIVE] Alerting incident response team
+[PENDING] Full system rollback to secure state
+
+SECURITY POSTURE: RED
+All non-essential services temporarily disabled
+Emergency protocols in effect
+</pre>
+      </div>
+      
+      <div class="threat-analysis">
+        <h2 class="glow neon-red">Threat Analysis</h2>
+        <div class="threat-grid">
+          <div class="threat-item">
+            <span class="threat-type neon-red">MALWARE:</span>
+            <span class="threat-status">POSSIBLE</span>
+          </div>
+          <div class="threat-item">
+            <span class="threat-type neon-red">DATA BREACH:</span>
+            <span class="threat-status">INVESTIGATING</span>
+          </div>
+          <div class="threat-item">
+            <span class="threat-type neon-red">INSIDER THREAT:</span>
+            <span class="threat-status">RULED OUT</span>
+          </div>
+          <div class="threat-item">
+            <span class="threat-type neon-red">DDoS ATTACK:</span>
+            <span class="threat-status">MONITORING</span>
+          </div>
+        </div>
+      </div>
+      
+      <div class="incident-timeline">
+        <h2 class="glow neon-blue">Incident Timeline</h2>
+        <div class="timeline-entries">
+          <div class="timeline-entry">
+            <span class="time">14:42:15</span>
+            <span class="event neon-red">Anomalous traffic patterns detected</span>
+          </div>
+          <div class="timeline-entry">
+            <span class="time">14:42:23</span>
+            <span class="event neon-purple">Automated security scan initiated</span>
+          </div>
+          <div class="timeline-entry">
+            <span class="time">14:42:31</span>
+            <span class="event neon-blue">SOC team alerted</span>
+          </div>
+          <div class="timeline-entry">
+            <span class="time">14:42:45</span>
+            <span class="event neon-green">Containment procedures activated</span>
+          </div>
+        </div>
+      </div>
+      
+      <div class="error-actions">
+        <a href="index.html" class="error-btn neon-green">SECURE FALLBACK</a>
+        <button onclick="runDiagnostics()" class="error-btn neon-blue">RUN DIAGNOSTICS</button>
+        <button onclick="contactSOC()" class="error-btn neon-red">CONTACT SOC</button>
+      </div>
+      
+      <div class="error-humor">
+        <p class="neon-red">
+          "Well, this is awkward. Either someone found a zero-day exploit, 
+          or the server just decided to take an unscheduled vacation. 
+          My money's on the vacation."
+        </p>
+        <p class="neon-green">
+          - Chief Information Security Officer
+        </p>
+      </div>
+    </section>
+    
+    <section class="recovery-status">
+      <h2 class="glow neon-green">Recovery Status</h2>
+      <div class="recovery-progress">
+        <div class="progress-item">
+          <span class="progress-label">System Isolation:</span>
+          <div class="progress-bar-container">
+            <div class="progress-bar neon-green" style="width: 100%"></div>
+          </div>
+          <span class="progress-status">COMPLETE</span>
+        </div>
+        <div class="progress-item">
+          <span class="progress-label">Threat Analysis:</span>
+          <div class="progress-bar-container">
+            <div class="progress-bar neon-blue" style="width: 75%"></div>
+          </div>
+          <span class="progress-status">IN PROGRESS</span>
+        </div>
+        <div class="progress-item">
+          <span class="progress-label">System Restoration:</span>
+          <div class="progress-bar-container">
+            <div class="progress-bar neon-purple" style="width: 25%"></div>
+          </div>
+          <span class="progress-status">QUEUED</span>
+        </div>
+      </div>
+    </section>
+  </main>
+  
+  <script>
+    function runDiagnostics() {
+      alert('SYSTEM DIAGNOSTICS\n\nRunning comprehensive security scan...\n\n[✓] Memory integrity check\n[✓] File system verification\n[✓] Network traffic analysis\n[!] Suspicious process detected\n[✓] Log file correlation\n\nResult: System requires manual intervention from security team.');
+    }
+    
+    function contactSOC() {
+      alert('SOC EMERGENCY CONTACT\n\nSecurity Operations Center has been notified.\n\nIncident Response Team ETA: 15 minutes\nPriority Level: P1 - Critical\nCase Number: SOC-2025-0826-001\n\nPlease remain calm and avoid using affected systems.');
+    }
+    
+    document.addEventListener('DOMContentLoaded', () => {
+      // Log critical incident
+      console.log('500 CRITICAL INCIDENT:', {
+        timestamp: new Date().toISOString(),
+        url: window.location.href,
+        incidentId: 'INC-2025-0826-001',
+        severity: 'CRITICAL',
+        userAgent: navigator.userAgent,
+        incident: 'SYSTEM_COMPROMISE_DETECTED'
+      });
+      
+      // Simulate progressive recovery
+      setTimeout(() => {
+        document.querySelector('.progress-bar.neon-blue').style.width = '90%';
+      }, 3000);
+      
+      setTimeout(() => {
+        document.querySelector('.progress-bar.neon-purple').style.width = '45%';
+      }, 6000);
+    });
+  </script>
+  <script src="assets/js/main.js"></script>
+</body>
+</html>

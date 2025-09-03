@@ -1,0 +1,69 @@
+#terminal-container {
+  position: relative;
+  z-index: 4;
+  margin: 1em auto;
+  max-width: 800px;
+  background: rgba(0, 0, 0, 0.95);
+  border: 2px solid #00ff41;
+  border-radius: 12px;
+  box-shadow: 
+    0 0 30px rgba(0, 255, 65, 0.4), 
+    0 0 60px rgba(0, 255, 65, 0.2),
+    inset 0 0 20px rgba(0, 255, 65, 0.1);
+  padding: 1em;
+  font-family: 'JetBrains Mono', monospace;
+  backdrop-filter: blur(4px);
+  display: none;
+  opacity: 0;
+  transform: translateY(-20px);
+  transition: all 0.3s ease;
+}
+
+#terminal-container.active {
+  display: block;
+  opacity: 1;
+  transform: translateY(0);
+}
+#terminal {
+  min-height: 200px;
+  max-height: 400px;
+  overflow-y: auto;
+  color: #00ff41;
+  font-size: 1em;
+  background: transparent;
+  white-space: pre-wrap;
+}
+.terminal-input {
+  outline: none;
+  border: none;
+  background: transparent;
+  color: #00ff41;
+  font-family: inherit;
+  font-size: 1em;
+  width: 90%;
+}
+.terminal-prompt {
+  color: #00bfff;
+  font-weight: bold;
+}
+.terminal-output {
+  color: #fff;
+  text-shadow: 0 0 4px #00ff41;
+  margin-bottom: 0.2em;
+}
+.terminal-cursor {
+  display: inline-block;
+  width: 10px;
+  background: #00ff41;
+  animation: blink 1s steps(1) infinite;
+}
+@keyframes blink {
+  0%, 50% { opacity: 1; }
+  51%, 100% { opacity: 0; }
+}
+.terminal-glow {
+  text-shadow: 0 0 8px #00ff41, 0 0 2px #fff;
+}
+.terminal-hidden {
+  display: none;
+}

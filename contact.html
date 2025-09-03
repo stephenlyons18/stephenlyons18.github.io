@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Contact - Stephen Lyons | Senior Cybersecurity Engineer</title>
+  <link rel="stylesheet" href="assets/css/style.css">
+  <link rel="stylesheet" href="assets/css/terminal.css">
+  <link rel="stylesheet" href="assets/css/extended-styles.css">
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+</head>
+<body>
+  <div id="matrix-bg"></div>
+  <div id="terminal-container">
+    <div id="terminal"></div>
+  </div>
+  <div class="page-container">
+    <header>
+      <pre class="ascii-banner">
+     ██████╗ ██████╗ ███╗   ██╗████████╗ █████╗  ██████╗████████╗
+    ██╔════╝██╔═══██╗████╗  ██║╚══██╔══╝██╔══██╗██╔════╝╚══██╔══╝
+    ██║     ██║   ██║██╔██╗ ██║   ██║   ███████║██║        ██║   
+    ██║     ██║   ██║██║╚██╗██║   ██║   ██╔══██║██║        ██║   
+    ╚██████╗╚██████╔╝██║ ╚████║   ██║   ██║  ██║╚██████╗   ██║   
+     ╚═════╝ ╚═════╝ ╚═╝  ╚═══╝   ╚═╝   ╚═╝  ╚═╝ ╚═════╝   ╚═╝   
+      </pre>
+      <div class="system-status">
+        <span>Uptime: <span id="uptime">00:00:00</span></span>
+        <span>Security Level: <span class="neon-green">MAX</span></span>
+        <span>Threat Detection: <span class="neon-red">0</span></span>
+      </div>
+    </header>
+  <main>
+    <section class="contact-header">
+      <h1 class="glow">Secure Communication Channel</h1>
+      <p class="neon-blue">Establishing encrypted connection...</p>
+    </section>
+
+    <section class="contact-form-section">
+      <h2 class="glow">Secure Terminal Session</h2>
+      <form class="secure-form" id="contactForm">
+        <div class="form-group">
+          <label for="name" class="neon-green">IDENTIFICATION:</label>
+          <input type="text" id="name" name="name" placeholder="Enter your name" required>
+        </div>
+        <div class="form-group">
+          <label for="email" class="neon-blue">TRANSMISSION SOURCE:</label>
+          <input type="email" id="email" name="email" placeholder="your.email@domain.com" required>
+        </div>
+        <div class="form-group">
+          <label for="subject" class="neon-purple">OPERATION CODE:</label>
+          <input type="text" id="subject" name="subject" placeholder="Subject/Purpose of contact" required>
+        </div>
+        <div class="form-group">
+          <label for="message" class="neon-red">ENCRYPTED MESSAGE:</label>
+          <textarea id="message" name="message" rows="6" placeholder="Your secure message..." required></textarea>
+        </div>
+        <button type="submit" class="submit-btn glow">TRANSMIT MESSAGE</button>
+      </form>
+      <div class="form-status" id="formStatus"></div>
+    </section>
+
+    <section class="contact-info">
+      <h2 class="glow">Contact Protocols</h2>
+      <div class="contact-grid">
+        <div class="contact-method">
+          <span class="method-label neon-green">SECURE EMAIL:</span>
+          <span class="method-value">your.email@domain.com</span>
+          <span class="method-note">PGP encrypted preferred</span>
+        </div>
+        <div class="contact-method">
+          <span class="method-label neon-blue">PROFESSIONAL NETWORK:</span>
+          <span class="method-value">linkedin.com/in/yourprofile</span>
+          <span class="method-note">Business inquiries</span>
+        </div>
+        <div class="contact-method">
+          <span class="method-label neon-purple">CODE REPOSITORY:</span>
+          <span class="method-value">github.com/yourusername</span>
+          <span class="method-note">Open source collaboration</span>
+        </div>
+        <div class="contact-method">
+          <span class="method-label neon-red">LOCATION:</span>
+          <span class="method-value">40.7128° N, 74.0060° W</span>
+          <span class="method-note">New York Metro Area</span>
+        </div>
+      </div>
+    </section>
+
+    <section class="pgp-section">
+      <h2 class="glow">PGP Public Key</h2>
+      <div class="pgp-key">
+        <pre class="key-block">
+-----BEGIN PGP PUBLIC KEY BLOCK-----
+
+mQENBGP8xF0BCADLx5cE3kJ2vY8nR7qW9sL4mP1oX6gH2rT9vU3jK8eA1bN5cQ7z
+M4pR6wE8tY9sK3nV2oL7gP5rT8xW4eF6sJ9dC1aE3bM7vY2kR5wN8pL6gH4mX1o
+T9sL7qW3nV5cE8kJ2vY9pR6wA1bN7cQ8tM4zL5oX6gH2rT9vU3jK8eA1bN5cQ7z
+M4pR6wE8tY9sK3nV2oL7gP5rT8xW4eF6sJ9dC1aE3bM7vY2kR5wN8pL6gH4mX1o
+
+[REDACTED FOR SECURITY]
+
+-----END PGP PUBLIC KEY BLOCK-----
+        </pre>
+      </div>
+      <p class="pgp-note neon-blue">For sensitive communications, please encrypt your message using this public key.</p>
+    </section>
+
+    <section class="encrypted-contact">
+      <h2 class="glow">Ultra-Secure Channel</h2>
+      <div class="encrypted-form">
+        <textarea placeholder="Enter PGP encrypted message here..." rows="6" class="encrypted-input"></textarea>
+        <button class="decrypt-btn glow">DECRYPT & SEND</button>
+      </div>
+      <p class="encryption-note">This channel uses AES-256 encryption with ephemeral keys.</p>
+    </section>
+
+    <section class="response-time">
+      <h2 class="glow">Response Protocols</h2>
+      <div class="protocol-list">
+        <div class="protocol-item">
+          <span class="priority neon-red">CRITICAL:</span>
+          <span class="time">< 2 hours</span>
+          <span class="desc">Security vulnerabilities, urgent matters</span>
+        </div>
+        <div class="protocol-item">
+          <span class="priority neon-purple">HIGH:</span>
+          <span class="time">< 24 hours</span>
+          <span class="desc">Business inquiries, collaboration requests</span>
+        </div>
+        <div class="protocol-item">
+          <span class="priority neon-blue">MEDIUM:</span>
+          <span class="time">< 48 hours</span>
+          <span class="desc">General questions, feedback</span>
+        </div>
+        <div class="protocol-item">
+          <span class="priority neon-green">LOW:</span>
+          <span class="time">< 1 week</span>
+          <span class="desc">Casual conversations, networking</span>
+        </div>
+      </div>
+    </section>
+  </main>
+  </div>
+  <script>
+    // Contact form handling
+    document.getElementById('contactForm').addEventListener('submit', function(e) {
+      e.preventDefault();
+      const status = document.getElementById('formStatus');
+      status.innerHTML = '<span class="neon-green">MESSAGE TRANSMITTED SUCCESSFULLY</span><br><span class="neon-blue">Awaiting secure response...</span>';
+      status.style.display = 'block';
+      
+      // Reset form after 3 seconds
+      setTimeout(() => {
+        this.reset();
+        status.style.display = 'none';
+      }, 3000);
+    });
+  </script>
+  <script src="assets/js/navigation.js"></script>
+  <script src="assets/js/page-transitions.js"></script>
+  <script src="assets/js/terminal.js"></script>
+  <script src="assets/js/main.js"></script>
+</body>
+</html>

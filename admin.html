@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AUTHORIZED PERSONNEL ONLY - Admin Portal</title>
+  <link rel="stylesheet" href="assets/css/style.css">
+  <link rel="stylesheet" href="assets/css/terminal.css">
+  <link rel="stylesheet" href="assets/css/extended-styles.css">
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+  <!-- AWS_ACCESS_KEY: AKIA1234567890ABCDEF -->
+  <!-- DB_CONNECTION: mysql://admin:P@ssw0rd123@db.internal.corp:3306/production -->
+  <!-- API_SECRET: sk_live_51H7zBwJ4NzYx3FoVm2Qp8KrS9Lm6Ft2Zr5Gs1Hk3Wp7Jd8Ct9Vr4Ms5Nt6Lu7Qw -->
+</head>
+<body>
+  <div id="matrix-bg"></div>
+  <div class="warning-banner">
+    <div class="warning-text">
+      ⚠️ AUTHORIZED PERSONNEL ONLY ⚠️<br>
+      All activities monitored and logged. Unauthorized access prohibited by law and subject to prosecution.<br>
+      Federal Computer Fraud and Abuse Act - 18 U.S.C. § 1030
+    </div>
+  </div>
+  
+  <div id="terminal-container">
+    <div id="terminal"></div>
+  </div>
+  <div class="page-container">
+  
+  <header>
+    <pre class="ascii-banner">
+     █████╗ ██████╗ ███╗   ███╗██╗███╗   ██╗    ██████╗  ██████╗ ██████╗ ████████╗ █████╗ ██╗     
+    ██╔══██╗██╔══██╗████╗ ████║██║████╗  ██║    ██╔══██╗██╔═══██╗██╔══██╗╚══██╔══╝██╔══██╗██║     
+    ███████║██║  ██║██╔████╔██║██║██╔██╗ ██║    ██████╔╝██║   ██║██████╔╝   ██║   ███████║██║     
+    ██╔══██║██║  ██║██║╚██╔╝██║██║██║╚██╗██║    ██╔═══╝ ██║   ██║██╔══██╗   ██║   ██╔══██║██║     
+    ██║  ██║██████╔╝██║ ╚═╝ ██║██║██║ ╚████║    ██║     ╚██████╔╝██║  ██║   ██║   ██║  ██║███████╗
+    ╚═╝  ╚═╝╚═════╝ ╚═╝     ╚═╝╚═╝╚═╝  ╚═══╝    ╚═╝      ╚═════╝ ╚═╝  ╚═╝   ╚═╝   ╚═╝  ╚═╝╚══════╝
+    </pre>
+    <div class="system-status">
+      <span>Security Level: <span class="neon-red">MAXIMUM</span></span>
+      <span>Intrusion Detection: <span class="neon-green">ACTIVE</span></span>
+      <span>Monitoring: <span class="neon-blue">ENABLED</span></span>
+    </div>
+  </header>
+
+  <div id="terminal-container">
+    <div id="terminal"></div>
+  </div>
+
+  <main class="admin-main">
+    <section class="login-section">
+      <div class="login-container">
+        <h1 class="glow neon-red">SECURE LOGIN PORTAL</h1>
+        <div class="security-notice">
+          <p class="neon-blue">Multi-factor authentication required</p>
+          <p class="neon-purple">Session timeout: 15 minutes</p>
+        </div>
+        
+        <form class="admin-login" id="adminLogin">
+          <div class="form-group">
+            <label for="username" class="neon-green">USERNAME:</label>
+            <input type="text" id="username" name="username" placeholder="admin" autocomplete="username">
+          </div>
+          <div class="form-group">
+            <label for="password" class="neon-blue">PASSWORD:</label>
+            <input type="password" id="password" name="password" placeholder="********" autocomplete="current-password">
+          </div>
+          <div class="form-group">
+            <label for="token" class="neon-purple">2FA TOKEN:</label>
+            <input type="text" id="token" name="token" placeholder="000000" maxlength="6">
+          </div>
+          <div class="form-group">
+            <label for="clearance" class="neon-red">CLEARANCE LEVEL:</label>
+            <select id="clearance" name="clearance">
+              <option value="">Select Level</option>
+              <option value="1">Level 1 - Basic</option>
+              <option value="2">Level 2 - Confidential</option>
+              <option value="3">Level 3 - Secret</option>
+              <option value="4">Level 4 - Top Secret</option>
+              <option value="5">Level 5 - Ultra</option>
+            </select>
+          </div>
+          <button type="submit" class="login-btn glow">AUTHENTICATE</button>
+        </form>
+        
+        <div class="login-status" id="loginStatus"></div>
+        
+        <div class="connection-info">
+          <p class="neon-green">Secure connection established</p>
+          <p class="neon-blue">SSL Certificate: Valid (SHA-256)</p>
+          <p class="neon-purple">Server: AWS us-east-1 (172.31.45.67)</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="fake-dashboard" style="display: none;" id="dashboard">
+      <h2 class="glow">System Dashboard</h2>
+      <div class="dashboard-grid">
+        <div class="dashboard-item">
+          <span class="dashboard-label neon-green">Active Sessions:</span>
+          <span class="dashboard-value">47</span>
+        </div>
+        <div class="dashboard-item">
+          <span class="dashboard-label neon-blue">Database Connections:</span>
+          <span class="dashboard-value">156</span>
+        </div>
+        <div class="dashboard-item">
+          <span class="dashboard-label neon-purple">Server Load:</span>
+          <span class="dashboard-value">78%</span>
+        </div>
+        <div class="dashboard-item">
+          <span class="dashboard-label neon-red">Security Alerts:</span>
+          <span class="dashboard-value">3</span>
+        </div>
+      </div>
+    </section>
+
+    <section class="honeypot-logs">
+      <h2 class="glow neon-red">Recent Access Attempts</h2>
+      <div class="log-entries">
+        <div class="log-entry">
+          <span class="timestamp">[2025-08-26 14:23:15]</span>
+          <span class="event neon-red">UNAUTHORIZED ACCESS ATTEMPT - IP: 192.168.1.100</span>
+        </div>
+        <div class="log-entry">
+          <span class="timestamp">[2025-08-26 14:22:47]</span>
+          <span class="event neon-blue">Login attempt from: user@example.com</span>
+        </div>
+        <div class="log-entry">
+          <span class="timestamp">[2025-08-26 14:21:33]</span>
+          <span class="event neon-purple">Brute force detection: 15 failed attempts</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- Canary Token Image -->
+    <img src="https://canarytokens.org/static/images/logo.png" alt="" style="position: absolute; width: 1px; height: 1px; opacity: 0;">
+  </main>
+  </div>
+
+  <script>
+    // Honeypot functionality
+    document.getElementById('adminLogin').addEventListener('submit', function(e) {
+      e.preventDefault();
+      
+      const status = document.getElementById('loginStatus');
+      const username = document.getElementById('username').value;
+      const password = document.getElementById('password').value;
+      const token = document.getElementById('token').value;
+      const clearance = document.getElementById('clearance').value;
+      
+      // Log the attempt (in real implementation, this would go to a server)
+      console.log('HONEYPOT TRIGGERED:', {
+        timestamp: new Date().toISOString(),
+        username: username,
+        password: password,
+        token: token,
+        clearance: clearance,
+        userAgent: navigator.userAgent,
+        ip: 'client-side-detection',
+        page: 'admin.html'
+      });
+      
+      // Simulate authentication delay
+      status.innerHTML = '<span class="neon-blue">Authenticating...</span>';
+      status.style.display = 'block';
+      
+      setTimeout(() => {
+        status.innerHTML = '<span class="neon-red">AUTHENTICATION FAILED</span><br><span class="neon-purple">Access denied. Incident logged.</span>';
+        
+        // Add to access log
+        const logEntries = document.querySelector('.log-entries');
+        const newEntry = document.createElement('div');
+        newEntry.className = 'log-entry';
+        newEntry.innerHTML = `
+          <span class="timestamp">[${new Date().toLocaleString()}]</span>
+          <span class="event neon-red">FAILED LOGIN: ${username} - IP: ${location.hostname}</span>
+        `;
+        logEntries.insertBefore(newEntry, logEntries.firstChild);
+        
+        // Reset form
+        setTimeout(() => {
+          this.reset();
+          status.style.display = 'none';
+        }, 3000);
+      }, 2000);
+    });
+
+    // Track page access
+    console.log('HONEYPOT ACCESS DETECTED:', {
+      timestamp: new Date().toISOString(),
+      page: 'admin.html',
+      userAgent: navigator.userAgent,
+      referrer: document.referrer,
+      screen: screen.width + 'x' + screen.height
+    });
+  </script>
+  <script src="assets/js/navigation.js"></script>
+  <script src="assets/js/page-transitions.js"></script>
+  <script src="assets/js/terminal.js"></script>
+  <script src="assets/js/main.js"></script>
+</body>
+</html>

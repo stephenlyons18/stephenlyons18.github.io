@@ -1,0 +1,6 @@
+<!-- This is a placeholder for the canary token image -->
+<!-- In a real deployment, replace with actual canary token URL -->
+<!-- Example: https://canarytokens.org/feedback/images/[your-token-here]/contact.php -->
+
+<!-- Transparent 1x1 pixel GIF encoded as base64 -->
+data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7

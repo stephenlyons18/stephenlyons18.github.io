@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>404 - SYSTEM ERROR</title>
+  <link rel="stylesheet" href="assets/css/style.css">
+  <link rel="stylesheet" href="assets/css/terminal.css">
+  <link rel="stylesheet" href="assets/css/extended-styles.css">
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+</head>
+<body>
+  <div id="matrix-bg"></div>
+  <header>
+    <pre class="ascii-banner neon-red">
+    ███████╗██╗   ██╗███████╗████████╗███████╗███╗   ███╗    ███████╗██████╗ ██████╗  ██████╗ ██████╗ 
+    ██╔════╝╚██╗ ██╔╝██╔════╝╚══██╔══╝██╔════╝████╗ ████║    ██╔════╝██╔══██╗██╔══██╗██╔═══██╗██╔══██╗
+    ███████╗ ╚████╔╝ ███████╗   ██║   █████╗  ██╔████╔██║    █████╗  ██████╔╝██████╔╝██║   ██║██████╔╝
+    ╚════██║  ╚██╔╝  ╚════██║   ██║   ██╔══╝  ██║╚██╔╝██║    ██╔══╝  ██╔══██╗██╔══██╗██║   ██║██╔══██╗
+    ███████║   ██║   ███████║   ██║   ███████╗██║ ╚═╝ ██║    ███████╗██║  ██║██║  ██║╚██████╔╝██║  ██║
+    ╚══════╝   ╚═╝   ╚══════╝   ╚═╝   ╚══════╝╚═╝     ╚═╝    ╚══════╝╚═╝  ╚═╝╚═╝  ╚═╝ ╚═════╝ ╚═╝  ╚═╝
+    </pre>
+  </header>
+  
+  <main class="error-main">
+    <section class="error-container">
+      <div class="error-code">
+        <span class="giant-404 neon-red">404</span>
+        <h1 class="glow neon-red">FILE NOT FOUND</h1>
+      </div>
+      
+      <div class="error-message">
+        <pre class="terminal-output">
+CRITICAL ERROR: Requested resource not found in system database
+Location: /var/www/cybersec-portfolio/
+Status: FILE_NOT_FOUND
+Timestamp: 2025-08-26 14:30:42 UTC
+
+ERROR DETAILS:
+- Target file does not exist in current directory structure
+- No backup copies found in redundant storage
+- Possible causes: File moved, deleted, or never existed
+- Security scan: No malicious activity detected
+
+RECOMMENDATIONS:
+1. Verify file path and spelling
+2. Check site navigation menu
+3. Return to secure terminal interface
+4. Contact system administrator if issue persists
+        </pre>
+      </div>
+      
+      <div class="error-actions">
+        <a href="index.html" class="error-btn neon-green">RETURN TO BASE</a>
+        <a href="javascript:history.back()" class="error-btn neon-blue">PREVIOUS LOCATION</a>
+        <button onclick="location.reload()" class="error-btn neon-purple">RETRY CONNECTION</button>
+      </div>
+      
+      <div class="error-humor">
+        <p class="neon-blue">
+          "The file you're looking for has gone dark. It might be hiding behind a firewall, 
+          or perhaps it's been exfiltrated by a sophisticated threat actor. 
+          Either way, it's not here."
+        </p>
+        <p class="neon-green">
+          - Anonymous Security Researcher
+        </p>
+      </div>
+    </section>
+    
+    <section class="system-diagnostics">
+      <h2 class="glow">System Diagnostics</h2>
+      <div class="diagnostic-grid">
+        <div class="diagnostic-item">
+          <span class="diagnostic-label">Server Status:</span>
+          <span class="diagnostic-value neon-green">ONLINE</span>
+        </div>
+        <div class="diagnostic-item">
+          <span class="diagnostic-label">Database:</span>
+          <span class="diagnostic-value neon-green">CONNECTED</span>
+        </div>
+        <div class="diagnostic-item">
+          <span class="diagnostic-label">Security:</span>
+          <span class="diagnostic-value neon-red">ALERT - 404 ERROR</span>
+        </div>
+        <div class="diagnostic-item">
+          <span class="diagnostic-label">Load Balancer:</span>
+          <span class="diagnostic-value neon-blue">ACTIVE</span>
+        </div>
+      </div>
+    </section>
+  </main>
+  
+  <script>
+    // Add some interactive elements
+    document.addEventListener('DOMContentLoaded', () => {
+      // Simulate system scan
+      setTimeout(() => {
+        const scanResult = document.createElement('div');
+        scanResult.className = 'scan-result';
+        scanResult.innerHTML = '<p class="neon-purple">System scan complete. No threats detected.</p>';
+        document.querySelector('.error-container').appendChild(scanResult);
+      }, 2000);
+      
+      // Log 404 error
+      console.log('404 ERROR LOGGED:', {
+        timestamp: new Date().toISOString(),
+        url: window.location.href,
+        referrer: document.referrer,
+        userAgent: navigator.userAgent
+      });
+    });
+  </script>
+  <script src="assets/js/main.js"></script>
+</body>
+</html>

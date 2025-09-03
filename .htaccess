@@ -1,0 +1,68 @@
+# Security Headers and Configuration
+Header always set X-Content-Type-Options nosniff
+Header always set X-Frame-Options DENY
+Header always set X-XSS-Protection "1; mode=block"
+Header always set Referrer-Policy "strict-origin-when-cross-origin"
+Header always set Permissions-Policy "geolocation=(), microphone=(), camera=()"
+
+# Fake security headers for authenticity
+Header always set X-Security-Level "MAXIMUM"
+Header always set X-Threat-Detection "ACTIVE"
+Header always set X-Firewall-Status "ENABLED"
+Header always set X-Intrusion-Detection "MONITORING"
+
+# Content Security Policy
+Header always set Content-Security-Policy "default-src 'self'; script-src 'self' 'unsafe-inline' fonts.googleapis.com; style-src 'self' 'unsafe-inline' fonts.googleapis.com; font-src 'self' fonts.gstatic.com; img-src 'self' data: canarytokens.org; connect-src 'self'"
+
+# Clean URLs
+RewriteEngine On
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule ^([^\.]+)$ $1.html [NC,L]
+
+# Custom Error Pages
+ErrorDocument 404 /404.html
+ErrorDocument 403 /403.html
+ErrorDocument 500 /500.html
+
+# Security measures
+<Files ".env">
+    Order Allow,Deny
+    Deny from all
+</Files>
+
+<Files "config.*">
+    Order Allow,Deny
+    Deny from all
+</Files>
+
+# Cache control
+<IfModule mod_expires.c>
+    ExpiresActive On
+    ExpiresByType text/css "access plus 1 month"
+    ExpiresByType application/javascript "access plus 1 month"
+    ExpiresByType image/png "access plus 1 year"
+    ExpiresByType image/jpg "access plus 1 year"
+    ExpiresByType image/jpeg "access plus 1 year"
+    ExpiresByType image/gif "access plus 1 year"
+    ExpiresByType image/svg+xml "access plus 1 year"
+</IfModule>
+
+# Compression
+<IfModule mod_deflate.c>
+    AddOutputFilterByType DEFLATE text/plain
+    AddOutputFilterByType DEFLATE text/html
+    AddOutputFilterByType DEFLATE text/xml
+    AddOutputFilterByType DEFLATE text/css
+    AddOutputFilterByType DEFLATE application/xml
+    AddOutputFilterByType DEFLATE application/xhtml+xml
+    AddOutputFilterByType DEFLATE application/rss+xml
+    AddOutputFilterByType DEFLATE application/javascript
+    AddOutputFilterByType DEFLATE application/x-javascript
+</IfModule>
+
+# Rate limiting (fake for demonstration)
+# SetEnvIf Remote_Addr "^192\.168\." internal_network
+# RewriteEngine On
+# RewriteCond %{ENV:internal_network} !^1$
+# RewriteRule ^admin.* - [R=429,L]

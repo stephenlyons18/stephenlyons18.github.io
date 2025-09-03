@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>403 - ACCESS DENIED</title>
+  <link rel="stylesheet" href="assets/css/style.css">
+  <link rel="stylesheet" href="assets/css/terminal.css">
+  <link rel="stylesheet" href="assets/css/extended-styles.css">
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+</head>
+<body>
+  <div id="matrix-bg"></div>
+  <header>
+    <pre class="ascii-banner neon-red">
+     █████╗  ██████╗ ██████╗███████╗███████╗███████╗    ██████╗ ███████╗███╗   ██╗██╗███████╗██████╗ 
+    ██╔══██╗██╔════╝██╔════╝██╔════╝██╔════╝██╔════╝    ██╔══██╗██╔════╝████╗  ██║██║██╔════╝██╔══██╗
+    ███████║██║     ██║     █████╗  ███████╗███████╗    ██║  ██║█████╗  ██╔██╗ ██║██║█████╗  ██║  ██║
+    ██╔══██║██║     ██║     ██╔══╝  ╚════██║╚════██║    ██║  ██║██╔══╝  ██║╚██╗██║██║██╔══╝  ██║  ██║
+    ██║  ██║╚██████╗╚██████╗███████╗███████║███████║    ██████╔╝███████╗██║ ╚████║██║███████╗██████╔╝
+    ╚═╝  ╚═╝ ╚═════╝ ╚═════╝╚══════╝╚══════╝╚══════╝    ╚═════╝ ╚══════╝╚═╝  ╚═══╝╚═╝╚══════╝╚═════╝ 
+    </pre>
+  </header>
+  
+  <main class="error-main">
+    <section class="error-container">
+      <div class="error-code">
+        <span class="giant-403 neon-red">403</span>
+        <h1 class="glow neon-red">SECURITY CLEARANCE REQUIRED</h1>
+      </div>
+      
+      <div class="error-message">
+        <pre class="terminal-output">
+SECURITY VIOLATION: Insufficient privileges to access requested resource
+Classification Level: RESTRICTED
+Your Clearance: GUEST
+Required Clearance: TOP SECRET
+
+SECURITY ALERT:
+- Access attempt logged and flagged
+- IP address recorded for security audit
+- Incident reported to system administrator
+- User session under surveillance
+
+SECURITY PROTOCOLS ENGAGED:
+- Multi-factor authentication required
+- Biometric scan needed
+- Security token validation pending
+- Administrative approval required
+
+ACCESS DENIED: Your security credentials do not meet the minimum 
+requirements for this resource. Please contact your system 
+administrator or security officer for clearance upgrade.
+        </pre>
+      </div>
+      
+      <div class="clearance-info">
+        <h2 class="glow neon-blue">Security Clearance Levels</h2>
+        <div class="clearance-grid">
+          <div class="clearance-item">
+            <span class="level neon-green">LEVEL 1</span>
+            <span class="desc">Public Information</span>
+          </div>
+          <div class="clearance-item">
+            <span class="level neon-blue">LEVEL 2</span>
+            <span class="desc">Internal Use Only</span>
+          </div>
+          <div class="clearance-item">
+            <span class="level neon-purple">LEVEL 3</span>
+            <span class="desc">Confidential</span>
+          </div>
+          <div class="clearance-item">
+            <span class="level neon-red">LEVEL 4</span>
+            <span class="desc">Secret</span>
+          </div>
+          <div class="clearance-item">
+            <span class="level neon-red">LEVEL 5</span>
+            <span class="desc">Top Secret</span>
+          </div>
+        </div>
+      </div>
+      
+      <div class="error-actions">
+        <a href="index.html" class="error-btn neon-green">RETURN TO SAFE ZONE</a>
+        <a href="contact.html" class="error-btn neon-blue">REQUEST ACCESS</a>
+        <button onclick="requestClearance()" class="error-btn neon-purple">UPGRADE CLEARANCE</button>
+      </div>
+      
+      <div class="error-humor">
+        <p class="neon-red">
+          "I could tell you what's behind this page, but then I'd have to revoke your security clearance. 
+          And trust me, the paperwork isn't worth it."
+        </p>
+        <p class="neon-green">
+          - Chief Security Officer
+        </p>
+      </div>
+    </section>
+    
+    <section class="security-log">
+      <h2 class="glow neon-red">Security Incident Log</h2>
+      <div class="log-entries">
+        <div class="log-entry">
+          <span class="timestamp">[2025-08-26 14:35:18]</span>
+          <span class="event neon-red">ACCESS DENIED - Insufficient clearance level</span>
+        </div>
+        <div class="log-entry">
+          <span class="timestamp">[2025-08-26 14:35:18]</span>
+          <span class="event neon-blue">User IP logged: 127.0.0.1</span>
+        </div>
+        <div class="log-entry">
+          <span class="timestamp">[2025-08-26 14:35:18]</span>
+          <span class="event neon-purple">Security team notified</span>
+        </div>
+      </div>
+    </section>
+  </main>
+  
+  <script>
+    function requestClearance() {
+      alert('CLEARANCE REQUEST SUBMITTED\n\nYour request for elevated security clearance has been submitted to the security review board. Please allow 7-10 business days for processing.\n\nNote: Background check and polygraph examination may be required.');
+    }
+    
+    document.addEventListener('DOMContentLoaded', () => {
+      // Log security incident
+      console.log('403 SECURITY INCIDENT:', {
+        timestamp: new Date().toISOString(),
+        url: window.location.href,
+        referrer: document.referrer,
+        userAgent: navigator.userAgent,
+        incident: 'ACCESS_DENIED_INSUFFICIENT_CLEARANCE'
+      });
+      
+      // Simulate security scan
+      setTimeout(() => {
+        const scanResult = document.createElement('div');
+        scanResult.className = 'security-alert';
+        scanResult.innerHTML = '<p class="neon-red">⚠️ SECURITY ALERT: Unauthorized access attempt detected and logged</p>';
+        document.querySelector('.error-container').appendChild(scanResult);
+      }, 1500);
+    });
+  </script>
+  <script src="assets/js/main.js"></script>
+</body>
+</html>

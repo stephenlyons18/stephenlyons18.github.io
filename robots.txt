@@ -1,0 +1,49 @@
+User-agent: *
+Allow: /
+Disallow: /admin.html
+Disallow: /admin/
+Disallow: /.env
+Disallow: /config/
+Disallow: /backup/
+Disallow: /logs/
+Disallow: /private/
+Disallow: /secure/
+Disallow: /internal/
+Disallow: /api/keys/
+Disallow: /database/
+Disallow: /credentials/
+
+# Honeypot paths to attract crawlers
+Disallow: /secret/
+Disallow: /hidden/
+Disallow: /confidential/
+Disallow: /classified/
+Disallow: /.git/
+Disallow: /wp-admin/
+Disallow: /phpmyadmin/
+
+# Sitemap
+Sitemap: https://yourdomain.com/sitemap.xml
+
+# Crawl-delay for security scanning bots
+User-agent: Googlebot
+Crawl-delay: 1
+
+User-agent: Bingbot
+Crawl-delay: 1
+
+# Block common security scanners and vulnerability scanners
+User-agent: sqlmap
+Disallow: /
+
+User-agent: nikto
+Disallow: /
+
+User-agent: nmap
+Disallow: /
+
+User-agent: dirb
+Disallow: /
+
+User-agent: dirbuster
+Disallow: /

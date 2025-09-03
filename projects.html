@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Projects - Stephen Lyons | Senior Cybersecurity Engineer</title>
+  <link rel="stylesheet" href="assets/css/style.css">
+  <link rel="stylesheet" href="assets/css/terminal.css">
+  <link rel="stylesheet" href="assets/css/extended-styles.css">
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+</head>
+<body>
+  <div id="matrix-bg"></div>
+  <div id="terminal-container">
+    <div id="terminal"></div>
+  </div>
+  <div class="page-container">
+    <header>
+      <pre class="ascii-banner">
+    ██████╗ ██████╗  ██████╗      ██╗███████╗ ██████╗████████╗███████╗
+    ██╔══██╗██╔══██╗██╔═══██╗     ██║██╔════╝██╔════╝╚══██╔══╝██╔════╝
+    ██████╔╝██████╔╝██║   ██║     ██║█████╗  ██║        ██║   ███████╗
+    ██╔═══╝ ██╔══██╗██║   ██║██   ██║██╔══╝  ██║        ██║   ╚════██║
+    ██║     ██║  ██║╚██████╔╝╚█████╔╝███████╗╚██████╗   ██║   ███████║
+    ╚═╝     ╚═╝  ╚═╝ ╚═════╝  ╚════╝ ╚══════╝ ╚═════╝   ╚═╝   ╚══════╝
+      </pre>
+      <div class="system-status">
+        <span>Uptime: <span id="uptime">00:00:00</span></span>
+        <span>Security Level: <span class="neon-green">MAX</span></span>
+        <span>Threat Detection: <span class="neon-red">0</span></span>
+      </div>
+    </header>
+    <main>
+      <section class="projects-header">
+        <h1 class="glow">Project Showcase</h1>
+        <div class="filters">
+          <button class="filter-btn active" data-filter="all">ALL</button>
+          <button class="filter-btn" data-filter="security">SECURITY OPS</button>
+          <button class="filter-btn" data-filter="cloud">CLOUD/AWS</button>
+          <button class="filter-btn" data-filter="automation">AUTOMATION</button>
+          <button class="filter-btn" data-filter="web">WEB DEV</button>
+        </div>
+      </section>
+
+      <section class="projects-grid">
+        <div class="project-card" data-category="security">
+          <h3 class="project-title neon-red">OPERATION: SENTINEL-CORE</h3>
+          <div class="project-codename">SIEM Automation Platform</div>
+          <p class="project-description">
+            Real-time threat detection and incident response platform with automated log collection, 
+            normalization, and enrichment across cloud, endpoint, and SaaS sources. 
+            Continuous rule tuning reduces false positives by 40% while maximizing actionable insights.
+          </p>
+          <div class="project-tech">
+            <span class="tech-tag">SIEM</span>
+            <span class="tech-tag">Log Analytics</span>
+            <span class="tech-tag">Threat Detection</span>
+            <span class="tech-tag">Automation</span>
+          </div>
+          <div class="project-stats">
+            <span>Integration Sources: 50+</span>
+            <span>False Positive Reduction: 40%</span>
+            <span>Impact: CRITICAL</span>
+          </div>
+          <div class="project-links">
+            <a href="#" class="neon-blue">Architecture</a>
+            <a href="#" class="neon-green">Documentation</a>
+          </div>
+        </div>
+
+        <div class="project-card" data-category="cloud">
+          <h3 class="project-title neon-blue">OPERATION: CLOUD-FORTRESS</h3>
+          <div class="project-codename">AWS Security Pipeline</div>
+          <p class="project-description">
+            Secure AWS environments with automated deployments and continuous security integration. 
+            CI/CD pipelines in GitHub Actions embed security checks and compliance gates directly into workflows, 
+            using Infrastructure-as-Code to standardize configurations.
+          </p>
+          <div class="project-tech">
+            <span class="tech-tag">AWS</span>
+            <span class="tech-tag">GitHub Actions</span>
+            <span class="tech-tag">IaC</span>
+            <span class="tech-tag">DevSecOps</span>
+          </div>
+          <div class="project-stats">
+            <span>Deployments: 500+ per month</span>
+            <span>Security Gates: 15+</span>
+            <span>Impact: HIGH</span>
+          </div>
+          <div class="project-links">
+            <a href="#" class="neon-blue">Pipeline</a>
+            <a href="#" class="neon-green">Templates</a>
+          </div>
+        </div>
+
+        <div class="project-card" data-category="security">
+          <h3 class="project-title neon-purple">OPERATION: ENDPOINT-SHIELD</h3>
+          <div class="project-codename">EDR Management System</div>
+          <p class="project-description">
+            Endpoint Detection and Response solution deployment with automated monitoring 
+            and enforcement across platforms. Integrated Data Loss Prevention controls 
+            safeguard sensitive data while providing comprehensive device visibility.
+          </p>
+          <div class="project-tech">
+            <span class="tech-tag">EDR</span>
+            <span class="tech-tag">DLP</span>
+            <span class="tech-tag">Endpoint Security</span>
+            <span class="tech-tag">Monitoring</span>
+          </div>
+          <div class="project-stats">
+            <span>Endpoints Protected: 2,000+</span>
+            <span>Data Incidents Prevented: 95%</span>
+            <span>Impact: HIGH</span>
+          </div>
+          <div class="project-links">
+            <a href="#" class="neon-blue">Dashboard</a>
+            <a href="#" class="neon-green">Policies</a>
+          </div>
+        </div>
+
+        <div class="project-card" data-category="automation">
+          <h3 class="project-title neon-green">OPERATION: RESPONSE-BOT</h3>
+          <div class="project-codename">Incident Response Automation</div>
+          <p class="project-description">
+            Automated security operations including triage, investigation, containment, and remediation. 
+            Improved playbooks and workflows with focus on automation to reduce response time 
+            and scale operations efficiently.
+          </p>
+          <div class="project-tech">
+            <span class="tech-tag">Automation</span>
+            <span class="tech-tag">Playbooks</span>
+            <span class="tech-tag">SOAR</span>
+            <span class="tech-tag">Orchestration</span>
+          </div>
+          <div class="project-stats">
+            <span>Response Time: 75% faster</span>
+            <span>Automated Tasks: 80%</span>
+            <span>Impact: CRITICAL</span>
+          </div>
+          <div class="project-links">
+            <a href="#" class="neon-blue">Workflows</a>
+            <a href="#" class="neon-green">Metrics</a>
+          </div>
+        </div>
+
+        <div class="project-card" data-category="web">
+          <h3 class="project-title neon-red">OPERATION: STUDENT-CONNECT</h3>
+          <div class="project-codename">ASI Web Platform</div>
+          <p class="project-description">
+            Led web development team for Associated Students Inc. at CSULB, managing student union 
+            and recreation center applications. Developed COVID-19 freshman quiz game and improved 
+            website with SEO optimization and daily content updates.
+          </p>
+          <div class="project-tech">
+            <span class="tech-tag">JavaScript</span>
+            <span class="tech-tag">React.js</span>
+            <span class="tech-tag">PHP</span>
+            <span class="tech-tag">CMS</span>
+          </div>
+          <div class="project-stats">
+            <span>Team Size: 5 developers</span>
+            <span>SEO Improvement: 200%</span>
+            <span>Impact: MEDIUM</span>
+          </div>
+          <div class="project-links">
+            <a href="#" class="neon-blue">Live Site</a>
+            <a href="#" class="neon-green">Case Study</a>
+          </div>
+        </div>
+
+        <div class="project-card" data-category="automation">
+          <h3 class="project-title neon-blue">OPERATION: SAP-SECURE</h3>
+          <div class="project-codename">Business Application Security</div>
+          <p class="project-description">
+            Developed custom SAP programs using ABAP programming language during internship at Yamaha Motor. 
+            Maintained coding standards and Quality Control Systems while supporting 
+            transition to modern web technologies and frameworks.
+          </p>
+          <div class="project-tech">
+            <span class="tech-tag">ABAP</span>
+            <span class="tech-tag">SAP ERP</span>
+            <span class="tech-tag">Quality Assurance</span>
+            <span class="tech-tag">Migration</span>
+          </div>
+          <div class="project-stats">
+            <span>Programs Developed: 25+</span>
+            <span>Quality Standards: 100%</span>
+            <span>Impact: MEDIUM</span>
+          </div>
+          <div class="project-links">
+            <a href="#" class="neon-blue">Documentation</a>
+            <a href="#" class="neon-green">Standards</a>
+          </div>
+        </div>
+      </section>
+
+      <section class="project-stats-summary">
+        <h2 class="glow">Combat Statistics</h2>
+        <div class="stats-grid">
+          <div class="stat">
+            <span class="stat-number neon-red">2,000+</span>
+            <span class="stat-label">Endpoints Protected</span>
+          </div>
+          <div class="stat">
+            <span class="stat-number neon-blue">40%</span>
+            <span class="stat-label">False Positive Reduction</span>
+          </div>
+          <div class="stat">
+            <span class="stat-number neon-green">500+</span>
+            <span class="stat-label">Monthly Deployments</span>
+          </div>
+          <div class="stat">
+            <span class="stat-number neon-purple">75%</span>
+            <span class="stat-label">Faster Response Time</span>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+  <script>
+    // Project filtering functionality
+    document.addEventListener('DOMContentLoaded', () => {
+      const filterBtns = document.querySelectorAll('.filter-btn');
+      const projectCards = document.querySelectorAll('.project-card');
+      
+      filterBtns.forEach(btn => {
+        btn.addEventListener('click', () => {
+          const filter = btn.dataset.filter;
+          
+          // Update active button
+          filterBtns.forEach(b => b.classList.remove('active'));
+          btn.classList.add('active');
+          
+          // Filter projects
+          projectCards.forEach(card => {
+            if (filter === 'all' || card.dataset.category === filter) {
+              card.style.display = 'block';
+            } else {
+              card.style.display = 'none';
+            }
+          });
+        });
+      });
+      
+    });
+  </script>
+  <script src="assets/js/navigation.js"></script>
+  <script src="assets/js/page-transitions.js"></script>
+  <script src="assets/js/terminal.js"></script>
+  <script src="assets/js/main.js"></script>
+</body>
+</html>
