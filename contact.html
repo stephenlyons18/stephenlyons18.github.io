@@ -97,65 +97,13 @@ M4pR6wE8tY9sK3nV2oL7gP5rT8xW4eF6sJ9dC1aE3bM7vY2kR5wN8pL6gH4mX1o
 T9sL7qW3nV5cE8kJ2vY9pR6wA1bN7cQ8tM4zL5oX6gH2rT9vU3jK8eA1bN5cQ7z
 M4pR6wE8tY9sK3nV2oL7gP5rT8xW4eF6sJ9dC1aE3bM7vY2kR5wN8pL6gH4mX1o
 
-[REDACTED FOR SECURITY]
-
 -----END PGP PUBLIC KEY BLOCK-----
         </pre>
       </div>
       <p class="pgp-note neon-blue">For sensitive communications, please encrypt your message using this public key.</p>
     </section>
 
-    <section class="encrypted-contact">
-      <h2 class="glow">Ultra-Secure Channel</h2>
-      <div class="encrypted-form">
-        <textarea placeholder="Enter PGP encrypted message here..." rows="6" class="encrypted-input"></textarea>
-        <button class="decrypt-btn glow">DECRYPT & SEND</button>
-      </div>
-      <p class="encryption-note">This channel uses AES-256 encryption with ephemeral keys.</p>
-    </section>
-
-    <section class="response-time">
-      <h2 class="glow">Response Protocols</h2>
-      <div class="protocol-list">
-        <div class="protocol-item">
-          <span class="priority neon-red">CRITICAL:</span>
-          <span class="time">< 2 hours</span>
-          <span class="desc">Security vulnerabilities, urgent matters</span>
-        </div>
-        <div class="protocol-item">
-          <span class="priority neon-purple">HIGH:</span>
-          <span class="time">< 24 hours</span>
-          <span class="desc">Business inquiries, collaboration requests</span>
-        </div>
-        <div class="protocol-item">
-          <span class="priority neon-blue">MEDIUM:</span>
-          <span class="time">< 48 hours</span>
-          <span class="desc">General questions, feedback</span>
-        </div>
-        <div class="protocol-item">
-          <span class="priority neon-green">LOW:</span>
-          <span class="time">< 1 week</span>
-          <span class="desc">Casual conversations, networking</span>
-        </div>
-      </div>
-    </section>
-  </main>
-  </div>
-  <script>
-    // Contact form handling
-    document.getElementById('contactForm').addEventListener('submit', function(e) {
-      e.preventDefault();
-      const status = document.getElementById('formStatus');
-      status.innerHTML = '<span class="neon-green">MESSAGE TRANSMITTED SUCCESSFULLY</span><br><span class="neon-blue">Awaiting secure response...</span>';
-      status.style.display = 'block';
-      
-      // Reset form after 3 seconds
-      setTimeout(() => {
-        this.reset();
-        status.style.display = 'none';
-      }, 3000);
-    });
-  </script>
+   
   <script src="assets/js/navigation.js"></script>
   <script src="assets/js/page-transitions.js"></script>
   <script src="assets/js/terminal.js"></script>

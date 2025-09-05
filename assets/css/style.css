@@ -204,6 +204,11 @@ header {
 .neon-red { color: #ff3366; text-shadow: 0 0 8px #ff3366; }
 .neon-blue { color: #00bfff; text-shadow: 0 0 8px #00bfff; }
 .neon-purple { color: #9933ff; text-shadow: 0 0 8px #9933ff; }
+.neon-green-text { color: #00ff41; }
+.neon-red-text { color: #ff3366; }
+.neon-blue-text { color: #00bfff; }
+.neon-purple-text { color: #9933ff; }
+
 .glow {
   text-shadow: 0 0 8px #00ff41, 0 0 2px #fff;
 }
@@ -215,6 +220,36 @@ header {
 }
 .quick-links a:hover {
   filter: brightness(1.5) drop-shadow(0 0 6px #fff);
+}
+.divider {
+  height: 1px;
+  background: linear-gradient(to right, transparent, #9933ff, transparent);
+  margin: 2em 0;
+  /* centered width at half length; */
+  width: 50%;
+  margin-left: auto;
+  margin-right: auto;
+  box-shadow: 0 0 8px #9933ff;
+  border-radius: 4px;
+}
+.platform-link {
+  display: inline-block;
+  padding-left: 2.5em;
+  background-repeat: no-repeat;
+  background-position: left center;
+  background-size: 1.5em;
+  min-height: 1.5em;
+  line-height: 1.5em;
+}
+
+.platform-link[data-platform="github"] {
+  background-image: url('https://github.githubassets.com/images/modules/site/icons/header/github-mark.svg');
+}
+
+.platform-link[data-platform="linkedin"] {
+  background-image: url('https://cdn-icons-png.flaticon.com/512/174/174857.png');
+  background-size: 1.2em;
+  padding-left: 2.2em;
 }
 .projects-carousel {
   margin: 2em auto;
@@ -239,7 +274,6 @@ header {
 }
 .activity-feed li {
   margin-bottom: 0.5em;
-  color: #ff3366;
   font-family: 'JetBrains Mono', monospace;
 }
 .skills-matrix {

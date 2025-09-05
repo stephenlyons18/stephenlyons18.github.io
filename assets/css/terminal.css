@@ -1,8 +1,13 @@
 #terminal-container {
-  position: relative;
-  z-index: 4;
-  margin: 1em auto;
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 1000;
+  margin: 0;
   max-width: 800px;
+  width: 90%;
+  max-height: 80vh;
   background: rgba(0, 0, 0, 0.95);
   border: 2px solid #00ff41;
   border-radius: 12px;
@@ -13,16 +18,14 @@
   padding: 1em;
   font-family: 'JetBrains Mono', monospace;
   backdrop-filter: blur(4px);
-  display: none;
   opacity: 0;
-  transform: translateY(-20px);
-  transition: all 0.3s ease;
+  pointer-events: none;
+  transition: opacity 0.3s ease, transform 0.3s ease;
 }
 
 #terminal-container.active {
-  display: block;
   opacity: 1;
-  transform: translateY(0);
+  pointer-events: auto;
 }
 #terminal {
   min-height: 200px;

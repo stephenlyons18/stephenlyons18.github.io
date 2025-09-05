@@ -176,7 +176,7 @@ function initTerminal() {
   else currentPage = 'index';
   
   // Show welcome message
-  terminal.innerHTML = `<div class="terminal-output">Welcome to Stephen Lyons' Cybersec Terminal Interface v2.1.7</div>
+  terminal.innerHTML = `<div class="terminal-output">Welcome to Stephen Lyons'  Terminal Interface v2.1.7</div>
 <div class="terminal-output">Current location: /${currentPage}.html</div>
 <div class="terminal-output">Type "help" for available commands</div>
 <div class="terminal-output">Security status: <span class="neon-green">SECURE</span></div>

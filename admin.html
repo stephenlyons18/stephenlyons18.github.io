@@ -12,6 +12,7 @@
   <!-- DB_CONNECTION: mysql://admin:P@ssw0rd123@db.internal.corp:3306/production -->
   <!-- API_SECRET: sk_live_51H7zBwJ4NzYx3FoVm2Qp8KrS9Lm6Ft2Zr5Gs1Hk3Wp7Jd8Ct9Vr4Ms5Nt6Lu7Qw -->
 </head>
+
 <body>
   <div id="matrix-bg"></div>
   <div class="warning-banner">
@@ -119,15 +120,18 @@
       <h2 class="glow neon-red">Recent Access Attempts</h2>
       <div class="log-entries">
         <div class="log-entry">
-          <span class="timestamp">[2025-08-26 14:23:15]</span>
+          <!-- Timestamp will be injected by JavaScript -->
+          <span class="timestamp" id="log1-ts"></span>
           <span class="event neon-red">UNAUTHORIZED ACCESS ATTEMPT - IP: 192.168.1.100</span>
         </div>
         <div class="log-entry">
-          <span class="timestamp">[2025-08-26 14:22:47]</span>
+          <!-- Timestamp will be injected by JavaScript -->
+          <span class="timestamp" id="log2-ts"></span>
           <span class="event neon-blue">Login attempt from: user@example.com</span>
         </div>
         <div class="log-entry">
-          <span class="timestamp">[2025-08-26 14:21:33]</span>
+          <!-- Timestamp will be injected by JavaScript -->
+          <span class="timestamp" id="log3-ts"></span>
           <span class="event neon-purple">Brute force detection: 15 failed attempts</span>
         </div>
       </div>
@@ -139,6 +143,21 @@
   </div>
 
   <script>
+    // Inject semi-realistic timestamps into honeypot log entries
+    function setLogTimestamps() {
+      const now = new Date();
+      // Log 1: 10-15 minutes ago
+      const log1 = new Date(now.getTime() - (Math.floor(Math.random() * 6) + 10) * 60000);
+      // Log 2: 5-10 minutes ago
+      const log2 = new Date(now.getTime() - (Math.floor(Math.random() * 6) + 5) * 60000);
+      // Log 3: just now
+      const log3 = now;
+      document.getElementById('log1-ts').textContent = `[${log1.toLocaleString()}]`;
+      document.getElementById('log2-ts').textContent = `[${log2.toLocaleString()}]`;
+      document.getElementById('log3-ts').textContent = `[${log3.toLocaleString()}]`;
+    }
+    setLogTimestamps();
+
     // Honeypot functionality
     document.getElementById('adminLogin').addEventListener('submit', function(e) {
       e.preventDefault();
