@@ -23,8 +23,8 @@
 
 .menu-toggle {
   background: rgba(20, 5, 40, 0.95);
-  border: 1px solid #9933ff;
-  color: #9933ff;
+  border: 1px solid #00ff41;
+  color: #00ff41;
   padding: 10px 15px;
   border-radius: 4px;
   cursor: pointer;
@@ -32,13 +32,13 @@
   font-size: 14px;
   transition: all 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
   backdrop-filter: blur(10px);
-  box-shadow: 0 0 15px rgba(153, 51, 255, 0.3);
+  box-shadow: 0 0 15px rgba(0, 255, 65, 0.3);
 }
 
 .menu-toggle:hover {
-  background: rgba(153, 51, 255, 0.2);
+  background: rgba(0, 255, 65, 0.2);
   transform: scale(1.05);
-  box-shadow: 0 0 25px rgba(153, 51, 255, 0.5);
+  box-shadow: 0 0 25px rgba(0, 255, 65, 0.5);
   color: #ffffff;
 }
 
@@ -47,7 +47,7 @@
   top: 50px;
   right: 0;
   background: rgba(15, 5, 30, 0.98);
-  border: 1px solid #9933ff;
+  border: 1px solid #00ff41;
   border-radius: 8px;
   padding: 10px 0;
   min-width: 200px;
@@ -56,7 +56,7 @@
   transform: translateY(-10px) scale(0.95);
   transition: all 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
   backdrop-filter: blur(15px);
-  box-shadow: 0 10px 30px rgba(153, 51, 255, 0.3),
+  box-shadow: 0 10px 30px rgba(0, 255, 65, 0.3),
               0 0 20px rgba(255, 51, 102, 0.2);
 }
 
@@ -77,9 +77,9 @@
 }
 
 .menu-items a:hover {
-  background: rgba(153, 51, 255, 0.15);
-  border-left-color: #9933ff;
-  color: #9933ff;
+  background: rgba(0, 255, 65, 0.15);
+  border-left-color: #00ff41;
+  color: #00ff41;
   padding-left: 25px;
 }
 
@@ -107,22 +107,22 @@
   bottom: 20px;
   left: 20px;
   background: rgba(20, 5, 40, 0.95);
-  border: 1px solid #9933ff;
-  color: #9933ff;
+  border: 1px solid #00ff41;
+  color: #00ff41;
   padding: 12px 20px;
   border-radius: 6px;
   font-family: 'JetBrains Mono', monospace;
   font-size: 12px;
   backdrop-filter: blur(10px);
-  box-shadow: 0 0 15px rgba(153, 51, 255, 0.3);
+  box-shadow: 0 0 15px rgba(0, 255, 65, 0.3);
   transition: all 0.3s ease;
   z-index: 998;
   cursor: pointer;
 }
 
 .terminal-hint:hover {
-  background: rgba(153, 51, 255, 0.2);
-  box-shadow: 0 0 25px rgba(153, 51, 255, 0.5);
+  background: rgba(0, 255, 65, 0.2);
+  box-shadow: 0 0 25px rgba(0, 255, 65, 0.5);
   transform: scale(1.05);
 }
 
@@ -168,6 +168,35 @@ body.page-transition {
               0 0 40px rgba(0, 191, 255, 0.05),
               inset 0 1px 0 rgba(255, 255, 255, 0.05);
 }
+.page-container:hover {
+  border-color: #00ff41;
+  box-shadow: 0 6px 30px rgba(6, 232, 63, 0.9), 
+              0 0 50px rgba(0, 255, 65, 0.1),
+              inset 0 1px 0 rgba(255, 255, 255, 0.1);
+}
+.text-container {
+  max-width: 800px;
+  margin: 0 auto;
+  line-height: 1.6;
+  font-size: 1.1em;
+  /* background which is slightly darker than the page-container */
+  background: rgba(10, 10, 10, 0.85);
+  padding: 1.5em;
+  border-radius: 6px;
+  box-shadow: 0 0 10px rgba(0, 191, 255, 0.1);
+  transform: translateY(20px);
+  transition: all 0.3s ease-in-out;
+}
+/* add neon green glow to text-container */
+.text-container:hover {
+    box-shadow: 0 6px 30px rgba(6, 232, 63, 0.9), 
+              0 0 50px rgba(0, 255, 65, 0.2);
+  transform: translateY(0) scale(1.02);
+  /* fade the transition in and out on hover. when user hovers off, animation translates down */
+}
+
+  
+
 #matrix-bg {
   position: fixed;
   top: 0; left: 0; width: 100vw; height: 100vh;
@@ -223,13 +252,13 @@ header {
 }
 .divider {
   height: 1px;
-  background: linear-gradient(to right, transparent, #9933ff, transparent);
+  background: linear-gradient(to right, transparent, #00ff41, transparent);
   margin: 2em 0;
   /* centered width at half length; */
   width: 50%;
   margin-left: auto;
   margin-right: auto;
-  box-shadow: 0 0 8px #9933ff;
+  box-shadow: 0 0 8px #00ff41;
   border-radius: 4px;
 }
 .platform-link {
@@ -319,4 +348,13 @@ section {
   .progress-bar { grid-template-columns: 1fr; }
   main { padding: 0 1em; }
   .ascii-banner { font-size: 0.7em; }
+}
+.bio {
+ width: 66%;
+  /*centered within the page container*/
+  margin: 0 auto;
+  text-align: left;
+  line-height: 1.6;
+  font-size: 1.1em;
+
 }
