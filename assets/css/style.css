@@ -89,54 +89,183 @@
   color: #ff3366;
 }
 
-@media (max-width: 768px) {
+@media (max-width: 1024px) { /* Tablet adjustments */
+  .nav-menu {
+    top: 15px;
+    right: 15px;
+  }
+  
+  .menu-items {
+    min-width: 180px;
+    font-size: 13px;
+  }
+  
+  .terminal-hint {
+    bottom: 15px;
+    left: 15px;
+    padding: 10px 18px;
+    font-size: 11px;
+  }
+  
+  .page-container {
+    margin: 0.8em;
+    padding: 2em;
+  }
+  
+  .ascii-banner {
+    font-size: 0.8em;
+  }
+  
+  .system-status {
+    gap: 1.5em;
+    font-size: 0.9em;
+  }
+  
+  .carousel {
+    gap: 1.5em;
+  }
+  
+  .progress-bar {
+    grid-template-columns: 1fr 2fr;
+    gap: 0.5em 0.8em;
+  }
+}
+
+@media (max-width: 768px) { /* Mobile adjustments */
   .nav-menu {
     top: 10px;
     right: 10px;
   }
   
-  .menu-items {
-    right: -10px;
-    min-width: 180px;
+  .menu-toggle {
+    padding: 12px 16px; /* Larger touch target */
+    font-size: 13px;
+    min-width: 44px; /* Min touch target */
+    min-height: 44px;
   }
-}
-
-/* Terminal Toggle Hint */
-.terminal-hint {
-  position: fixed;
-  bottom: 20px;
-  left: 20px;
-  background: rgba(20, 5, 40, 0.95);
-  border: 1px solid #00ff41;
-  color: #00ff41;
-  padding: 12px 20px;
-  border-radius: 6px;
-  font-family: 'JetBrains Mono', monospace;
-  font-size: 12px;
-  backdrop-filter: blur(10px);
-  box-shadow: 0 0 15px rgba(0, 255, 65, 0.3);
-  transition: all 0.3s ease;
-  z-index: 998;
-  cursor: pointer;
-}
-
-.terminal-hint:hover {
-  background: rgba(0, 255, 65, 0.2);
-  box-shadow: 0 0 25px rgba(0, 255, 65, 0.5);
-  transform: scale(1.05);
-}
-
-.terminal-hint .key-combo {
-  color: #00ff41;
-  font-weight: bold;
-}
-
-@media (max-width: 768px) {
+  
+  .menu-items {
+    top: 55px;
+    right: -5px;
+    min-width: 160px;
+    padding: 8px 0;
+  }
+  
+  .menu-items a {
+    padding: 14px 20px; /* Larger touch target */
+    font-size: 13px;
+  }
+  
   .terminal-hint {
     bottom: 10px;
     left: 10px;
-    font-size: 11px;
-    padding: 10px 15px;
+    padding: 12px 16px; /* Larger touch target */
+    font-size: 10px;
+    min-width: 44px;
+    min-height: 44px;
+  }
+  
+  body {
+    font-size: 14px; /* Slightly larger base font for readability */
+  }
+  
+  .page-container {
+    margin: 0.5em;
+    padding: 1.5em;
+    border-radius: 12px; /* More rounded for mobile */
+  }
+  
+  .text-container {
+    padding: 1.2em;
+    font-size: 1em; /* Scale down proportionally */
+    transform: translateY(15px);
+  }
+  
+  .ascii-banner {
+    font-size: 0.6em;
+  }
+  
+  .system-status {
+    flex-direction: column;
+    gap: 0.5em;
+    font-size: 0.85em;
+  }
+  
+  .quick-links a {
+    margin: 0 0.5em;
+    display: block; /* Stack vertically */
+    margin-bottom: 0.5em;
+  }
+  
+  .carousel {
+    flex-direction: column;
+    gap: 1em;
+    align-items: center;
+  }
+  
+  .project-codename, .project-desc {
+    font-size: 0.9em;
+  }
+  
+  .activity-feed li {
+    font-size: 0.9em;
+    margin-bottom: 0.8em;
+  }
+  
+  .progress-bar {
+    grid-template-columns: 1fr; /* Stack labels and bars */
+    gap: 0.5em;
+  }
+  
+  .bar {
+    height: 18px; /* Slightly taller for touch */
+  }
+  
+  .bio {
+    width: 100%; /* Full width on mobile */
+    font-size: 1em;
+  }
+}
+
+@media (max-width: 480px) { /* Small phones */
+  .ascii-banner {
+    font-size: 0.5em;
+  }
+  
+  .page-container {
+    padding: 1em;
+  }
+  
+  .text-container {
+    padding: 1em;
+    font-size: 0.95em;
+  }
+  
+  .menu-toggle, .terminal-hint {
+    font-size: 12px;
+  }
+  
+  .system-status {
+    font-size: 0.8em;
+  }
+  
+  .quick-links a {
+    font-size: 0.9em;
+  }
+  
+  .activity-feed li {
+    font-size: 0.85em;
+  }
+}
+
+/* Optimize animations for mobile performance */
+@media (max-width: 768px) {
+  .menu-toggle, .terminal-hint, .text-container {
+    transition: all 0.2s ease; /* Faster transitions to reduce lag */
+  }
+  
+  .scroll-progress {
+    height: 3px; /* Thinner for mobile */
   }
 }
 
