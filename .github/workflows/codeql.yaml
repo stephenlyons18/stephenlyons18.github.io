@@ -42,8 +42,9 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        $codeql-languages-matrix
-        # CodeQL supports the following values keywords for 'language': $supported-codeql-languages
+        language: [ 'javascript' ]
+        build-mode: [ 'none' ]
+        # CodeQL supports the following values keywords for 'language': javascript, typescript, python, etc.
         # Use `c-cpp` to analyze code written in C, C++ or both
         # Use 'java-kotlin' to analyze code written in Java, Kotlin or both
         # Use 'javascript-typescript' to analyze code written in JavaScript, TypeScript or both
