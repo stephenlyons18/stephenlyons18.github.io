@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Projects by Stephen Lyons — Full-stack applications, security engineering, and DevSecOps automation.">
+  <meta name="author" content="Stephen Lyons">
+  <meta name="theme-color" content="#0A0A0A">
+  <title>Projects — Stephen Lyons</title>
+  <link rel="stylesheet" href="styles.css">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🛡️</text></svg>">
+</head>
+<body>
+
+  <canvas id="matrix-canvas" aria-hidden="true"></canvas>
+
+  <!-- Header -->
+  <header class="site-header" role="banner">
+    <div class="container">
+      <a href="index.html" class="logo" aria-label="Stephen Lyons — Home">
+        <span class="logo-bracket">[</span>SL<span class="logo-bracket">]</span>
+      </a>
+      <nav class="nav-links" role="navigation" aria-label="Main navigation">
+        <a href="index.html">Home</a>
+        <a href="about.html">About</a>
+        <a href="projects.html">Projects</a>
+        <a href="devsecops.html">DevSecOps</a>
+        <a href="contact.html">Contact</a>
+      </nav>
+      <button class="nav-terminal-hint" aria-label="Open terminal with Ctrl+K">
+        <kbd>Ctrl+K</kbd> Terminal
+      </button>
+      <button class="nav-toggle" aria-label="Toggle mobile navigation" aria-expanded="false">
+        <span></span><span></span><span></span>
+      </button>
+    </div>
+  </header>
+
+  <!-- Page Header -->
+  <section class="page-header" aria-label="Page header">
+    <div class="container reveal">
+      <span class="section-label">Portfolio</span>
+      <h1 class="section-title">Projects</h1>
+      <p class="page-desc">A selection of notable projects spanning full-stack development, mobile apps, and security engineering.</p>
+    </div>
+  </section>
+
+  <!-- Projects -->
+  <section class="section" style="padding-top:0;" aria-label="Project showcase">
+    <div class="container">
+
+      <!-- Thumbo.app -->
+      <article class="card reveal" style="margin-bottom: 2rem;">
+        <div style="display:flex;justify-content:space-between;align-items:start;flex-wrap:wrap;gap:1rem;margin-bottom:1rem;">
+          <div>
+            <span class="card__tag">Freelance Full-Stack Engineer</span>
+            <h2 class="card__title glitch" style="font-size:1.4rem;">Thumbo.app</h2>
+          </div>
+          <span style="font-size:0.75rem;color:var(--text-muted);white-space:nowrap;">Aug 2022 – Dec 2023</span>
+        </div>
+        <p class="card__desc" style="font-size:0.95rem;">
+          Developed the MVP for a stadium and fan entertainment site enabling real-time chatting, trivia, and polls from attendees. Built the front-end experience for both mobile devices and Jumbotron displays, and managed full deployment pipeline via AWS.
+        </p>
+        <p class="card__desc">
+          The platform allows event organizers to engage live audiences through interactive features, providing a seamless experience from personal devices to large-screen stadium displays.
+        </p>
+
+        <h3 style="font-family:var(--font-display);font-size:0.85rem;color:var(--accent);margin-bottom:0.75rem;text-transform:uppercase;letter-spacing:0.08em;">Key Contributions</h3>
+        <ul class="timeline-item__details" style="margin-bottom:1.25rem;">
+          <li>Architected and developed the full-stack MVP from concept to deployment</li>
+          <li>Built responsive mobile UI and large-format Jumbotron display interface</li>
+          <li>Implemented real-time chatting, trivia games, and audience polling features</li>
+          <li>Managed containerized deployments with Docker on AWS infrastructure</li>
+          <li>Configured CI/CD pipeline for automated testing and deployments via Vercel and AWS</li>
+        </ul>
+
+        <div class="card__tech">
+          <span>Next.js</span>
+          <span>TypeScript</span>
+          <span>TailwindCSS</span>
+          <span>Firebase</span>
+          <span>Docker</span>
+          <span>AWS</span>
+          <span>Vercel</span>
+          <span>GitHub</span>
+        </div>
+
+        <div style="margin-top:1.25rem;">
+          <a href="https://thumbo.app" target="_blank" rel="noopener noreferrer" class="btn" style="font-size:0.8rem;padding:0.5rem 1rem;">
+            Visit thumbo.app →
+          </a>
+        </div>
+      </article>
+
+      <!-- FooDood -->
+      <article class="card reveal" style="margin-bottom: 2rem;">
+        <div style="display:flex;justify-content:space-between;align-items:start;flex-wrap:wrap;gap:1rem;margin-bottom:1rem;">
+          <div>
+            <span class="card__tag">CSULB Senior Project</span>
+            <h2 class="card__title glitch" style="font-size:1.4rem;">FooDood</h2>
+          </div>
+          <span style="font-size:0.75rem;color:var(--text-muted);white-space:nowrap;">Sep 2022 – May 2023</span>
+        </div>
+        <p class="card__desc" style="font-size:0.95rem;">
+          A food-finding swiper mobile application that recommends personalized dishes from nearby restaurants. Users swipe through curated dish suggestions based on their preferences, location, and ratings from Google Business Profile and Yelp APIs.
+        </p>
+        <p class="card__desc">
+          Built as a senior capstone project at CSULB, the app demonstrates end-to-end mobile development from user experience design to API integration and cloud deployment.
+        </p>
+
+        <h3 style="font-family:var(--font-display);font-size:0.85rem;color:var(--accent);margin-bottom:0.75rem;text-transform:uppercase;letter-spacing:0.08em;">Key Features</h3>
+        <ul class="timeline-item__details" style="margin-bottom:1.25rem;">
+          <li>Swipe-based UI for intuitive dish discovery and selection</li>
+          <li>Personalized recommendations using machine learning and user preference data</li>
+          <li>Integration with Google Business Profile API and Yelp API for restaurant data</li>
+          <li>Real-time data sync via Firebase with Google Cloud backend</li>
+          <li>Cross-platform mobile app built with React Native and Expo</li>
+        </ul>
+
+        <div class="card__tech">
+          <span>React Native</span>
+          <span>Expo</span>
+          <span>Next.js</span>
+          <span>Google Cloud</span>
+          <span>Firebase</span>
+          <span>Google Business Profile API</span>
+          <span>Yelp API</span>
+        </div>
+
+        <div style="margin-top:1.25rem;">
+          <a href="https://github.com/Brenden-Smith/FooDood" target="_blank" rel="noopener noreferrer" class="btn" style="font-size:0.8rem;padding:0.5rem 1rem;">
+            View on GitHub →
+          </a>
+        </div>
+      </article>
+
+      <!-- Security Automation -->
+      <article class="card reveal" style="margin-bottom: 2rem;">
+        <div style="display:flex;justify-content:space-between;align-items:start;flex-wrap:wrap;gap:1rem;margin-bottom:1rem;">
+          <div>
+            <span class="card__tag">DevSecOps</span>
+            <h2 class="card__title glitch" style="font-size:1.4rem;">GitHub Actions Security Pipelines</h2>
+          </div>
+          <span style="font-size:0.75rem;color:var(--text-muted);white-space:nowrap;">Ongoing</span>
+        </div>
+        <p class="card__desc" style="font-size:0.95rem;">
+          A collection of GitHub Actions workflows implementing security-first CI/CD practices. Includes automated secret scanning with TruffleHog, code formatting enforcement with Prettier, and broken link checking for static sites.
+        </p>
+
+        <h3 style="font-family:var(--font-display);font-size:0.85rem;color:var(--accent);margin-bottom:0.75rem;text-transform:uppercase;letter-spacing:0.08em;">Workflows</h3>
+        <ul class="timeline-item__details" style="margin-bottom:1.25rem;">
+          <li>Secret Scanning — TruffleHog scans every push and PR for accidentally committed credentials</li>
+          <li>Code Formatting — Prettier checks enforce consistent style across HTML, CSS, and JS</li>
+          <li>Link Checker — Weekly and on-push scans detect broken internal and external links</li>
+        </ul>
+
+        <div class="card__tech">
+          <span>GitHub Actions</span>
+          <span>TruffleHog</span>
+          <span>Prettier</span>
+          <span>YAML</span>
+          <span>CI/CD</span>
+        </div>
+
+        <div style="margin-top:1.25rem;">
+          <a href="devsecops.html" class="btn" style="font-size:0.8rem;padding:0.5rem 1rem;">
+            View DevSecOps Details →
+          </a>
+        </div>
+      </article>
+
+      <!-- Portfolio Site -->
+      <article class="card reveal" style="margin-bottom: 2rem;">
+        <div style="display:flex;justify-content:space-between;align-items:start;flex-wrap:wrap;gap:1rem;margin-bottom:1rem;">
+          <div>
+            <span class="card__tag">Personal</span>
+            <h2 class="card__title glitch" style="font-size:1.4rem;">Portfolio Website</h2>
+          </div>
+          <span style="font-size:0.75rem;color:var(--text-muted);white-space:nowrap;">2026</span>
+        </div>
+        <p class="card__desc" style="font-size:0.95rem;">
+          This very site — a terminal-themed cybersecurity portfolio built with pure HTML, CSS, and vanilla JavaScript. Features an interactive terminal overlay (Ctrl+K), Matrix rain backgrounds, CRT scanline effects, and a fully responsive design.
+        </p>
+
+        <h3 style="font-family:var(--font-display);font-size:0.85rem;color:var(--accent);margin-bottom:0.75rem;text-transform:uppercase;letter-spacing:0.08em;">Highlights</h3>
+        <ul class="timeline-item__details" style="margin-bottom:1.25rem;">
+          <li>Interactive terminal with tab-completion, command history, and themed output</li>
+          <li>Terminal boot sequence, typing animations, and glitch effects</li>
+          <li>Canvas-based matrix rain background and CSS scanline overlays</li>
+          <li>Theme switching (green/cyan/amber) via terminal command</li>
+          <li>GitHub Actions for secret scanning, formatting, and link checking</li>
+          <li>Deployed to GitHub Pages as static files — zero build tools</li>
+        </ul>
+
+        <div class="card__tech">
+          <span>HTML5</span>
+          <span>CSS3</span>
+          <span>Vanilla JS</span>
+          <span>GitHub Actions</span>
+          <span>GitHub Pages</span>
+        </div>
+      </article>
+
+      <!-- Down App -->
+      <article class="card reveal" style="margin-bottom: 2rem;">
+        <div style="display:flex;justify-content:space-between;align-items:start;flex-wrap:wrap;gap:1rem;margin-bottom:1rem;">
+          <div>
+            <span class="card__tag">Security Engineering</span>
+            <h2 class="card__title glitch" style="font-size:1.4rem;">Down — Social Media App</h2>
+          </div>
+          <span style="font-size:0.75rem;color:var(--text-muted);white-space:nowrap;">May 2021 – Jan 2022</span>
+        </div>
+        <p class="card__desc" style="font-size:0.95rem;">
+          Led security engineering for a React Native social media application. Coordinated development and testing across Android and iOS platforms, implemented Firebase security rules, and built comprehensive test suites with Jest and Detox.
+        </p>
+
+        <div class="card__tech">
+          <span>TypeScript</span>
+          <span>React Native</span>
+          <span>Expo</span>
+          <span>Firebase</span>
+          <span>Jest</span>
+          <span>Detox</span>
+          <span>GitHub</span>
+        </div>
+
+        <div style="margin-top:1.25rem;">
+          <a href="https://joindown.com" target="_blank" rel="noopener noreferrer" class="btn" style="font-size:0.8rem;padding:0.5rem 1rem;">
+            Visit joindown.com →
+          </a>
+        </div>
+      </article>
+
+      <!-- ACM Website -->
+      <article class="card reveal">
+        <div style="display:flex;justify-content:space-between;align-items:start;flex-wrap:wrap;gap:1rem;margin-bottom:1rem;">
+          <div>
+            <span class="card__tag">Club Webmaster</span>
+            <h2 class="card__title glitch" style="font-size:1.4rem;">CSULB ACM Website</h2>
+          </div>
+          <span style="font-size:0.75rem;color:var(--text-muted);white-space:nowrap;">2022 – 2023</span>
+        </div>
+        <p class="card__desc" style="font-size:0.95rem;">
+          Served as Webmaster for the CSULB Association for Computing Machinery (ACM) chapter, maintaining and improving the club's website to serve the computer science community at Long Beach.
+        </p>
+
+        <div class="card__tech">
+          <span>HTML</span>
+          <span>CSS</span>
+          <span>JavaScript</span>
+          <span>React.js</span>
+        </div>
+
+        <div style="margin-top:1.25rem;display:flex;gap:0.75rem;flex-wrap:wrap;">
+          <a href="https://acm.csulb.org" target="_blank" rel="noopener noreferrer" class="btn" style="font-size:0.8rem;padding:0.5rem 1rem;">
+            Visit acm.csulb.org →
+          </a>
+          <a href="https://github.com/csulbacm/ACM-Website-2022" target="_blank" rel="noopener noreferrer" class="btn" style="font-size:0.8rem;padding:0.5rem 1rem;">
+            View on GitHub →
+          </a>
+        </div>
+      </article>
+
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer class="site-footer" role="contentinfo">
+    <div class="container">
+      <nav class="footer-nav" aria-label="Footer navigation">
+        <a href="index.html">Home</a>
+        <a href="about.html">About</a>
+        <a href="projects.html">Projects</a>
+        <a href="devsecops.html">DevSecOps</a>
+        <a href="contact.html">Contact</a>
+      </nav>
+      <p>&copy; 2026 Stephen Lyons. Built with pure HTML, CSS &amp; JS. <span style="color:var(--accent);">Press <kbd>Ctrl+K</kbd> for terminal.</span></p>
+    </div>
+  </footer>
+
+  <script src="terminal.js"></script>
+  <script src="main.js"></script>
+</body>
+</html>
