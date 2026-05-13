@@ -60,6 +60,12 @@ jobs:
   # JOB 2 — Deploy
   # Only runs after a successful build AND only on pushes/manual triggers
   # (not on pull requests — PRs only get the build status check above).
+  #
+  # Uses pure git plumbing to push dist/ to the build branch so every
+  # file — including dotfiles like .nojekyll — is reliably deployed.
+  # .nojekyll prevents GitHub Pages from running Jekyll, which would
+  # otherwise silently strip every file/folder starting with _ (including
+  # _astro/) and break all CSS and framework JS.
   # ─────────────────────────────────────────────────────────────
   deploy:
     name: Deploy to build branch
@@ -73,22 +79,7 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
-          # Fetch all branches so we can resolve origin/build for rollback.
           fetch-depth: 0
-
-      # Record the current HEAD of the build branch BEFORE we touch it.
-      # If anything goes wrong after this point we can restore this SHA.
-      - name: Record previous build branch HEAD (rollback anchor)
-        id: prev
-        run: |
-          if git ls-remote --exit-code origin build >/dev/null 2>&1; then
-            SHA=$(git rev-parse origin/build)
-            echo "sha=$SHA"        >> "$GITHUB_OUTPUT"
-            echo "exists=true"     >> "$GITHUB_OUTPUT"
-          else
-            echo "sha="            >> "$GITHUB_OUTPUT"
-            echo "exists=false"    >> "$GITHUB_OUTPUT"
-          fi
 
       - name: Download dist artifact
         uses: actions/download-artifact@v4
@@ -96,31 +87,63 @@ jobs:
           name: dist-${{ github.sha }}
           path: dist/
 
-      - name: Deploy to build branch
+      - name: Deploy to build branch via git
         id: deploy
-        uses: JamesIves/github-pages-deploy-action@v4
-        with:
-          branch: build
-          folder: dist
-          # Include the triggering commit message + SHA in the deploy commit
-          # for traceability.
-          commit-message: >-
-            deploy: ${{ github.event.head_commit.message || 'manual trigger' }}
-            (${{ github.sha }})
-          # Keep full history on the build branch so rollbacks are always
-          # possible — do not squash into a single orphan commit.
-          single-commit: false
-          # Remove stale files from previous builds (e.g. renamed or deleted
-          # pages), keeping the branch clean.
-          clean: true
-
-      # If the deploy step itself failed AND the build branch previously
-      # existed, force-push the last known-good SHA back to restore it.
-      # This guards against partial writes or push failures leaving the
-      # build branch in a broken state.
-      - name: Rollback to previous build on failure
-        if: failure() && steps.prev.outputs.exists == 'true'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          echo "::warning::Deployment failed — rolling back build branch to ${{ steps.prev.outputs.sha }}"
-          git push origin "${{ steps.prev.outputs.sha }}:refs/heads/build" --force
-          echo "::notice::Rollback complete. build branch restored to ${{ steps.prev.outputs.sha }}"
+          set -euo pipefail
+
+          # ── Configure git identity ──────────────────────────────────────
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          # Authenticate pushes with the built-in Actions token
+          git remote set-url origin \
+            "https://x-access-token:${GITHUB_TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
+
+          # ── Record rollback anchor (HEAD of build branch if it exists) ──
+          ROLLBACK_SHA=""
+          BRANCH_EXISTS=false
+          if git ls-remote --exit-code origin build >/dev/null 2>&1; then
+            git fetch origin build
+            ROLLBACK_SHA=$(git rev-parse origin/build)
+            BRANCH_EXISTS=true
+          fi
+          echo "rollback-sha=${ROLLBACK_SHA}" >> "$GITHUB_OUTPUT"
+          echo "branch-existed=${BRANCH_EXISTS}" >> "$GITHUB_OUTPUT"
+
+          # ── Build a tree object from dist/ using a scratch index ────────
+          # GIT_WORK_TREE tells git to treat dist/ as the root, so paths in
+          # the index become index.html, _astro/foo.css, .nojekyll, etc.
+          # GIT_INDEX_FILE uses a temp file so we never touch the main index.
+          TMPIDX=$(mktemp)
+          GIT_INDEX_FILE="$TMPIDX" GIT_WORK_TREE="${GITHUB_WORKSPACE}/dist" \
+            git add --all
+          TREE=$(GIT_INDEX_FILE="$TMPIDX" git write-tree)
+          rm -f "$TMPIDX"
+
+          # ── Create commit (chained onto build branch history if it exists)
+          MSG="deploy: ${{ github.event.head_commit.message || 'manual trigger' }} (${{ github.sha }})"
+          if [ "$BRANCH_EXISTS" = "true" ]; then
+            COMMIT=$(git commit-tree "$TREE" -p origin/build -m "$MSG")
+          else
+            COMMIT=$(git commit-tree "$TREE" -m "$MSG")
+          fi
+
+          # ── Push ────────────────────────────────────────────────────────
+          git push origin "${COMMIT}:refs/heads/build"
+          echo "::notice::Deployed commit ${COMMIT} to branch 'build'"
+
+      # ── Rollback: if the push failed and the branch previously existed,
+      #    force-restore it to the last known-good SHA. ───────────────────
+      - name: Rollback to previous build on failure
+        if: failure() && steps.deploy.outputs.branch-existed == 'true'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          git remote set-url origin \
+            "https://x-access-token:${GITHUB_TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
+          echo "::warning::Deployment failed — rolling back build branch to ${{ steps.deploy.outputs.rollback-sha }}"
+          git push origin "${{ steps.deploy.outputs.rollback-sha }}:refs/heads/build" --force
+          echo "::notice::Rollback complete. build branch restored to ${{ steps.deploy.outputs.rollback-sha }}"
