@@ -16,6 +16,10 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: false
 
+# Opt into Node.js 24 now (becomes mandatory on June 2 2026 / removed Sep 16 2026).
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
 jobs:
   # ─────────────────────────────────────────────────────────────
   # JOB 1 — Build
@@ -116,8 +120,12 @@ jobs:
           # ── Build a tree object from dist/ using a scratch index ────────
           # GIT_WORK_TREE tells git to treat dist/ as the root, so paths in
           # the index become index.html, _astro/foo.css, .nojekyll, etc.
-          # GIT_INDEX_FILE uses a temp file so we never touch the main index.
+          # GIT_INDEX_FILE must NOT be a pre-existing empty file — git parses
+          # the path as an existing index and fails with "smaller than expected"
+          # on a 0-byte file.  mktemp gives us a unique path; we delete the
+          # empty placeholder immediately so git creates a fresh valid index.
           TMPIDX=$(mktemp)
+          rm -f "$TMPIDX"   # remove the 0-byte placeholder; git will create a fresh index here
           GIT_INDEX_FILE="$TMPIDX" GIT_WORK_TREE="${GITHUB_WORKSPACE}/dist" \
             git add --all
           TREE=$(GIT_INDEX_FILE="$TMPIDX" git write-tree)
