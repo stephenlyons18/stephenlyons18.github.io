@@ -65,11 +65,14 @@ jobs:
   # Only runs after a successful build AND only on pushes/manual triggers
   # (not on pull requests — PRs only get the build status check above).
   #
-  # Uses pure git plumbing to push dist/ to the build branch so every
-  # file — including dotfiles like .nojekyll — is reliably deployed.
-  # .nojekyll prevents GitHub Pages from running Jekyll, which would
-  # otherwise silently strip every file/folder starting with _ (including
-  # _astro/) and break all CSS and framework JS.
+  # Uses `git worktree` — the proper way to work with a second branch —
+  # so `git add --all` stages ALL files (including dotfiles like
+  # .nojekyll) without any GIT_WORK_TREE / GIT_INDEX_FILE trickery that
+  # silently skips dotfiles.
+  #
+  # .nojekyll MUST be in the build branch.  Without it GitHub Pages runs
+  # Jekyll, which silently strips every file/folder starting with _ —
+  # including _astro/ — which removes all compiled CSS and framework JS.
   # ─────────────────────────────────────────────────────────────
   deploy:
     name: Deploy to build branch
@@ -77,7 +80,7 @@ jobs:
     if: github.event_name != 'pull_request'
     runs-on: ubuntu-latest
     permissions:
-      contents: write   # Required to push to the build branch
+      contents: write
 
     steps:
       - name: Checkout repository
@@ -91,60 +94,76 @@ jobs:
           name: dist-${{ github.sha }}
           path: dist/
 
-      - name: Deploy to build branch via git
+      - name: Deploy to build branch via git worktree
         id: deploy
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           set -euo pipefail
 
-          # ── Configure git identity ──────────────────────────────────────
+          # ── Configure git identity & auth ──────────────────────────────
           git config user.name  "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-
-          # Authenticate pushes with the built-in Actions token
           git remote set-url origin \
             "https://x-access-token:${GITHUB_TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
 
-          # ── Record rollback anchor (HEAD of build branch if it exists) ──
+          # ── Record rollback anchor ─────────────────────────────────────
           ROLLBACK_SHA=""
           BRANCH_EXISTS=false
           if git ls-remote --exit-code origin build >/dev/null 2>&1; then
-            git fetch origin build
+            git fetch origin build --depth=1
             ROLLBACK_SHA=$(git rev-parse origin/build)
             BRANCH_EXISTS=true
           fi
           echo "rollback-sha=${ROLLBACK_SHA}" >> "$GITHUB_OUTPUT"
           echo "branch-existed=${BRANCH_EXISTS}" >> "$GITHUB_OUTPUT"
 
-          # ── Build a tree object from dist/ using a scratch index ────────
-          # GIT_WORK_TREE tells git to treat dist/ as the root, so paths in
-          # the index become index.html, _astro/foo.css, .nojekyll, etc.
-          # GIT_INDEX_FILE must NOT be a pre-existing empty file — git parses
-          # the path as an existing index and fails with "smaller than expected"
-          # on a 0-byte file.  mktemp gives us a unique path; we delete the
-          # empty placeholder immediately so git creates a fresh valid index.
-          TMPIDX=$(mktemp)
-          rm -f "$TMPIDX"   # remove the 0-byte placeholder; git will create a fresh index here
-          GIT_INDEX_FILE="$TMPIDX" GIT_WORK_TREE="${GITHUB_WORKSPACE}/dist" \
-            git add --all
-          TREE=$(GIT_INDEX_FILE="$TMPIDX" git write-tree)
-          rm -f "$TMPIDX"
-
-          # ── Create commit (chained onto build branch history if it exists)
-          MSG="deploy: ${{ github.event.head_commit.message || 'manual trigger' }} (${{ github.sha }})"
+          # ── Create a git worktree for the build branch ─────────────────
+          # RUNNER_TEMP is outside the source repo so the source repo's
+          # .gitignore cannot interfere with what gets staged.
+          DEPLOY_DIR="${RUNNER_TEMP}/build-worktree"
           if [ "$BRANCH_EXISTS" = "true" ]; then
-            COMMIT=$(git commit-tree "$TREE" -p origin/build -m "$MSG")
+            git worktree add "$DEPLOY_DIR" origin/build
           else
-            COMMIT=$(git commit-tree "$TREE" -m "$MSG")
+            # First deploy: create an orphan branch (no shared history with main)
+            git worktree add --orphan -b build "$DEPLOY_DIR"
           fi
 
-          # ── Push ────────────────────────────────────────────────────────
-          git push origin "${COMMIT}:refs/heads/build"
-          echo "::notice::Deployed commit ${COMMIT} to branch 'build'"
+          # ── Wipe previous content from the worktree ───────────────────
+          git -C "$DEPLOY_DIR" rm -rf . 2>/dev/null || true
+          git -C "$DEPLOY_DIR" clean -fdx 2>/dev/null || true
 
-      # ── Rollback: if the push failed and the branch previously existed,
-      #    force-restore it to the last known-good SHA. ───────────────────
+          # ── Copy ALL dist/ contents including dotfiles (.nojekyll etc.) ─
+          # cp -a preserves permissions and copies hidden files.
+          cp -a "${GITHUB_WORKSPACE}/dist/." "$DEPLOY_DIR/"
+
+          # ── Stage everything ───────────────────────────────────────────
+          git -C "$DEPLOY_DIR" add --all
+
+          # ── Sanity-check that .nojekyll was staged ─────────────────────
+          # Without .nojekyll GitHub Pages runs Jekyll and strips _astro/,
+          # removing all CSS + JS and breaking the entire deployed site.
+          if ! git -C "$DEPLOY_DIR" ls-files | grep -qF '.nojekyll'; then
+            echo "::error::.nojekyll was NOT staged — aborting deploy to prevent broken release"
+            git -C "$DEPLOY_DIR" ls-files
+            exit 1
+          fi
+          echo "::notice::.nojekyll confirmed present in staged files"
+
+          # ── Commit ─────────────────────────────────────────────────────
+          MSG="deploy: ${{ github.event.head_commit.message || 'manual trigger' }} (${{ github.sha }})"
+          if git -C "$DEPLOY_DIR" diff --cached --quiet; then
+            echo "::notice::Nothing changed — skipping push"
+          else
+            git -C "$DEPLOY_DIR" commit -m "$MSG"
+            git -C "$DEPLOY_DIR" push origin HEAD:refs/heads/build
+            echo "::notice::Successfully deployed to branch 'build'"
+          fi
+
+          # ── Remove worktree ────────────────────────────────────────────
+          git worktree remove --force "$DEPLOY_DIR" 2>/dev/null || true
+
+      # ── Rollback ───────────────────────────────────────────────────────
       - name: Rollback to previous build on failure
         if: failure() && steps.deploy.outputs.branch-existed == 'true'
         env:
