@@ -57,6 +57,10 @@ jobs:
           # when multiple workflow runs overlap.
           name: dist-${{ github.sha }}
           path: astro-portfolio/dist/
+          # CRITICAL: include-hidden-files defaults to false in upload-artifact@v4,
+          # which silently drops dotfiles like .nojekyll.  Without .nojekyll in the
+          # build branch, GitHub Pages runs Jekyll and strips _astro/ (all CSS+JS).
+          include-hidden-files: true
           # Keep artifacts for 7 days so you can inspect past builds.
           retention-days: 7
 
@@ -136,6 +140,11 @@ jobs:
           # ── Copy ALL dist/ contents including dotfiles (.nojekyll etc.) ─
           # cp -a preserves permissions and copies hidden files.
           cp -a "${GITHUB_WORKSPACE}/dist/." "$DEPLOY_DIR/"
+
+          # ── Defense-in-depth: ensure .nojekyll is always present ───────
+          # Without it GitHub Pages runs Jekyll and silently strips _astro/.
+          # This is a no-op if the file was already copied from dist/.
+          touch "$DEPLOY_DIR/.nojekyll"
 
           # ── Stage everything ───────────────────────────────────────────
           git -C "$DEPLOY_DIR" add --all
