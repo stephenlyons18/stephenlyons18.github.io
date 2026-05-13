@@ -319,7 +319,6 @@
       '',
       '  Stephen Lyons',
       '  Cybersecurity Engineer @ Yamaha Motor Corporation',
-      '  Brea, CA',
       '',
       '  B.S. Computer Science — Cal State Long Beach',
       '  Minor in Cyber Security Applications',
@@ -518,12 +517,11 @@
     printLine('');
     printLine('  ┌─ Contact Info', 'accent');
     printLine('  │');
-    printLine('  │  Email    stephen.lyons18@gmail.com');
-    printLine('  │  Phone    (714) 350-0014');
-    printLine('  │  Website  stephenlyons.dev');
-    printLine('  │  Location Brea, CA 92821');
+    printLine('  │  Email     stephen.lyons18@gmail.com');
+    printLine('  │  Website   stephenlyons.dev');
+    printLine('  │  Location  Southern California');
     printLine('  │');
-    printLine('  │  GitHub   github.com/stephenlyons');
+    printLine('  │  GitHub   github.com/stephenlyons18');
     printLine('  │  LinkedIn linkedin.com/in/stephen-lyons');
     printLine('  │');
     printLine('  └──────────────────────');

@@ -1,0 +1,28 @@
+---
+const pathname = Astro.url.pathname;
+const isActive = (href: string) => {
+  const norm = pathname.replace(/\/index\.html$/, '/').replace(/\.html$/, '');
+  if (href === '/') return norm === '/' || norm === '';
+  return norm === href || norm === href + '/';
+};
+---
+
+<header class="site-header" role="banner">
+  <div class="container">
+    <a href="/" class="logo" aria-label="Stephen Lyons — Home">
+      <span class="logo-bracket">[</span>SL<span class="logo-bracket">]</span>
+    </a>
+    <nav class="nav-links" role="navigation" aria-label="Main navigation">
+      <a href="/" class:list={[isActive('/') && 'active']}>Home</a>
+      <a href="/about" class:list={[isActive('/about') && 'active']}>About</a>
+      <a href="/projects" class:list={[isActive('/projects') && 'active']}>Projects</a>
+      <a href="/contact" class:list={[isActive('/contact') && 'active']}>Contact</a>
+    </nav>
+    <button class="nav-terminal-hint" aria-label="Open terminal with Ctrl+K" data-open-terminal>
+      <kbd>Ctrl+K</kbd> Terminal
+    </button>
+    <button class="nav-toggle" aria-label="Toggle mobile navigation" aria-expanded="false">
+      <span></span><span></span><span></span>
+    </button>
+  </div>
+</header>

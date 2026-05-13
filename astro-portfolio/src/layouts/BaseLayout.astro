@@ -1,0 +1,55 @@
+---
+import "../styles/global.css";
+import Header from "../components/Header.astro";
+import Footer from "../components/Footer.astro";
+import ScrollProgress from "../components/react/ScrollProgress";
+
+interface Props {
+	title: string;
+	description: string;
+	fixedFooter?: boolean;
+	fullFooter?: boolean;
+	showHeader?: boolean;
+	/** Set to false on pages with no scrollable content (e.g. 404) to avoid
+	 *  loading the React + Motion bundle unnecessarily. Defaults to true. */
+	showScrollProgress?: boolean;
+}
+
+const {
+	title,
+	description,
+	fixedFooter = false,
+	fullFooter = true,
+	showHeader = true,
+	showScrollProgress = true,
+} = Astro.props;
+---
+
+<!doctype html>
+<html lang='en'>
+	<head>
+		<meta charset='UTF-8' />
+		<meta name='viewport' content='width=device-width, initial-scale=1.0' />
+		<meta name='description' content={description} />
+		<meta name='author' content='Stephen Lyons' />
+		<meta name='theme-color' content='#0A0A0A' />
+		<title>{title}</title>
+		<link
+			rel='icon'
+			href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🛡️</text></svg>"
+		/>
+	</head>
+	<body>
+		{showScrollProgress && <ScrollProgress client:load />}
+		<canvas id='matrix-canvas' aria-hidden='true'></canvas>
+
+		{showHeader && <Header />}
+
+		<slot />
+
+		<Footer fixed={fixedFooter} full={fullFooter} />
+
+		<script is:inline src='/scripts/terminal.js' defer></script>
+		<script is:inline src='/scripts/site.js' defer></script>
+	</body>
+</html>

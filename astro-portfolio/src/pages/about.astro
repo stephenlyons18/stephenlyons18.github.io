@@ -1,0 +1,342 @@
+---
+import BaseLayout from "../layouts/BaseLayout.astro";
+
+interface Job {
+	date: string;
+	role: string;
+	org: string;
+	tech: string[];
+	details: string[];
+}
+
+const jobs: Job[] = [
+	{
+		date: "Aug 2023 – Present",
+		role: "Cybersecurity Engineer",
+		org: "Yamaha Motor Corporation — Cypress, CA",
+		tech: [
+			"GitHub Enterprise",
+			"Infrastrcture as Code",
+			"Netskope",
+			"CrowdStrike",
+			"Zscaler",
+			"Azure",
+			"Intune",
+			"Python",
+			"AWS",
+		],
+		details: [
+			"Manages on-prem and cloud security operations",
+			"Implements and manages DevSecOps practices using GitHub Actions and GitHub Enterprise",
+			"Develops infrastructure as code using Infrastrcture as Code",
+			"Oversees enterprise cybersecurity tool management including Netskope, CrowdStrike, and Zscaler",
+			"Manages Azure infrastructure, groups, and mobile devices through Intune",
+			"Builds and maintains CI/CD pipelines with embedded security checks and compliance gates",
+			"Develops and maintains SIEM platforms for real-time visibility, detection, and incident response",
+			"Automates log collection, normalization, and enrichment across cloud, endpoint, and SaaS sources",
+			"Deploys and manages EDR solutions and implements DLP controls",
+			"Assists in leading security operations including triage, investigation, containment, and remediation",
+		],
+	},
+	{
+		date: "May 2022 – Aug 2022",
+		role: "Business Application Development Intern",
+		org: "Yamaha Motor Corporation — Cypress, CA",
+		tech: ["ABAP", "SAP", "Python", "React.js"],
+		details: [
+			"Designed and presented testing methods to ensure quality of newly developed code and data",
+			"Developed custom SAP programs using the ABAP programming language",
+			"Utilized ABAP, SAP, Python, and React.js to support development of advanced business applications",
+			"Provided support in transitioning web technologies and frameworks",
+		],
+	},
+	{
+		date: "Feb 2020 – May 2022 & Oct 2022 – Jul 2023",
+		role: "Web Developer",
+		org: "Associated Students Inc. — Long Beach, CA",
+		tech: [
+			"HTML5",
+			"CSS",
+			"PHP",
+			"Joomla",
+			"React.js",
+			"Google Analytics",
+			"WordPress",
+		],
+		details: [
+			"Led a team of graduate student developers and conducted interviews to hire new web developers",
+			"Improved ASI websites with SEO, website merging, and daily content updates for campus events",
+			"Developed and deployed a quiz game for incoming freshmen during the COVID-19 Pandemic using React.js",
+			"Assisted with the development and deployment of web-related applications for the Student Union and Student Recreation Center",
+		],
+	},
+	{
+		date: "May 2021 – Jan 2022",
+		role: "Lead Security Engineer",
+		org: "Down (joindown.com) — Remote",
+		tech: [
+			"TypeScript",
+			"React Native",
+			"Expo",
+			"Jest/Detox",
+			"GitHub",
+			"Firebase",
+		],
+		details: [
+			"Coordinated development and testing of Android and iOS components for React Native social media app",
+			"Developed security rules and tested the React Native application using Jest and Detox libraries",
+			"Led the development of security and testing with Firebase storage",
+		],
+	},
+	{
+		date: "Jun 2021 – Aug 2021",
+		role: "Software Development Lead",
+		org: "Down Friend Groups — Remote",
+		tech: ["React Native", "JavaScript"],
+		details: [
+			"Led software development efforts for the Down Friend Groups team",
+		],
+	},
+	{
+		date: "Jul 2018 – Jun 2019",
+		role: "Intern / Laser Technician",
+		org: "M.R. Mold and Engineering — Brea, CA",
+		tech: ["Solidworks", "3D Modeling", "QC Software"],
+		details: [
+			"Founded internship program and acted as liaison to Brea Olinda High School for future interns",
+			"Learned cutting-edge plastic and silicone molding methods and 3D modeling with Solidworks",
+			"Produced laser-engraved steel products and developed software to quality-control precision silicone parts",
+		],
+	},
+];
+
+const skillsLanguages = [
+	"TypeScript",
+	"Python",
+	"JavaScript",
+	"HTML5",
+	"CSS",
+	"Rust",
+	"PHP",
+	"Java",
+	"C++",
+	"C#",
+];
+const skillsFrameworks = [
+	"React.js",
+	"Next.js",
+	"React Native",
+	"Node.js",
+	"Docker",
+	"Git",
+	"Linux/UNIX",
+	"Unity",
+	"Adobe Suite",
+	"Excel",
+];
+const skillsSecurity = [
+	"CrowdStrike",
+	"Netskope",
+	"Zscaler",
+	"Azure",
+	"Intune",
+	"Infrastrcture as Code",
+	"GitHub Enterprise",
+	"SIEM Platforms",
+	"EDR",
+	"DLP",
+];
+const skillsCloud = ["AWS", "Azure", "Google Cloud", "Firebase", "Vercel"];
+---
+
+<BaseLayout
+	title='About — Stephen Lyons'
+	description='About Stephen Lyons — Cybersecurity Engineer specializing in DevSecOps, cloud security, and threat detection.'
+>
+	<section class='page-header' aria-label='Page header'>
+		<div class='container reveal'>
+			<span class='section-label'>About Me</span>
+			<h1 class='section-title'>Stephen Lyons</h1>
+			<p class='page-desc'>
+				Cybersecurity Engineer building secure, resilient systems at
+				enterprise scale.
+			</p>
+		</div>
+	</section>
+
+	<section
+		class='section'
+		style='padding-top:0;'
+		aria-label='Biography and details'
+	>
+		<div class='container'>
+			<div class='about-grid'>
+				<aside class='about-sidebar reveal'>
+					<div class='about-avatar' aria-hidden='true'>SL</div>
+					<h2 class='about-name'>Stephen Lyons</h2>
+					<p class='about-role'>Cybersecurity Engineer</p>
+					<div class='about-meta'>
+						<p><strong>Location:</strong> Southern California</p>
+						<p>
+							<strong>Company:</strong> Yamaha Motor Corporation
+						</p>
+						<p><strong>Email:</strong> stephen.lyons18@gmail.com</p>
+						<p>
+							<strong>Web:</strong>
+							<a href='https://stephenlyons.dev'
+								>stephenlyons.dev</a
+							>
+						</p>
+					</div>
+				</aside>
+
+				<div>
+					<div class='reveal' style='margin-bottom: 3rem;'>
+						<span class='section-label'>Summary</span>
+						<h2 class='section-title' style='font-size:1.5rem;'>
+							Professional Background
+						</h2>
+						<p
+							style='color:var(--text-secondary);line-height:1.8;margin-bottom:1rem;'
+						>
+							I'm a Cybersecurity Engineer at Yamaha Motor
+							Corporation with a strong foundation in both
+							offensive and defensive security practices. My work
+							spans DevSecOps, cloud infrastructure security, SIEM
+							engineering, endpoint protection, and incident
+							response.
+						</p>
+						<p
+							style='color:var(--text-secondary);line-height:1.8;margin-bottom:1rem;'
+						>
+							I build and maintain CI/CD pipelines with security
+							checks baked into every workflow, manage enterprise
+							security tools including CrowdStrike, Netskope, and
+							Zscaler, and develop infrastructure as code using
+							Infrastrcture as Code. My approach emphasizes
+							automation, continuous monitoring, and proactive
+							threat detection.
+						</p>
+						<p style='color:var(--text-secondary);line-height:1.8;'>
+							Before focusing on security, I honed my skills as a
+							full-stack web developer, which gives me a deep
+							understanding of the systems I protect. I hold a
+							B.S. in Computer Science from Cal State Long Beach
+							with a minor in Cyber Security Applications.
+						</p>
+					</div>
+
+					<div class='reveal' style='margin-bottom: 3rem;'>
+						<span class='section-label'>Technical Skills</span>
+						<h2 class='section-title' style='font-size:1.5rem;'>
+							Skills Matrix
+						</h2>
+						<div class='skills-grid'>
+							<div class='skill-category'>
+								<h3>Languages</h3>
+								<ul class='skill-list'>
+									{skillsLanguages.map(s => <li>{s}</li>)}
+								</ul>
+							</div>
+							<div class='skill-category'>
+								<h3>Frameworks &amp; Tools</h3>
+								<ul class='skill-list'>
+									{skillsFrameworks.map(s => <li>{s}</li>)}
+								</ul>
+							</div>
+							<div class='skill-category'>
+								<h3>Security Tools</h3>
+								<ul class='skill-list'>
+									{skillsSecurity.map(s => <li>{s}</li>)}
+								</ul>
+							</div>
+							<div class='skill-category'>
+								<h3>Cloud Platforms</h3>
+								<ul class='skill-list'>
+									{skillsCloud.map(s => <li>{s}</li>)}
+								</ul>
+							</div>
+						</div>
+					</div>
+
+					<div class='reveal' style='margin-bottom: 3rem;'>
+						<span class='section-label'>Experience</span>
+						<h2 class='section-title' style='font-size:1.5rem;'>
+							Work History
+						</h2>
+						<div class='timeline'>
+							{
+								jobs.map(j => (
+									<div class='timeline-item'>
+										<span class='timeline-item__date'>
+											{j.date}
+										</span>
+										<h3 class='timeline-item__role'>
+											{j.role}
+										</h3>
+										<p class='timeline-item__org'>
+											{j.org}
+										</p>
+										<div class='timeline-item__tech'>
+											{j.tech.map(t => (
+												<span>{t}</span>
+											))}
+										</div>
+										<ul class='timeline-item__details'>
+											{j.details.map(d => (
+												<li>{d}</li>
+											))}
+										</ul>
+									</div>
+								))
+							}
+						</div>
+					</div>
+
+					<div class='reveal' style='margin-bottom: 3rem;'>
+						<span class='section-label'>Education</span>
+						<h2 class='section-title' style='font-size:1.5rem;'>
+							Academic Background
+						</h2>
+						<div class='card'>
+							<span class='card__tag'>B.S. Computer Science</span>
+							<h3 class='card__title'>
+								California State University, Long Beach
+							</h3>
+							<p class='card__desc' style='margin-bottom:0.5rem;'>
+								<strong style='color:var(--white);'
+									>Aug 2019 – May 2023</strong
+								><br />
+								Minor in Cyber Security Applications
+							</p>
+							<p
+								class='card__desc'
+								style='margin-bottom:0.75rem;'
+							>
+								<strong style='color:var(--text-primary);'
+									>Relevant Courses:</strong
+								>
+								Algorithms, Data Structures, Computer Security I &amp;
+								II, Networks and Network Security, Machine Learning,
+								Cybersecurity in Business, Artificial Intelligence,
+								Digital Forensics, Object-Oriented Programming, Software
+								Engineering, Databases
+							</p>
+							<p class='card__desc' style='margin-bottom:0;'>
+								<strong style='color:var(--text-primary);'
+									>Activities:</strong
+								>
+								CSULB ACM (Webmaster — <a
+									href='https://acm.csulb.org'
+									target='_blank'
+									rel='noopener noreferrer'>acm.csulb.org</a
+								>), CSULB Cybersecurity Club, CSULB Jiu Jitsu
+								Club, CSULB Snow and Ski Club, BeachHacks 2023
+							</p>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+	</section>
+</BaseLayout>

@@ -42,7 +42,7 @@ A terminal-themed cybersecurity portfolio website built with pure HTML, CSS, and
 
 ```bash
 # Clone the repository
-git clone https://github.com/stephenlyons/portfolio.git
+git clone https://github.com/stephenlyons18/portfolio.git
 cd portfolio
 
 # Option 1: Python (built-in)

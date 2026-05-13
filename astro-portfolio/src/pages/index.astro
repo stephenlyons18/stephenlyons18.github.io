@@ -1,0 +1,208 @@
+---
+import BaseLayout from "../layouts/BaseLayout.astro";
+import {featuredProjects} from "../data/projects";
+---
+
+---
+
+<BaseLayout
+	title='Stephen Lyons — Cybersecurity Engineer'
+	description='Stephen Lyons — Cybersecurity Engineer. Portfolio showcasing DevSecOps, cloud security, and threat detection expertise.'
+>
+	<!-- Hero Section -->
+	<section class='hero' aria-label='Introduction'>
+		<div class='container'>
+			<div class='hero-content reveal'>
+				<div
+					class='hero-terminal'
+					role='img'
+					aria-label='Animated terminal introduction'
+				>
+					<div class='hero-terminal__bar'>
+						<span class='hero-terminal__dot hero-terminal__dot--red'
+						></span>
+						<span
+							class='hero-terminal__dot hero-terminal__dot--yellow'
+						></span>
+						<span
+							class='hero-terminal__dot hero-terminal__dot--green'
+						></span>
+						<span class='hero-terminal__title'>stephen@lyons:~</span
+						>
+					</div>
+					<div class='hero-terminal__body' id='hero-typed'></div>
+				</div>
+				<div class='hero-cta'>
+					<a href='/projects' class='btn btn--filled'
+						>View Projects →</a
+					>
+					<a href='/about' class='btn'>About Me</a>
+					<a href='/contact' class='btn'>Get In Touch</a>
+				</div>
+			</div>
+		</div>
+	</section>
+
+	<!-- Featured Projects -->
+	<section class='section' aria-label='Featured projects'>
+		<div class='container'>
+			<div class='reveal'>
+				<span class='section-label'>Featured Work</span>
+				<h2 class='section-title'>Recent Projects</h2>
+			</div>
+
+			<div class='featured-grid'>
+				{
+					featuredProjects.map(p => (
+						<article class='card reveal'>
+							<span class='card__tag'>
+								{p.featuredTag ?? p.tag}
+							</span>
+							<h3 class='card__title glitch'>
+								{p.featuredTitle ?? p.title}
+							</h3>
+							<p class='card__desc'>
+								{p.featuredDesc ?? p.descriptions[0]}
+							</p>
+							<div class='card__tech'>
+								{(p.featuredTech ?? p.tech).map(t => (
+									<span>{t}</span>
+								))}
+							</div>
+						</article>
+					))
+				}
+			</div>
+		</div>
+	</section>
+
+	<!-- Capabilities Overview -->
+	<section class='section' aria-label='Capabilities'>
+		<div class='container'>
+			<div class='reveal'>
+				<span class='section-label'>What I Do</span>
+				<h2 class='section-title'>Core Capabilities</h2>
+			</div>
+
+			<div class='grid-3'>
+				<div class='card reveal'>
+					<h3 class='card__title'>DevSecOps &amp; CI/CD</h3>
+					<p class='card__desc'>
+						Building and maintaining CI/CD pipelines in GitHub
+						Actions with embedded security checks, compliance gates,
+						and automated deployments across AWS and Azure.
+					</p>
+				</div>
+				<div class='card reveal'>
+					<h3 class='card__title'>Cloud Security Architecture</h3>
+					<p class='card__desc'>
+						Designing secure SaaS architectures, automating policy
+						enforcement, infrastructure hardening, and continuous
+						monitoring across multi-cloud environments.
+					</p>
+				</div>
+				<div class='card reveal'>
+					<h3 class='card__title'>Threat Detection &amp; SIEM</h3>
+					<p class='card__desc'>
+						Developing SIEM platforms for real-time visibility and
+						incident response. Automating log collection,
+						normalization, and enrichment from cloud, endpoint, and
+						SaaS sources.
+					</p>
+				</div>
+				<div class='card reveal'>
+					<h3 class='card__title'>Endpoint Security &amp; DLP</h3>
+					<p class='card__desc'>
+						Deploying EDR solutions for comprehensive device
+						protection and implementing DLP controls to safeguard
+						sensitive data across the enterprise.
+					</p>
+				</div>
+				<div class='card reveal'>
+					<h3 class='card__title'>Incident Response</h3>
+					<p class='card__desc'>
+						Leading security operations including triage,
+						investigation, containment, and remediation. Maintaining
+						and improving automated playbooks and escalation
+						workflows.
+					</p>
+				</div>
+				<div class='card reveal'>
+					<h3 class='card__title'>Infrastructure as Code</h3>
+					<p class='card__desc'>
+						Developing and managing infrastructure using
+						Infrastrcture as Code to standardize configurations,
+						enforce compliance, and ensure consistent, secure
+						deployments.
+					</p>
+				</div>
+			</div>
+
+			<div
+				class='stats-row reveal'
+				style='display: flex; justify-content: center; align-items: center; gap: 2rem; flex-wrap: wrap; text-align: center;'
+			>
+				<div class='stat'>
+					<div class='stat__number'>3+</div>
+					<div class='stat__label'>Years in Cybersecurity</div>
+				</div>
+				<div class='stat'>
+					<div class='stat__number'>5+</div>
+					<div class='stat__label'>Professional Roles</div>
+				</div>
+				<div class='stat'>
+					<div class='stat__number'>10+</div>
+					<div class='stat__label'>Security Tools Managed</div>
+				</div>
+				<div class='stat'>
+					<div class='stat__number'>B.S.</div>
+					<div class='stat__label'>Computer Science, CSULB</div>
+				</div>
+			</div>
+			<style>
+				.stats-row {
+					display: flex;
+					justify-content: center;
+					align-items: center;
+					gap: 2rem;
+					flex-wrap: wrap;
+					text-align: center;
+				}
+				.stat {
+					min-width: 120px;
+				}
+				@media (max-width: 600px) {
+					.stats-row {
+						flex-direction: column;
+						gap: 1.25rem;
+					}
+					.stat {
+						min-width: 0;
+					}
+				}
+			</style>
+		</div>
+	</section>
+
+	<!-- CTA Section -->
+	<section class='section' aria-label='Call to action'>
+		<div class='container' style='text-align:center;'>
+			<div class='reveal'>
+				<span class='section-label'>Let's Connect</span>
+				<h2 class='section-title'>Interested in Working Together?</h2>
+				<p
+					style='color:var(--text-secondary);max-width:500px;margin:0 auto 2rem;font-size:0.95rem;'
+				>
+					I'm always open to discussing cybersecurity challenges,
+					DevSecOps best practices, or potential collaborations.
+				</p>
+				<div
+					style='display:flex;gap:1rem;justify-content:center;flex-wrap:wrap;'
+				>
+					<a href='/contact' class='btn btn--filled'>Contact Me →</a>
+					<a href='/about' class='btn'>Learn More</a>
+				</div>
+			</div>
+		</div>
+	</section>
+</BaseLayout>

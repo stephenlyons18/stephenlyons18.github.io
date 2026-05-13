@@ -1,0 +1,111 @@
+---
+import BaseLayout from "../layouts/BaseLayout.astro";
+import projects from "../data/projects";
+import ProjectGallery from "../components/react/ProjectGallery";
+---
+
+<BaseLayout
+	title='Projects — Stephen Lyons'
+	description='Projects by Stephen Lyons — Full-stack applications, security engineering, and DevSecOps automation.'
+>
+	<section class='page-header' aria-label='Page header'>
+		<div class='container reveal'>
+			<span class='section-label'>Portfolio</span>
+			<h1 class='section-title'>Projects</h1>
+			<p class='page-desc'>
+				A selection of notable projects spanning full-stack development,
+				mobile apps, and security engineering.
+			</p>
+		</div>
+	</section>
+
+	<section
+		class='section'
+		style='padding-top:0;'
+		aria-label='Project showcase'
+	>
+		<div class='container'>
+			{
+				projects.map((p, i) => (
+					<article
+						class='card reveal'
+						style={
+							i < projects.length - 1
+								? "margin-bottom: 2rem;"
+								: undefined
+						}
+					>
+						<div style='display:flex;justify-content:space-between;align-items:start;flex-wrap:wrap;gap:1rem;margin-bottom:1rem;'>
+							<div>
+								<span class='card__tag'>{p.tag}</span>
+								<h2
+									class='card__title glitch'
+									style='font-size:1.4rem;'
+								>
+									{p.title}
+								</h2>
+							</div>
+							{p.date && (
+								<span style='font-size:0.75rem;color:var(--text-muted);white-space:nowrap;'>
+									{p.date}
+								</span>
+							)}
+						</div>
+
+						{p.descriptions.map(d => (
+							<p class='card__desc' style='font-size:0.95rem;'>
+								{d}
+							</p>
+						))}
+
+						{p.sections?.map(s => (
+							<>
+								<h3 style='font-family:var(--font-display);font-size:0.85rem;color:var(--accent);margin-bottom:0.75rem;text-transform:uppercase;letter-spacing:0.08em;'>
+									{s.heading}
+								</h3>
+								<ul
+									class='timeline-item__details'
+									style='margin-bottom:1.25rem;'
+								>
+									{s.items.map(item => (
+										<li>{item}</li>
+									))}
+								</ul>
+							</>
+						))}
+
+						<div class='card__tech'>
+							{p.tech.map(t => (
+								<span>{t}</span>
+							))}
+						</div>
+
+						{p.images && p.images.length > 0 && (
+							<ProjectGallery
+								images={p.images}
+								projectId={p.id}
+								client:visible
+							/>
+						)}
+
+						{p.links && p.links.length > 0 && (
+							<div style='margin-top:1.25rem;display:flex;gap:1rem;flex-wrap:wrap;'>
+								{p.links.map(link => (
+									<a
+										href={link.href}
+										target='_blank'
+										rel='noopener noreferrer'
+										class='btn'
+										style='font-size:0.8rem;padding:0.5rem 1rem;'
+									>
+										{link.label}
+									</a>
+								))}
+							</div>
+						)}
+					</article>
+				))
+			}
+		</div>
+	</section>
+</BaseLayout>

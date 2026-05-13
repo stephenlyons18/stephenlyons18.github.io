@@ -1,0 +1,277 @@
+---
+import BaseLayout from "../layouts/BaseLayout.astro";
+---
+
+<BaseLayout
+	title='Contact — Stephen Lyons'
+	description='Get in touch with Stephen Lyons — Cybersecurity Engineer. Contact for collaboration, consulting, or opportunities.'
+>
+	<section class='page-header' aria-label='Page header'>
+		<div class='container reveal'>
+			<span class='section-label'>Get In Touch</span>
+			<h1 class='section-title'>Contact</h1>
+			<p class='page-desc'>
+				Have a question, opportunity, or want to collaborate? Let's
+				connect.
+			</p>
+		</div>
+	</section>
+
+	<section
+		class='section'
+		style='padding-top:0;'
+		aria-label='Contact information and form'
+	>
+		<div class='container'>
+			<div class='grid-2' style='align-items:start;'>
+				<!-- Contact Form -->
+				<div class='reveal'>
+					<span class='section-label'>Send a Message</span>
+					<h2 class='section-title' style='font-size:1.5rem;'>
+						Message Me
+					</h2>
+					<form
+						class='contact-form'
+						id='contact-form'
+						aria-label='Contact form'
+					>
+						<div class='form-group'>
+							<label for='name'>Name</label>
+							<input
+								type='text'
+								id='name'
+								name='name'
+								required
+								placeholder='Your name'
+								autocomplete='name'
+							/>
+						</div>
+						<div class='form-group'>
+							<label for='email'>Email</label>
+							<input
+								type='email'
+								id='email'
+								name='email'
+								required
+								placeholder='your@email.com'
+								autocomplete='email'
+							/>
+						</div>
+						<div class='form-group'>
+							<label for='subject'>Subject</label>
+							<input
+								type='text'
+								id='subject'
+								name='subject'
+								required
+								placeholder='What is this about?'
+							/>
+						</div>
+						<div class='form-group'>
+							<label for='message'>Message</label>
+							<textarea
+								id='message'
+								name='message'
+								required
+								placeholder='Your message...'></textarea>
+						</div>
+						<button type='submit' class='btn btn--filled'
+							>Send Message →</button
+						>
+						<p
+							id='contact-status'
+							role='status'
+							aria-live='polite'
+							style='font-size:0.75rem;color:var(--text-muted);margin-top:0.75rem;'
+						>
+							Submitting opens your email client with the message
+							pre-filled. Or write directly to
+							<a href='mailto:stephen.lyons18@gmail.com'
+								>stephen.lyons18@gmail.com</a
+							>.
+						</p>
+					</form>
+
+					<script is:inline>
+						(function () {
+							function bind() {
+								var form =
+									document.getElementById("contact-form");
+								if (!form || form.dataset.bound) return;
+								form.dataset.bound = "1";
+								var status =
+									document.getElementById("contact-status");
+								form.addEventListener("submit", function (e) {
+									e.preventDefault();
+									var name = (
+										form.elements.namedItem("name")
+											?.value || ""
+									).trim();
+									var email = (
+										form.elements.namedItem("email")
+											?.value || ""
+									).trim();
+									var subject = (
+										form.elements.namedItem("subject")
+											?.value || ""
+									).trim();
+									var message = (
+										form.elements.namedItem("message")
+											?.value || ""
+									).trim();
+									if (!name || !email || !subject || !message)
+										return;
+									var body =
+										message +
+										"\n\n— Sent via stephenlyons.dev contact form\nFrom: " +
+										name +
+										" <" +
+										email +
+										">";
+									var href =
+										"mailto:stephen.lyons18@gmail.com?subject=" +
+										encodeURIComponent(subject) +
+										"&body=" +
+										encodeURIComponent(body);
+									if (status) {
+										status.textContent =
+											"Opening your email client…";
+										status.style.color = "var(--accent)";
+									}
+									window.location.href = href;
+								});
+							}
+							if (document.readyState === "loading") {
+								document.addEventListener(
+									"DOMContentLoaded",
+									bind,
+									{once: true},
+								);
+							} else {
+								bind();
+							}
+							document.addEventListener("astro:page-load", bind);
+						})();
+					</script>
+				</div>
+
+				<!-- Contact Info & Links -->
+				<div class='reveal'>
+					<span class='section-label'>Contact Details</span>
+					<h2 class='section-title' style='font-size:1.5rem;'>
+						Find Me
+					</h2>
+
+					<div class='contact-links' style='margin-bottom:2.5rem;'>
+						<a
+							href='mailto:stephen.lyons18@gmail.com'
+							class='contact-link'
+						>
+							<span class='contact-link__icon' aria-hidden='true'
+								>✉</span
+							>
+							<div>
+								<strong
+									style='color:var(--white);display:block;font-size:0.85rem;'
+									>Email</strong
+								>
+								stephen.lyons18@gmail.com
+							</div>
+						</a>
+
+						<a
+							href='https://stephenlyons.dev'
+							target='_blank'
+							rel='noopener noreferrer'
+							class='contact-link'
+						>
+							<span class='contact-link__icon' aria-hidden='true'
+								>🌐</span
+							>
+							<div>
+								<strong
+									style='color:var(--white);display:block;font-size:0.85rem;'
+									>Website</strong
+								>
+								stephenlyons.dev
+							</div>
+						</a>
+						<div class='contact-link' style='cursor:default;'>
+							<span class='contact-link__icon' aria-hidden='true'
+								>📍</span
+							>
+							<div>
+								<strong
+									style='color:var(--white);display:block;font-size:0.85rem;'
+									>Location</strong
+								>
+								Southern California, USA
+							</div>
+						</div>
+					</div>
+
+					<span class='section-label'>Social &amp; Professional</span>
+					<h2
+						class='section-title'
+						style='font-size:1.5rem;margin-top:0.5rem;'
+					>
+						Profiles
+					</h2>
+
+					<div class='contact-links'>
+						<a
+							href='https://github.com/stephenlyons18'
+							target='_blank'
+							rel='noopener noreferrer'
+							class='contact-link'
+						>
+							<span class='contact-link__icon' aria-hidden='true'
+								>⌨</span
+							>
+							<div>
+								<strong
+									style='color:var(--white);display:block;font-size:0.85rem;'
+									>GitHub</strong
+								>
+								github.com/stephenlyons18
+							</div>
+						</a>
+						<a
+							href='https://linkedin.com/in/stephen-lyons'
+							target='_blank'
+							rel='noopener noreferrer'
+							class='contact-link'
+						>
+							<span class='contact-link__icon' aria-hidden='true'
+								>💼</span
+							>
+							<div>
+								<strong
+									style='color:var(--white);display:block;font-size:0.85rem;'
+									>LinkedIn</strong
+								>
+								linkedin.com/in/stephen-lyons
+							</div>
+						</a>
+					</div>
+
+					<div class='card' style='margin-top:2.5rem;'>
+						<h3 class='card__title' style='font-size:1rem;'>
+							Prefer the terminal?
+						</h3>
+						<p class='card__desc'>
+							Press <kbd
+								style='background:var(--bg-elevated);border:1px solid var(--border);padding:0.15rem 0.5rem;border-radius:3px;font-family:var(--font-display);font-size:0.8rem;'
+								>Ctrl+K</kbd
+							> to open the interactive terminal and type <code
+								style='color:var(--accent);'>contact</code
+							> to see my info, or try <code
+								style='color:var(--accent);'>whoami</code
+							> for a quick bio.
+						</p>
+					</div>
+				</div>
+			</div>
+		</div>
+	</section>
+</BaseLayout>
