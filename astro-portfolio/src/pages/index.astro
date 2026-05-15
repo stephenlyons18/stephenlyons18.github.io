@@ -54,22 +54,24 @@ import {featuredProjects} from "../data/projects";
 			<div class='featured-grid'>
 				{
 					featuredProjects.map(p => (
-						<article class='card reveal'>
-							<span class='card__tag'>
-								{p.featuredTag ?? p.tag}
-							</span>
-							<h3 class='card__title glitch'>
-								{p.featuredTitle ?? p.title}
-							</h3>
-							<p class='card__desc'>
-								{p.featuredDesc ?? p.descriptions[0]}
-							</p>
-							<div class='card__tech'>
-								{(p.featuredTech ?? p.tech).map(t => (
-									<span>{t}</span>
-								))}
-							</div>
-						</article>
+						<a href={`/projects#${p.id}`} class='card-link'>
+							<article class='card reveal'>
+								<span class='card__tag'>
+									{p.featuredTag ?? p.tag}
+								</span>
+								<h3 class='card__title glitch'>
+									{p.featuredTitle ?? p.title}
+								</h3>
+								<p class='card__desc'>
+									{p.featuredDesc ?? p.descriptions[0]}
+								</p>
+								<div class='card__tech'>
+									{(p.featuredTech ?? p.tech).map(t => (
+										<span>{t}</span>
+									))}
+								</div>
+							</article>
+						</a>
 					))
 				}
 			</div>

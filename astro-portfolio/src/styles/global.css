@@ -285,8 +285,10 @@ body.js-reveal-ready .reveal.revealed {
   position: fixed;
   top: 0; left: 0; right: 0;
   height: var(--header-h);
-  z-index: 1000;
-  background: rgba(10, 10, 10, 0.85);
+  /* Above body::after scanline overlay (z-index 9998) so header chrome
+     is always fully rendered on top of the CRT effect layer. */
+  z-index: 9999;
+  background: rgba(10, 10, 10, 0.92);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
   border-bottom: 1px solid var(--border);
@@ -347,23 +349,35 @@ body.js-reveal-ready .reveal.revealed {
   width: 100%;
 }
 
-.nav-terminal-hint {
+.nav-terminal-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-family: var(--font-display);
   font-size: 0.7rem;
-  color: var(--text-muted);
-  border: 1px solid var(--border);
-  padding: 0.25rem 0.6rem;
+  color: var(--accent);
+  border: 1px solid var(--accent);
+  padding: 0.3rem 0.65rem;
   border-radius: var(--radius);
   cursor: pointer;
   transition: all 0.2s var(--ease);
   background: transparent;
+  white-space: nowrap;
 }
-.nav-terminal-hint:hover {
-  border-color: var(--accent);
-  color: var(--accent);
+.nav-terminal-btn:hover,
+.nav-terminal-btn:focus-visible {
+  background: var(--accent);
+  color: var(--bg-primary);
+  box-shadow: 0 0 12px var(--accent-glow);
 }
-.nav-terminal-hint kbd {
-  font-family: var(--font-display);
+.nav-terminal-btn__icon {
+  font-weight: 700;
+  letter-spacing: -0.05em;
+}
+.nav-terminal-btn__label {
   font-size: 0.65rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
 }
 
 /* Mobile hamburger */
@@ -418,6 +432,9 @@ body.js-reveal-ready .reveal.revealed {
   box-shadow:
     0 0 40px rgba(0,0,0,0.5),
     0 0 80px var(--accent-glow);
+  /* Flex column keeps bar → scrollable body → sticky input in order */
+  display: flex;
+  flex-direction: column;
 }
 
 .hero-terminal__bar {
@@ -446,6 +463,32 @@ body.js-reveal-ready .reveal.revealed {
   font-size: 0.95rem;
   line-height: 1.8;
   min-height: 260px;
+  overflow-y: auto;
+  max-height: 380px;
+}
+
+/* Input row inside the hero terminal (shown after typing animation) */
+.hero-terminal__input-row {
+  display: flex;
+  align-items: center;
+  padding: 0.5rem 1.5rem 1rem;
+  gap: 0.5rem;
+  border-top: 1px solid var(--border);
+}
+.hero-terminal__input-row .hero-prompt {
+  flex-shrink: 0;
+  font-weight: 600;
+}
+.hero-terminal__input {
+  flex: 1;
+  background: none;
+  border: none;
+  color: var(--white);
+  font-family: var(--font-body);
+  font-size: 0.95rem;
+  outline: none;
+  caret-color: var(--accent);
+  min-width: 0;
 }
 
 .hero-prompt {
@@ -569,7 +612,7 @@ body.js-reveal-ready .reveal.revealed {
   background: var(--accent);
   box-shadow: 0 0 8px var(--accent-glow);
   transform-origin: 0%;
-  z-index: 1001;
+  z-index: 10001;
 }
 
 /* ---------- Project card image gallery ---------- */
@@ -618,7 +661,7 @@ body.js-reveal-ready .reveal.revealed {
   backdrop-filter: blur(6px);
   -webkit-backdrop-filter: blur(6px);
 }
-/* Non-interactive centering shell; Motion positions the figure via layoutId */
+/* Non-interactive centering shell on desktop; Motion positions the figure via layoutId */
 .lightbox-centering {
   position: fixed;
   inset: 0;
@@ -626,7 +669,26 @@ body.js-reveal-ready .reveal.revealed {
   display: flex;
   align-items: center;
   justify-content: center;
-  pointer-events: none;
+  pointer-events: none; /* desktop: let backdrop receive clicks */
+}
+
+/* Mobile: make the centering shell scrollable and pointer-interactive */
+@media (max-width: 768px) {
+  .lightbox-centering {
+    pointer-events: auto;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    align-items: flex-start;
+    padding: env(safe-area-inset-top, 1.5rem) 1rem
+             env(safe-area-inset-bottom, 1.5rem);
+  }
+  .lightbox-figure {
+    margin: auto;
+    max-width: 100%;
+  }
+  .lightbox-img {
+    max-height: 75vh;
+  }
 }
 .lightbox-figure {
   pointer-events: auto;
@@ -997,6 +1059,17 @@ body.js-reveal-ready .reveal.revealed {
   margin-top: 2rem;
 }
 
+/* Card link wrapper for featured project tiles */
+.card-link {
+  display: block;
+  text-decoration: none;
+  color: inherit;
+  border-radius: 4px;
+  transition: transform 0.15s ease;
+}
+.card-link:hover { transform: translateY(-3px); }
+.card-link:hover .card { border-color: var(--accent); }
+
 /* Stat counters on homepage */
 .stats-row {
   display: flex;
@@ -1074,7 +1147,7 @@ body.js-reveal-ready .reveal.revealed {
 .terminal-overlay {
   position: fixed;
   inset: 0;
-  z-index: 10000;
+  z-index: 10002;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1235,6 +1308,8 @@ body.js-reveal-ready .reveal.revealed {
     position: fixed;
     top: var(--header-h);
     left: 0; right: 0;
+    /* Sit just below the header in z-stacking */
+    z-index: 9998;
     background: rgba(10, 10, 10, 0.97);
     backdrop-filter: blur(12px);
     flex-direction: column;
@@ -1262,7 +1337,11 @@ body.js-reveal-ready .reveal.revealed {
     justify-content: center;
   }
 
-  .nav-terminal-hint {
+  /* Terminal button: show on mobile with compact label */
+  .nav-terminal-btn {
+    padding: 0.3rem 0.5rem;
+  }
+  .nav-terminal-btn__label {
     display: none;
   }
 
@@ -1322,6 +1401,16 @@ body.js-reveal-ready .reveal.revealed {
   /* Cards a bit tighter */
   .card {
     padding: 1.25rem;
+  }
+
+  /* Project images: single column on mobile, sensible height */
+  .card__images {
+    grid-template-columns: 1fr;
+  }
+  .card__image-item img {
+    height: 220px;
+    object-fit: cover;
+    object-position: center;
   }
 
   /* Timeline pulls left less aggressively */

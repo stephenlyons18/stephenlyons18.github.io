@@ -7,15 +7,18 @@ import projects from '../data/projects';
 declare global {
   interface Window {
     openTerminal?: () => void;
+    /** Execute a command with output directed to a custom element (hero terminal). */
+    runInElement?: (raw: string, outputEl: HTMLElement, onDone?: () => void) => void;
   }
 }
 
 interface CommandDef {
   desc: string;
-  fn: (args: string[]) => void;
+  fn: (args: string[], outputEl: HTMLElement, onDone?: () => void) => void;
 }
 
-const ASCII_BANNER = [
+// Full banner — desktop only
+const ASCII_BANNER_FULL = [
   '  ███████╗████████╗███████╗██████╗ ██╗  ██╗███████╗███╗   ██╗',
   '  ██╔════╝╚══██╔══╝██╔════╝██╔══██╗██║  ██║██╔════╝████╗  ██║',
   '  ███████╗   ██║   █████╗  ██████╔╝███████║█████╗  ██╔██╗ ██║',
@@ -30,6 +33,19 @@ const ASCII_BANNER = [
   '  ███████╗██║   ╚██████╔╝██║ ╚████║███████║',
   '  ╚══════╝╚═╝    ╚═════╝ ╚═╝  ╚═══╝╚══════╝',
 ];
+
+// Compact banner — used on mobile where the full banner overflows
+const ASCII_BANNER_COMPACT = [
+  '',
+  '  ╔═══════════════╗',
+  '  ║   [ S L ]     ║',
+  '  ╚═══════════════╝',
+  '',
+];
+
+function getAsciiBanner(): string[] {
+  return window.innerWidth < 768 ? ASCII_BANNER_COMPACT : ASCII_BANNER_FULL;
+}
 
 const WELCOME_MSG = [
   '',
@@ -49,10 +65,10 @@ const PAGES: Record<string, string> = {
 let history: string[] = [];
 let historyIdx = -1;
 let overlay: HTMLDivElement;
-let body: HTMLDivElement;
+let popupBody: HTMLDivElement;
 let inputEl: HTMLInputElement;
 let isOpen = false;
-let typeTimer: ReturnType<typeof setTimeout> | null = null;
+let streamTimer: ReturnType<typeof setTimeout> | null = null;
 let initialized = false;
 
 const COMMANDS: Record<string, CommandDef> = {
@@ -74,6 +90,82 @@ const COMMANDS: Record<string, CommandDef> = {
   sudo: { desc: '???', fn: cmdSudo },
 };
 
+// ── Helpers ────────────────────────────────────────────────
+
+function escapeHTML(str: string): string {
+  const d = document.createElement('div');
+  d.textContent = str;
+  return d.innerHTML;
+}
+
+function scrollEl(el: HTMLElement): void {
+  el.scrollTop = el.scrollHeight;
+}
+
+function appendLine(outputEl: HTMLElement, text: string, cls?: string): void {
+  const div = document.createElement('div');
+  div.className = 'terminal-line' + (cls ? ' terminal-line--' + cls : '');
+  div.textContent = text;
+  outputEl.appendChild(div);
+  scrollEl(outputEl);
+}
+
+function appendHTML(outputEl: HTMLElement, html: string): void {
+  const div = document.createElement('div');
+  div.className = 'terminal-line';
+  div.innerHTML = html;
+  outputEl.appendChild(div);
+  scrollEl(outputEl);
+}
+
+/** Stream lines with per-character typewriter on short lines, instant on long. */
+const CHAR_DELAY = 12;
+const LINE_DELAY = 28;
+const CHAR_LIMIT = 60;
+
+function streamLines(
+  lines: string[],
+  cls: string,
+  outputEl: HTMLElement,
+  onDone?: () => void,
+): void {
+  if (streamTimer) clearTimeout(streamTimer);
+  let i = 0;
+  function nextLine(): void {
+    if (i >= lines.length) { onDone?.(); return; }
+    const text = lines[i]!;
+    i++;
+    if (text.length <= CHAR_LIMIT) {
+      const div = document.createElement('div');
+      div.className = 'terminal-line' + (cls ? ' terminal-line--' + cls : '');
+      outputEl.appendChild(div);
+      let c = 0;
+      function nextChar(): void {
+        if (c < text.length) {
+          div.textContent = text.slice(0, ++c);
+          scrollEl(outputEl);
+          streamTimer = setTimeout(nextChar, CHAR_DELAY);
+        } else {
+          streamTimer = setTimeout(nextLine, LINE_DELAY);
+        }
+      }
+      nextChar();
+    } else {
+      appendLine(outputEl, text, cls);
+      streamTimer = setTimeout(nextLine, LINE_DELAY);
+    }
+  }
+  nextLine();
+}
+
+// Popup-terminal wrappers
+function printLine(text: string, cls?: string): void { appendLine(popupBody, text, cls); }
+function printHTML(html: string): void { appendHTML(popupBody, html); }
+
+void printLine; void printHTML; // silence unused warnings — kept for future convenience
+
+// ── Build popup terminal DOM ──────────────────────────────
+
 function buildTerminal(): void {
   overlay = document.createElement('div');
   overlay.className = 'terminal-overlay';
@@ -92,7 +184,7 @@ function buildTerminal(): void {
       </div>
       <div class="terminal-body" id="terminal-body"></div>
       <div style="padding: 0 1.25rem 1rem; display: flex; align-items: center;">
-        <span class="terminal-prompt">stephen@lyons:~$</span>
+        <span class="terminal-prompt">stephen@lyons:~$&nbsp;</span>
         <input class="terminal-input" id="terminal-input" type="text" autocomplete="off" autocorrect="off" spellcheck="false" aria-label="Terminal input">
       </div>
     </div>
@@ -100,7 +192,7 @@ function buildTerminal(): void {
 
   document.body.appendChild(overlay);
 
-  body = overlay.querySelector<HTMLDivElement>('#terminal-body')!;
+  popupBody = overlay.querySelector<HTMLDivElement>('#terminal-body')!;
   inputEl = overlay.querySelector<HTMLInputElement>('#terminal-input')!;
 
   const redDot = overlay.querySelector<HTMLElement>('.terminal-bar__dot--red')!;
@@ -113,12 +205,10 @@ function buildTerminal(): void {
     if (e.target === overlay) closeTerminal();
   });
 
-  // Click anywhere inside the panel (except interactive children) → focus input
   const panel = overlay.querySelector<HTMLElement>('.terminal-panel');
   panel?.addEventListener('click', (e) => {
     const target = e.target as HTMLElement;
     if (target.closest('.terminal-bar__dot, button, a, input, textarea')) return;
-    // Don't steal focus from a text selection inside the body
     const sel = window.getSelection();
     if (sel && sel.toString().length > 0) return;
     inputEl.focus({ preventScroll: true });
@@ -126,7 +216,10 @@ function buildTerminal(): void {
 
   inputEl.addEventListener('keydown', handleKeydown);
 
-  printBanner();
+  // Stream banner then welcome on open
+  streamLines(getAsciiBanner(), 'accent', popupBody, () => {
+    streamLines(WELCOME_MSG, 'dim', popupBody);
+  });
 }
 
 function openTerminal(): void {
@@ -134,7 +227,6 @@ function openTerminal(): void {
   isOpen = true;
   overlay.classList.add('active');
   inputEl.value = '';
-  // Defer focus so the panel transition has begun before browsers will accept it
   requestAnimationFrame(() => inputEl.focus({ preventScroll: true }));
 }
 
@@ -142,7 +234,7 @@ function closeTerminal(): void {
   if (!isOpen) return;
   isOpen = false;
   overlay.classList.remove('active');
-  if (typeTimer) clearTimeout(typeTimer);
+  if (streamTimer) clearTimeout(streamTimer);
 }
 
 function toggleTerminal(): void {
@@ -150,40 +242,28 @@ function toggleTerminal(): void {
   else openTerminal();
 }
 
-function printLine(text: string, cls?: string): void {
-  const div = document.createElement('div');
-  div.className = 'terminal-line' + (cls ? ' terminal-line--' + cls : '');
-  div.textContent = text;
-  body.appendChild(div);
-  body.scrollTop = body.scrollHeight;
-}
+// ── Shared command dispatcher ─────────────────────────────
 
-function printHTML(html: string): void {
-  const div = document.createElement('div');
-  div.className = 'terminal-line';
-  div.innerHTML = html;
-  body.appendChild(div);
-  body.scrollTop = body.scrollHeight;
-}
-
-function printBanner(): void {
-  ASCII_BANNER.forEach((l) => printLine(l, 'accent'));
-  WELCOME_MSG.forEach((l) => printLine(l, 'dim'));
-}
-
-function typeLines(lines: string[], cls: string, delay: number, cb?: () => void): void {
-  let i = 0;
-  function next(): void {
-    if (i >= lines.length) {
-      if (cb) cb();
-      return;
-    }
-    printLine(lines[i]!, cls);
-    i++;
-    typeTimer = setTimeout(next, delay || 30);
+function dispatchCommand(raw: string, outputEl: HTMLElement, onDone?: () => void): void {
+  appendHTML(
+    outputEl,
+    '<span style="color:var(--accent);font-weight:600;">stephen@lyons:~$</span>&nbsp;' +
+      escapeHTML(raw),
+  );
+  if (!raw) { onDone?.(); return; }
+  history.push(raw);
+  const parts = raw.split(/\s+/);
+  const cmd = parts[0]!.toLowerCase();
+  const args = parts.slice(1);
+  if (COMMANDS[cmd]) {
+    COMMANDS[cmd].fn(args, outputEl, onDone);
+  } else {
+    appendLine(outputEl, `Command not found: ${cmd}. Type "help" for available commands.`, 'dim');
+    onDone?.();
   }
-  next();
 }
+
+// ── Keyboard handler ─────────────────────────────────────
 
 function handleKeydown(e: KeyboardEvent): void {
   if (e.key === 'Tab') {
@@ -191,7 +271,6 @@ function handleKeydown(e: KeyboardEvent): void {
     tabComplete();
     return;
   }
-
   if (e.key === 'ArrowUp') {
     e.preventDefault();
     if (history.length === 0) return;
@@ -210,31 +289,12 @@ function handleKeydown(e: KeyboardEvent): void {
     }
     return;
   }
-
   if (e.key === 'Enter') {
     e.preventDefault();
     const raw = inputEl.value.trim();
     inputEl.value = '';
     historyIdx = -1;
-
-    printHTML(
-      '<span style="color:var(--accent);font-weight:600;">stephen@lyons:~$</span> ' +
-        escapeHTML(raw),
-    );
-
-    if (!raw) return;
-
-    history.push(raw);
-
-    const parts = raw.split(/\s+/);
-    const cmd = parts[0]!.toLowerCase();
-    const args = parts.slice(1);
-
-    if (COMMANDS[cmd]) {
-      COMMANDS[cmd].fn(args);
-    } else {
-      printLine(`Command not found: ${cmd}. Type "help" for available commands.`, 'dim');
-    }
+    dispatchCommand(raw, popupBody);
   }
 }
 
@@ -245,31 +305,28 @@ function tabComplete(): void {
   if (matches.length === 1) {
     inputEl.value = matches[0]! + ' ';
   } else if (matches.length > 1) {
-    printLine('  ' + matches.join('  '), 'dim');
+    appendLine(popupBody, '  ' + matches.join('  '), 'dim');
   }
 }
 
-function escapeHTML(str: string): string {
-  const d = document.createElement('div');
-  d.textContent = str;
-  return d.innerHTML;
+// ── Commands ─────────────────────────────────────────────
+
+function cmdHelp(_args: string[], outputEl: HTMLElement, onDone?: () => void): void {
+  const lines = [
+    '',
+    'Available commands:',
+    '',
+    ...Object.entries(COMMANDS)
+      .filter(([name]) => name !== 'close')
+      .map(([name, c]) => `  ${name.padEnd(14)} ${c.desc}`),
+    '',
+    'Tip: use Tab for auto-completion, ↑/↓ for history.',
+    '',
+  ];
+  streamLines(lines, '', outputEl, onDone);
 }
 
-function cmdHelp(): void {
-  printLine('');
-  printLine('Available commands:', 'accent');
-  printLine('');
-  Object.entries(COMMANDS).forEach(([name, c]) => {
-    if (name === 'close') return;
-    const pad = name.padEnd(14);
-    printLine(`  ${pad} ${c.desc}`, '');
-  });
-  printLine('');
-  printLine('Tip: use Tab for auto-completion, ↑/↓ for history.', 'dim');
-  printLine('');
-}
-
-function cmdWhoami(): void {
+function cmdWhoami(_args: string[], outputEl: HTMLElement, onDone?: () => void): void {
   const lines = [
     '',
     '  Stephen Lyons',
@@ -284,90 +341,96 @@ function cmdWhoami(): void {
     '  Building secure systems that scale.',
     '',
   ];
-  typeLines(lines, '', 25);
+  streamLines(lines, '', outputEl, onDone);
 }
 
-function cmdLs(args: string[]): void {
+function cmdLs(args: string[], outputEl: HTMLElement, onDone?: () => void): void {
   if (args[0] === 'pages' || args.length === 0) {
-    printLine('');
-    printLine('  Pages:', 'accent');
-    Object.entries(PAGES).forEach(([name, file]) => {
-      if (name === 'index') return;
-      printLine(`    ${name.padEnd(12)} → ${file}`);
-    });
-    printLine('');
+    const lines = [
+      '',
+      '  Pages:',
+      ...Object.entries(PAGES)
+        .filter(([name]) => name !== 'index')
+        .map(([name, path]) => `    ${name.padEnd(12)} → ${path}`),
+      '',
+    ];
+    streamLines(lines, '', outputEl, onDone);
   } else {
-    printLine(`ls: cannot access '${args[0]}': No such directory`, 'dim');
+    appendLine(outputEl, `ls: cannot access '${args[0]}': No such directory`, 'dim');
+    onDone?.();
   }
 }
 
-function cmdCd(args: string[]): void {
+function cmdCd(args: string[], outputEl: HTMLElement, onDone?: () => void): void {
   const target = (args[0] || '').toLowerCase();
   if (!target) {
-    printLine('Usage: cd <page>  (e.g., cd about)', 'dim');
+    appendLine(outputEl, 'Usage: cd <page>  (e.g., cd about)', 'dim');
+    onDone?.();
     return;
   }
   const file = PAGES[target];
   if (file) {
-    printLine(`Navigating to ${target}...`, 'accent');
-    setTimeout(() => {
-      window.location.href = file;
-    }, 400);
+    appendLine(outputEl, `Navigating to ${target}...`, 'accent');
+    setTimeout(() => { window.location.href = file; }, 400);
   } else {
-    printLine(`Page not found: ${target}. Use "ls pages" to see available pages.`, 'dim');
+    appendLine(outputEl, `Page not found: ${target}. Use "ls pages" to see available pages.`, 'dim');
+    onDone?.();
   }
 }
 
-function cmdSkills(): void {
+function cmdSkills(_args: string[], outputEl: HTMLElement, onDone?: () => void): void {
   const categories = [
-    {
-      title: 'Languages',
-      items: 'TypeScript, Python, JavaScript, HTML5, CSS, Rust, PHP, Java, C++, C#',
-    },
-    {
-      title: 'Frameworks & Tools',
-      items: 'React.js, Next.js, React Native, Node.js, Docker, Git, Linux/UNIX, Unity, Adobe Suite',
-    },
+    { title: 'Languages', items: 'TypeScript, Python, JavaScript, HTML5, CSS, Rust, PHP, Java, C++, C#' },
+    { title: 'Frameworks & Tools', items: 'React.js, Next.js, React Native, Node.js, Docker, Git, Linux/UNIX' },
     {
       title: 'Security Tools',
-      items:
-        'CrowdStrike, Netskope, Zscaler, Azure, Intune, Infrastrcture as Code, GitHub Enterprise, SIEM, EDR, DLP',
+      items: 'CrowdStrike, Netskope, Zscaler, Azure, Intune, GitHub Enterprise, SIEM, EDR, DLP',
     },
-    {
-      title: 'Cloud Platforms',
-      items: 'AWS, Azure, Google Cloud, Firebase, Vercel',
-    },
+    { title: 'Cloud Platforms', items: 'AWS, Azure, Google Cloud, Firebase, Vercel' },
   ];
-  printLine('');
+  const lines: string[] = [''];
   categories.forEach((cat) => {
-    printLine(`  ┌─ ${cat.title}`, 'accent');
-    printLine(`  │  ${cat.items}`);
-    printLine('  └──────────────────────');
-    printLine('');
+    lines.push(`  ┌─ ${cat.title}`);
+    lines.push(`  │  ${cat.items}`);
+    lines.push('  └──────────────────────');
+    lines.push('');
   });
+  streamLines(lines, '', outputEl, onDone);
 }
 
-function cmdProjects(): void {
-  printLine('');
-  projects.forEach((p) => {
-    printLine(`  > ${p.title}`, 'accent');
-    printLine(`    ${p.descriptions[0]}`);
-    printLine(`    Tech: ${p.tech.join(', ')}`, 'dim');
-    if (p.date) printLine(`    ${p.date}`, 'dim');
-    printLine('');
-  });
+function cmdProjects(_args: string[], outputEl: HTMLElement, onDone?: () => void): void {
+  appendLine(outputEl, '');
+  let i = 0;
+  function nextProject(): void {
+    if (i >= projects.length) { appendLine(outputEl, ''); onDone?.(); return; }
+    const p = projects[i]!;
+    i++;
+    // Clickable title — links to /projects#{id}
+    appendHTML(
+      outputEl,
+      `  <span style="color:var(--accent);font-weight:600;">&gt;</span> ` +
+        `<a href="/projects#${encodeURIComponent(p.id)}" ` +
+        `style="color:var(--accent);text-decoration:underline;text-decoration-color:var(--accent-dim);" ` +
+        `title="View on projects page">${escapeHTML(p.title)}</a>`,
+    );
+    appendLine(outputEl, `    ${p.descriptions[0]}`);
+    appendLine(outputEl, `    Tech: ${p.tech.join(', ')}`, 'dim');
+    if (p.date) appendLine(outputEl, `    ${p.date}`, 'dim');
+    appendLine(outputEl, '');
+    streamTimer = setTimeout(nextProject, LINE_DELAY * 3);
+  }
+  nextProject();
 }
 
-function cmdExperience(): void {
+function cmdExperience(_args: string[], outputEl: HTMLElement, onDone?: () => void): void {
   const jobs = [
     {
-      period: 'Aug 2023 – Present',
-      role: 'Cybersecurity Engineer',
+      period: 'Aug 2023 – Present', role: 'Cybersecurity Engineer',
       org: 'Yamaha Motor Corporation, Cypress, CA',
       highlights: [
         'Manages on-prem and cloud security operations',
         'Implements DevSecOps practices using GitHub Actions & GitHub Enterprise',
-        'Develops infrastructure as code using Infrastrcture as Code',
+        'Develops Infrastructure as Code solutions',
         'Oversees CrowdStrike, Netskope, Zscaler deployments',
         'Manages Azure infrastructure, groups, and Intune MDM',
         'Builds & maintains CI/CD pipelines with security checks',
@@ -375,8 +438,7 @@ function cmdExperience(): void {
       ],
     },
     {
-      period: 'May 2022 – Aug 2022',
-      role: 'Business Application Development Intern',
+      period: 'May 2022 – Aug 2022', role: 'Business Application Development Intern',
       org: 'Yamaha Motor Corporation, Cypress, CA',
       highlights: [
         'Designed testing methods for code and data quality',
@@ -385,8 +447,7 @@ function cmdExperience(): void {
       ],
     },
     {
-      period: 'Feb 2020 – May 2022 & Oct 2022 – Jul 2023',
-      role: 'Web Developer',
+      period: 'Feb 2020 – Jul 2023', role: 'Web Developer',
       org: 'Associated Students Inc., Long Beach, CA',
       highlights: [
         'Led team of graduate student developers',
@@ -395,8 +456,7 @@ function cmdExperience(): void {
       ],
     },
     {
-      period: 'May 2021 – Jan 2022',
-      role: 'Lead Security Engineer',
+      period: 'May 2021 – Jan 2022', role: 'Lead Security Engineer',
       org: 'Down (joindown.com), Remote',
       highlights: [
         'Coordinated Android & iOS testing for React Native app',
@@ -404,97 +464,76 @@ function cmdExperience(): void {
         'Tested application using Jest and Detox',
       ],
     },
-    {
-      period: 'Jul 2018 – Jun 2019',
-      role: 'Intern / Laser Technician',
-      org: 'M.R. Mold and Engineering, Brea, CA',
-      highlights: [
-        'Founded internship program',
-        'Produced laser-engraved products',
-        'Developed QC software for precision parts',
-      ],
-    },
   ];
-
-  printLine('');
+  const lines: string[] = [''];
   jobs.forEach((j) => {
-    printLine(`  ╔══ ${j.period}`, 'dim');
-    printLine(`  ║  ${j.role}`, 'accent');
-    printLine(`  ║  ${j.org}`);
-    j.highlights.forEach((h) => printLine(`  ║  > ${h}`, 'dim'));
-    printLine('  ╚══════════════════════════════');
-    printLine('');
+    lines.push(`  ╔══ ${j.period}`);
+    lines.push(`  ║  ${j.role}`);
+    lines.push(`  ║  ${j.org}`);
+    j.highlights.forEach((h) => lines.push(`  ║  > ${h}`));
+    lines.push('  ╚══════════════════════════════');
+    lines.push('');
   });
+  streamLines(lines, '', outputEl, onDone);
 }
 
-function cmdEducation(): void {
-  printLine('');
-  printLine('  ┌─────────────────────────────────────────────────┐', 'accent');
-  printLine('  │  California State University, Long Beach        │', 'accent');
-  printLine('  │  B.S. Computer Science — Aug 2019 – May 2023   │', '');
-  printLine('  │  Minor: Cyber Security Applications             │', '');
-  printLine('  └─────────────────────────────────────────────────┘', 'accent');
-  printLine('');
-  printLine('  Relevant Courses:', 'accent');
-  const courses = [
-    'Algorithms',
-    'Data Structures',
-    'Computer Security I & II',
-    'Networks & Network Security',
-    'Machine Learning',
-    'Cybersecurity in Business',
-    'Artificial Intelligence',
-    'Digital Forensics',
-    'OOP',
-    'Software Engineering',
-    'Databases',
+function cmdEducation(_args: string[], outputEl: HTMLElement, onDone?: () => void): void {
+  const lines = [
+    '',
+    '  ┌─────────────────────────────────────────────────┐',
+    '  │  California State University, Long Beach        │',
+    '  │  B.S. Computer Science — Aug 2019 – May 2023   │',
+    '  │  Minor: Cyber Security Applications             │',
+    '  └─────────────────────────────────────────────────┘',
+    '',
+    '  Relevant Courses:',
+    '    • Algorithms       • Data Structures',
+    '    • Computer Security I & II',
+    '    • Networks & Network Security',
+    '    • Machine Learning  • AI  • Digital Forensics',
+    '',
+    '  Activities:',
+    '    • CSULB ACM (Webmaster)',
+    '    • CSULB Cybersecurity Club',
+    '    • BeachHacks 2023',
+    '',
   ];
-  courses.forEach((c) => printLine(`    • ${c}`));
-  printLine('');
-  printLine('  Activities:', 'accent');
-  const activities = [
-    'CSULB ACM (Webmaster)',
-    'CSULB Cybersecurity Club',
-    'CSULB Jiu Jitsu Club',
-    'CSULB Snow and Ski Club',
-    'BeachHacks 2023',
+  streamLines(lines, '', outputEl, onDone);
+}
+
+function cmdContact(_args: string[], outputEl: HTMLElement, onDone?: () => void): void {
+  const lines = [
+    '',
+    '  ┌─ Contact Info',
+    '  │',
+    '  │  Email    stephen.lyons18@gmail.com',
+    '  │  Website  stephenlyons.dev',
+    '  │  Location Southern California',
+    '  │',
+    '  │  GitHub   github.com/stephenlyons18',
+    '  │  LinkedIn linkedin.com/in/stephen-lyons',
+    '  │',
+    '  └──────────────────────',
+    '',
   ];
-  activities.forEach((a) => printLine(`    • ${a}`));
-  printLine('');
+  streamLines(lines, '', outputEl, onDone);
 }
 
-function cmdContact(): void {
-  printLine('');
-  printLine('  ┌─ Contact Info', 'accent');
-  printLine('  │');
-  printLine('  │  Email    stephen.lyons18@gmail.com');
-  printLine('  │  Website  stephenlyons.dev');
-  printLine('  │  Location Southern California');
-  printLine('  │');
-  printLine('  │  GitHub   github.com/stephenlyons18');
-  printLine('  │  LinkedIn linkedin.com/in/stephen-lyons');
-  printLine('  │'); 
-  printLine('  └──────────────────────');
-  printLine('');
+function cmdClear(_args: string[], outputEl: HTMLElement): void {
+  outputEl.innerHTML = '';
 }
 
-function cmdClear(): void {
-  body.innerHTML = '';
-}
-
-function cmdExit(): void {
+function cmdExit(_args: string[], _outputEl: HTMLElement): void {
   closeTerminal();
 }
 
-function cmdTheme(args: string[]): void {
+function cmdTheme(args: string[], outputEl: HTMLElement, onDone?: () => void): void {
   const themes = ['green', 'cyan', 'amber'];
   const t = (args[0] || '').toLowerCase();
   if (!themes.includes(t)) {
-    printLine(`Usage: theme <${themes.join('|')}>`, 'dim');
-    printLine(
-      `Current theme: ${document.documentElement.getAttribute('data-theme') || 'green'}`,
-      'dim',
-    );
+    appendLine(outputEl, `Usage: theme <${themes.join('|')}>`, 'dim');
+    appendLine(outputEl, `Current: ${document.documentElement.getAttribute('data-theme') || 'green'}`, 'dim');
+    onDone?.();
     return;
   }
   if (t === 'green') {
@@ -502,20 +541,18 @@ function cmdTheme(args: string[]): void {
   } else {
     document.documentElement.setAttribute('data-theme', t);
   }
-  printLine(`Theme switched to ${t}.`, 'accent');
-  try {
-    localStorage.setItem('sl-theme', t);
-  } catch {
-    /* noop */
-  }
+  appendLine(outputEl, `Theme switched to ${t}.`, 'accent');
+  try { localStorage.setItem('sl-theme', t); } catch { /* noop */ }
+  onDone?.();
 }
 
-function cmdMatrix(): void {
-  printLine('Initiating Matrix rain sequence...', 'accent');
+function cmdMatrix(_args: string[], outputEl: HTMLElement, onDone?: () => void): void {
+  appendLine(outputEl, 'Initiating Matrix rain sequence...', 'accent');
   triggerMatrixEasterEgg();
+  onDone?.();
 }
 
-function cmdSudo(): void {
+function cmdSudo(_args: string[], outputEl: HTMLElement, onDone?: () => void): void {
   const responses = [
     'Nice try. 😏',
     'Access denied. This incident will be reported.',
@@ -524,7 +561,8 @@ function cmdSudo(): void {
     'Error 403: You thought. 🤨',
     'Permission denied. Stephen is the only admin here.',
   ];
-  printLine(responses[Math.floor(Math.random() * responses.length)]!, 'accent');
+  appendLine(outputEl, responses[Math.floor(Math.random() * responses.length)]!, 'accent');
+  onDone?.();
 }
 
 function triggerMatrixEasterEgg(): void {
@@ -591,6 +629,7 @@ function init(): void {
   }
 
   window.openTerminal = openTerminal;
+  window.runInElement = dispatchCommand;
 }
 
 document.addEventListener('keydown', (e: KeyboardEvent) => {

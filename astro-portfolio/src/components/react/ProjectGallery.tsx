@@ -88,8 +88,13 @@ export default function ProjectGallery({ images, projectId }: Props) {
               aria-hidden="true"
             />
 
-            {/* Centering shell — pointer-events:none so clicks fall through to backdrop */}
-            <div className="lightbox-centering" aria-hidden="true">
+            {/* Centering shell — pointer-events:none on desktop so clicks fall through to
+                backdrop; on mobile CSS sets pointer-events:auto so this div is the
+                scroll container and click-outside target. */}
+            <div
+              className="lightbox-centering"
+              onClick={(e) => { if (e.target === e.currentTarget) setSelectedIdx(null); }}
+            >
               <motion.figure
                 key={`lightbox-figure-${selectedIdx}`}
                 layoutId={`gallery-${projectId}-${selectedIdx}`}

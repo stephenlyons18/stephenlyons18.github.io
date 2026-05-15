@@ -18,8 +18,9 @@ const isActive = (href: string) => {
       <a href="/projects" class:list={[isActive('/projects') && 'active']}>Projects</a>
       <a href="/contact" class:list={[isActive('/contact') && 'active']}>Contact</a>
     </nav>
-    <button class="nav-terminal-hint" aria-label="Open terminal with Ctrl+K" data-open-terminal>
-      <kbd>Ctrl+K</kbd> Terminal
+    <button class="nav-terminal-btn" aria-label="Open terminal" data-open-terminal>
+      <span class="nav-terminal-btn__icon" aria-hidden="true">&gt;_</span>
+      <span class="nav-terminal-btn__label">Terminal</span>
     </button>
     <button class="nav-toggle" aria-label="Toggle mobile navigation" aria-expanded="false">
       <span></span><span></span><span></span>

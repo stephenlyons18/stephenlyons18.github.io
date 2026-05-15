@@ -27,8 +27,7 @@ import ProjectGallery from "../components/react/ProjectGallery";
 		<div class='container'>
 			{
 				projects.map((p, i) => (
-					<article
-						class='card reveal'
+					<article						id={p.id}						class='card reveal'
 						style={
 							i < projects.length - 1
 								? "margin-bottom: 2rem;"
