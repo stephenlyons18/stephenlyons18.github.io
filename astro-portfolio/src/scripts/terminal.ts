@@ -384,7 +384,7 @@ function cmdCd(args: string[], outputEl: HTMLElement, onDone?: () => void): void
 
 function cmdSkills(_args: string[], outputEl: HTMLElement, onDone?: () => void): void {
   const categories = [
-    { title: 'Languages', items: 'TypeScript, Python, JavaScript, HTML5, CSS, Rust, PHP, Java, C++, C#' },
+    { title: 'Languages', items: 'TypeScript, Python, JavaScript, HTML, CSS, Rust, PHP, Java, C++, C#' },
     { title: 'Frameworks & Tools', items: 'React.js, Next.js, React Native, Node.js, Docker, Git, Linux/UNIX' },
     {
       title: 'Security Tools',

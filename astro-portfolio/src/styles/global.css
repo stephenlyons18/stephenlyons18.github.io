@@ -284,7 +284,9 @@ body.js-reveal-ready .reveal.revealed {
 .site-header {
   position: fixed;
   top: 0; left: 0; right: 0;
-  height: var(--header-h);
+  /* Grow the bar to cover the device status bar on notched phones */
+  height: calc(var(--header-h) + env(safe-area-inset-top, 0px));
+  padding-top: env(safe-area-inset-top, 0px);
   /* Above body::after scanline overlay (z-index 9998) so header chrome
      is always fully rendered on top of the CRT effect layer. */
   z-index: 9999;
@@ -363,6 +365,9 @@ body.js-reveal-ready .reveal.revealed {
   transition: all 0.2s var(--ease);
   background: transparent;
   white-space: nowrap;
+  /* Same stacking-context fix as .nav-toggle */
+  position: relative;
+  z-index: 10000;
 }
 .nav-terminal-btn:hover,
 .nav-terminal-btn:focus-visible {
@@ -389,6 +394,10 @@ body.js-reveal-ready .reveal.revealed {
   border: none;
   cursor: pointer;
   padding: 4px;
+  /* Must sit above .nav-links (z-index 9998) within the header stacking context
+     that backdrop-filter creates. Without this the dropdown slides over these buttons. */
+  position: relative;
+  z-index: 10000;
 }
 .nav-toggle span {
   display: block;
@@ -1306,9 +1315,10 @@ body.js-reveal-ready .reveal.revealed {
 
   .nav-links {
     position: fixed;
-    top: var(--header-h);
+    top: calc(var(--header-h) + env(safe-area-inset-top, 0px));
     left: 0; right: 0;
-    /* Sit just below the header in z-stacking */
+    /* Keep below the terminal btn / hamburger (z-index 10000) so they
+       remain clickable even while the dropdown is animating. */
     z-index: 9998;
     background: rgba(10, 10, 10, 0.97);
     backdrop-filter: blur(12px);
@@ -1318,9 +1328,12 @@ body.js-reveal-ready .reveal.revealed {
     border-bottom: 1px solid var(--border);
     transform: translateY(-110%);
     transition: transform 0.3s var(--ease);
+    /* Prevent intercepting pointer events while hidden */
+    pointer-events: none;
   }
   .nav-links.open {
     transform: translateY(0);
+    pointer-events: auto;
   }
   .nav-links a {
     /* Larger tap targets on mobile */
@@ -1359,7 +1372,8 @@ body.js-reveal-ready .reveal.revealed {
   }
 
   .page-header {
-    padding: 6rem 0 2rem;
+    /* Explicitly clear the fixed header + safe-area inset + breathing room */
+    padding: calc(var(--header-h) + env(safe-area-inset-top, 0px) + 2.5rem) 0 2rem;
     margin-bottom: 2rem;
   }
 
