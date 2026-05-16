@@ -316,6 +316,7 @@ ul, ol { list-style: none; }
   border: none;
   cursor: pointer;
   padding: 4px;
+  
 }
 .nav-toggle span {
   display: block;

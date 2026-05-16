@@ -26,187 +26,143 @@ interface GraphLink extends SimulationLinkDatum<GraphNode> {
   target: GraphNode;
 }
 
-interface Camera {
-  x: number;
-  y: number;
-  scale: number;
-}
+interface Camera { x: number; y: number; scale: number; }
 
 interface TooltipState {
-  name: string;
-  weight: number;
-  category: SkillCategory;
-  projects: string[];
-  /** CSS px from canvas top-left */
-  cssX: number;
-  cssY: number;
-  /** true → render below the node instead of above */
-  below: boolean;
+  name: string; weight: number; category: SkillCategory;
+  projects: string[]; cssX: number; cssY: number; below: boolean;
 }
+
+type ViewMode = 'graph' | 'list';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
-const MIN_R = 7;
-const MAX_R = 22;
-const LABEL_PX = 12; // screen-space font size, always readable regardless of zoom
+const MIN_R    = 7;
+const MAX_R    = 20;
+const LABEL_PX = 12;   // fixed screen-space label font size
 const MIN_ZOOM = 0.15;
 const MAX_ZOOM = 4;
+
+// Extra sim-space padding added to forceCollide radius to prevent label overlap.
+// At a typical initial fit scale of ~0.55–0.75, 50 sim-units ≈ 28–38 screen-px,
+// which is enough clearance for 12px labels.
+const LABEL_CLEARANCE = 50;
 
 function weightToRadius(w: number): number {
   return MIN_R + ((w - 1) / 9) * (MAX_R - MIN_R);
 }
 
-// Per-category quadrant offsets (fraction of half-canvas) for cluster forces.
-// Soft forceX/forceY pulls nodes toward these quadrant centers without a hard
-// boundary, producing the organic Obsidian bubble aesthetic.
+// Five-cluster layout: each category is pulled toward a quadrant.
+// Fractions are of half-canvas width/height from center.
 const CLUSTER_OFFSET: Record<SkillCategory, [number, number]> = {
-  languages:  [-0.30, -0.22],
-  frameworks: [ 0.24, -0.22],
-  security:   [-0.20,  0.28],
-  cloud:      [ 0.28,  0.22],
+  languages:        [-0.42, -0.34],   // top-left
+  frameworks:       [ 0.36, -0.34],   // top-right
+  'security-tools': [-0.30,  0.32],   // bottom-left
+  'security-skills':[ 0.10,  0.38],   // bottom-center
+  cloud:            [ 0.42,  0.08],   // center-right
 };
 
-// ─── Helpers (pure, no React dependency) ──────────────────────────────────────
+// ─── Pure helpers ─────────────────────────────────────────────────────────────
 
-function hexToRgba(hex: string, alpha: number): string {
+function hexToRgba(hex: string, a: number): string {
   const r = parseInt(hex.slice(1, 3), 16);
   const g = parseInt(hex.slice(3, 5), 16);
   const b = parseInt(hex.slice(5, 7), 16);
-  return `rgba(${r},${g},${b},${alpha})`;
+  return `rgba(${r},${g},${b},${a})`;
 }
-
 function clamp(v: number, lo: number, hi: number): number {
   return Math.max(lo, Math.min(hi, v));
 }
-
-/** CSS pixel coordinate from a MouseEvent/TouchEvent relative to canvas */
-function cssCoord(
-  e: MouseEvent | Touch,
-  canvas: HTMLCanvasElement
-): [number, number] {
-  const rect = canvas.getBoundingClientRect();
-  return [e.clientX - rect.left, e.clientY - rect.top];
+function cssCoord(e: MouseEvent | Touch, c: HTMLCanvasElement): [number, number] {
+  const r = c.getBoundingClientRect();
+  return [e.clientX - r.left, e.clientY - r.top];
 }
-
 function touchDist(a: Touch, b: Touch): number {
   return Math.hypot(b.clientX - a.clientX, b.clientY - a.clientY);
 }
-
-function touchMid(a: Touch, b: Touch, canvas: HTMLCanvasElement): [number, number] {
+function touchMid(a: Touch, b: Touch, c: HTMLCanvasElement): [number, number] {
   return cssCoord(
-    { clientX: (a.clientX + b.clientX) / 2, clientY: (a.clientY + b.clientY) / 2 } as Touch,
-    canvas
+    { clientX: (a.clientX + b.clientX) / 2, clientY: (a.clientY + b.clientY) / 2 } as Touch, c
   );
 }
 
 // ─── Component ────────────────────────────────────────────────────────────────
 
-interface Props {
-  height?: number;
-}
-
-export default function SkillGraph({ height = 700 }: Props) {
-  // DOM / canvas
-  const canvasRef     = useRef<HTMLCanvasElement>(null);
-  const containerRef  = useRef<HTMLDivElement>(null);
-
-  // Simulation
-  const simRef = useRef<Simulation<GraphNode, GraphLink> | null>(null);
-  const nodesRef = useRef<GraphNode[]>([]);
-  const linksRef = useRef<GraphLink[]>([]);
-
-  // Camera (pan + zoom state kept in a ref so draw() always reads latest)
-  const cameraRef = useRef<Camera>({ x: 0, y: 0, scale: 1 });
-
-  // Interaction state (refs — no re-render needed)
-  const hoveredRef    = useRef<GraphNode | null>(null);
-  const draggedRef    = useRef<GraphNode | null>(null);
-  const isPanningRef  = useRef(false);
-  const panStartRef   = useRef({ camX: 0, camY: 0, mx: 0, my: 0 });
-  const pinchRef      = useRef<{ dist: number; mx: number; my: number } | null>(null);
-
-  // Mirrors of camera.scale exposed only for button disabled states
-  const [zoomLevel, setZoomLevel] = useState(1);
-
-  // React-rendered UI
-  const [activeCategory, setActiveCategory] = useState<SkillCategory | null>(null);
+export default function SkillGraph({ height = 700 }: { height?: number }) {
+  const canvasRef    = useRef<HTMLCanvasElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const simRef       = useRef<Simulation<GraphNode, GraphLink> | null>(null);
+  const nodesRef     = useRef<GraphNode[]>([]);
+  const linksRef     = useRef<GraphLink[]>([]);
+  const cameraRef    = useRef<Camera>({ x: 0, y: 0, scale: 1 });
+  const hoveredRef   = useRef<GraphNode | null>(null);
+  const draggedRef   = useRef<GraphNode | null>(null);
+  const isPanRef     = useRef(false);
+  const panStartRef  = useRef({ camX: 0, camY: 0, mx: 0, my: 0 });
+  const pinchRef     = useRef<{ dist: number; mx: number; my: number } | null>(null);
   const activeCatRef = useRef<SkillCategory | null>(null);
 
-  const [tooltip, setTooltip] = useState<TooltipState | null>(null);
+  const [zoomLevel,      setZoomLevel]      = useState(1);
+  const [activeCategory, setActiveCategory] = useState<SkillCategory | null>(null);
+  const [tooltip,        setTooltip]        = useState<TooltipState | null>(null);
+  const [viewMode,       setViewMode]       = useState<ViewMode>('graph');
 
-  // Detect prefers-reduced-motion once
   const prefersReduced =
     typeof window !== 'undefined' &&
     window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-  // ─── Sim → screen helpers ──────────────────────────────────────────────────
+  // ─── Coordinate helpers ────────────────────────────────────────────────────
 
-  function toSim(cssX: number, cssY: number): [number, number] {
+  function toSim(cx: number, cy: number): [number, number] {
     const { x, y, scale } = cameraRef.current;
-    return [(cssX - x) / scale, (cssY - y) / scale];
+    return [(cx - x) / scale, (cy - y) / scale];
   }
-
-  function toScreen(simX: number, simY: number): [number, number] {
+  function toScreen(sx: number, sy: number): [number, number] {
     const { x, y, scale } = cameraRef.current;
-    return [simX * scale + x, simY * scale + y];
+    return [sx * scale + x, sy * scale + y];
   }
-
-  // ─── Node hit-test ─────────────────────────────────────────────────────────
-
-  function nodeAt(cssX: number, cssY: number): GraphNode | null {
-    const [sx, sy] = toSim(cssX, cssY);
-    // Iterate in reverse so top-painted nodes (drawn last) get priority
+  function nodeAt(cx: number, cy: number): GraphNode | null {
+    const [sx, sy] = toSim(cx, cy);
     for (let i = nodesRef.current.length - 1; i >= 0; i--) {
       const n = nodesRef.current[i];
       if (n.x == null || n.y == null) continue;
-      const hit = Math.max(n.r, 16); // minimum 16px hit radius in sim space
+      const hit = Math.max(n.r, 16);
       if ((sx - n.x) ** 2 + (sy - n.y) ** 2 <= hit ** 2) return n;
     }
     return null;
   }
 
-  // ─── Camera controls ───────────────────────────────────────────────────────
+  // ─── Camera ───────────────────────────────────────────────────────────────
 
-  function zoomAt(cssX: number, cssY: number, factor: number) {
+  function zoomAt(cx: number, cy: number, factor: number) {
     const cam = cameraRef.current;
-    const newScale = clamp(cam.scale * factor, MIN_ZOOM, MAX_ZOOM);
-    const actual   = newScale / cam.scale;
-    cam.x     = cssX - (cssX - cam.x) * actual;
-    cam.y     = cssY - (cssY - cam.y) * actual;
-    cam.scale = newScale;
-    setZoomLevel(newScale);
+    const ns  = clamp(cam.scale * factor, MIN_ZOOM, MAX_ZOOM);
+    const af  = ns / cam.scale;
+    cam.x = cx - (cx - cam.x) * af;
+    cam.y = cy - (cy - cam.y) * af;
+    cam.scale = ns;
+    setZoomLevel(ns);
   }
 
-  function fitAll(canvasW: number, canvasH: number) {
+  function fitAll(w: number, h: number) {
     const nodes = nodesRef.current;
     if (!nodes.length) return;
-
-    const LABEL_H = LABEL_PX + 4;   // extra below-node clearance for labels
-    const PAD     = 48;              // canvas-edge padding (px)
-
+    const PAD = 52;
     let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
     for (const n of nodes) {
       if (n.x == null || n.y == null) continue;
       minX = Math.min(minX, n.x - n.r);
       minY = Math.min(minY, n.y - n.r);
       maxX = Math.max(maxX, n.x + n.r);
-      maxY = Math.max(maxY, n.y + n.r + LABEL_H);
+      // Account for label clearance below node in sim space (approx)
+      maxY = Math.max(maxY, n.y + n.r + 24);
     }
-
-    const gw = maxX - minX;
-    const gh = maxY - minY;
+    const gw = maxX - minX, gh = maxY - minY;
     if (!gw || !gh) return;
-
-    const scale = clamp(
-      Math.min((canvasW - PAD * 2) / gw, (canvasH - PAD * 2) / gh),
-      MIN_ZOOM, MAX_ZOOM
-    );
-
-    const cx = (minX + maxX) / 2;
-    const cy = (minY + maxY) / 2;
+    const scale = clamp(Math.min((w - PAD * 2) / gw, (h - PAD * 2) / gh), MIN_ZOOM, MAX_ZOOM);
     cameraRef.current = {
-      x:     canvasW  / 2 - cx * scale,
-      y:     canvasH  / 2 - cy * scale,
+      x: w / 2 - ((minX + maxX) / 2) * scale,
+      y: h / 2 - ((minY + maxY) / 2) * scale,
       scale,
     };
     setZoomLevel(scale);
@@ -217,396 +173,302 @@ export default function SkillGraph({ height = 700 }: Props) {
   function draw() {
     const canvas = canvasRef.current;
     if (!canvas) return;
-    const ctx   = canvas.getContext('2d');
-    if (!ctx)   return;
-
-    // canvas.width/height are in physical pixels; CSS size is set separately
-    const w = canvas.clientWidth;
-    const h = canvas.clientHeight;
+    const ctx = canvas.getContext('2d');
+    if (!ctx)  return;
     const dpr = window.devicePixelRatio || 1;
-    ctx.clearRect(0, 0, w * dpr, h * dpr);
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
 
     const cam     = cameraRef.current;
     const hovered = hoveredRef.current;
     const active  = activeCatRef.current;
-
-    const highlightSet = hovered
+    const hlSet   = hovered
       ? new Set([hovered.id, ...(hovered.skill.connections ?? [])])
       : null;
 
-    // ── Pass 1: edges (in sim space via camera transform) ─────────────────
+    // Pass 1 — edges (sim space via camera)
     ctx.save();
     ctx.scale(dpr, dpr);
     ctx.translate(cam.x, cam.y);
     ctx.scale(cam.scale, cam.scale);
 
-    for (const link of linksRef.current) {
-      const s = link.source as GraphNode;
-      const t = link.target as GraphNode;
+    for (const lk of linksRef.current) {
+      const s = lk.source as GraphNode;
+      const t = lk.target as GraphNode;
       if (s.x == null || s.y == null || t.x == null || t.y == null) continue;
-
-      const dimLink =
+      const dim =
         (active !== null && s.skill.category !== active && t.skill.category !== active) ||
-        (highlightSet !== null && !highlightSet.has(s.id) && !highlightSet.has(t.id));
-
+        (hlSet !== null && !hlSet.has(s.id) && !hlSet.has(t.id));
       ctx.beginPath();
       ctx.moveTo(s.x, s.y);
       ctx.lineTo(t.x, t.y);
-      ctx.strokeStyle = dimLink ? 'rgba(46,58,74,0.25)' : 'rgba(46,58,74,0.75)';
+      ctx.strokeStyle = dim ? 'rgba(46,58,74,0.2)' : 'rgba(46,58,74,0.7)';
       ctx.lineWidth   = 1;
       ctx.stroke();
     }
 
-    // ── Pass 2: node circles (still in sim space) ─────────────────────────
-    for (const node of nodesRef.current) {
-      if (node.x == null || node.y == null) continue;
-
-      const meta    = CATEGORY_META[node.skill.category];
-      const isSelf  = hovered?.id === node.id;
-      const isNeigh = highlightSet?.has(node.id) ?? false;
-      const dimNode =
-        (active !== null && node.skill.category !== active) ||
-        (highlightSet !== null && !isNeigh);
+    // Pass 2 — circles (sim space)
+    for (const n of nodesRef.current) {
+      if (n.x == null || n.y == null) continue;
+      const meta   = CATEGORY_META[n.skill.category];
+      const isSelf = hovered?.id === n.id;
+      const isNear = hlSet?.has(n.id) ?? false;
+      const dim    =
+        (active !== null && n.skill.category !== active) ||
+        (hlSet !== null && !isNear);
 
       if (isSelf) {
         ctx.save();
         ctx.shadowColor = meta.color;
-        ctx.shadowBlur  = 20 / cam.scale; // keep glow consistent in screen px
+        ctx.shadowBlur  = 18 / cam.scale;
       }
-
       ctx.beginPath();
-      ctx.arc(node.x, node.y, node.r, 0, Math.PI * 2);
-
-      if (dimNode) {
-        ctx.fillStyle   = hexToRgba(meta.color, 0.08);
-        ctx.strokeStyle = hexToRgba(meta.color, 0.15);
-      } else if (isSelf) {
-        ctx.fillStyle   = hexToRgba(meta.color, 0.30);
-        ctx.strokeStyle = meta.color;
-      } else {
-        ctx.fillStyle   = hexToRgba(meta.color, 0.15);
-        ctx.strokeStyle = hexToRgba(meta.color, 0.65);
-      }
-
-      ctx.lineWidth = isSelf ? 2 / cam.scale : 1 / cam.scale;
+      ctx.arc(n.x, n.y, n.r, 0, Math.PI * 2);
+      ctx.fillStyle   = dim ? hexToRgba(meta.color, 0.07) : isSelf ? hexToRgba(meta.color, 0.30) : hexToRgba(meta.color, 0.15);
+      ctx.strokeStyle = dim ? hexToRgba(meta.color, 0.12) : isSelf ? meta.color               : hexToRgba(meta.color, 0.65);
+      ctx.lineWidth   = (isSelf ? 2 : 1) / cam.scale;
       ctx.fill();
       ctx.stroke();
-
       if (isSelf) ctx.restore();
     }
 
-    ctx.restore(); // end camera transform
+    ctx.restore();
 
-    // ── Pass 3: labels in SCREEN space (constant font size) ───────────────
-    // Drawing labels after restore so they're always LABEL_PX px regardless of zoom.
-    // Below a certain zoom threshold, hide labels to reduce clutter.
-    if (cam.scale >= 0.35) {
+    // Pass 3 — labels (screen space, fixed size)
+    if (cam.scale >= 0.30) {
       ctx.save();
       ctx.scale(dpr, dpr);
       ctx.textAlign    = 'center';
       ctx.textBaseline = 'top';
       ctx.font         = `${LABEL_PX}px 'JetBrains Mono', monospace`;
 
-      for (const node of nodesRef.current) {
-        if (node.x == null || node.y == null) continue;
+      for (const n of nodesRef.current) {
+        if (n.x == null || n.y == null) continue;
+        const [sx, sy] = toScreen(n.x, n.y);
+        const meta     = CATEGORY_META[n.skill.category];
+        const isSelf   = hovered?.id === n.id;
+        const isNear   = hlSet?.has(n.id) ?? false;
+        const dim      =
+          (active !== null && n.skill.category !== active) ||
+          (hlSet !== null && !isNear);
 
-        const [sx, sy]  = toScreen(node.x, node.y);
-        const meta      = CATEGORY_META[node.skill.category];
-        const isSelf    = hovered?.id === node.id;
-        const isNeigh   = highlightSet?.has(node.id) ?? false;
-        const dimNode   =
-          (active !== null && node.skill.category !== active) ||
-          (highlightSet !== null && !isNeigh);
-
-        const nodeScreenR = node.r * cam.scale;
-        const labelY      = sy + nodeScreenR + 4;
-
-        ctx.fillStyle = dimNode
-          ? 'rgba(139,148,158,0.25)'
-          : isSelf
-            ? meta.color
-            : 'rgba(201,209,217,0.82)';
-
-        ctx.fillText(node.skill.name, sx, labelY);
+        ctx.fillStyle = dim ? 'rgba(139,148,158,0.25)' : isSelf ? meta.color : 'rgba(201,209,217,0.82)';
+        ctx.fillText(n.skill.name, sx, sy + n.r * cam.scale + 3);
       }
-
       ctx.restore();
     }
   }
 
-  // ─── Tooltip helper ────────────────────────────────────────────────────────
+  // ─── Tooltip ──────────────────────────────────────────────────────────────
 
-  function showTooltip(node: GraphNode) {
+  function showTooltip(n: GraphNode) {
     const canvas = canvasRef.current;
     if (!canvas) return;
-    const [sx, sy] = toScreen(node.x ?? 0, node.y ?? 0);
-    const nodeScreenR = node.r * cameraRef.current.scale;
-    const canvasH = canvas.clientHeight;
-    const below = sy - nodeScreenR - 8 < 80; // flip tooltip below if near top
+    const [sx, sy] = toScreen(n.x ?? 0, n.y ?? 0);
+    const nr = n.r * cameraRef.current.scale;
+    const below = sy - nr - 8 < 80;
     setTooltip({
-      name:     node.skill.name,
-      weight:   node.skill.weight,
-      category: node.skill.category,
-      projects: node.skill.relatedProjects ?? [],
-      cssX:     sx,
-      cssY:     sy + (below ? nodeScreenR + 6 : -nodeScreenR - 8),
-      below,
+      name: n.skill.name, weight: n.skill.weight, category: n.skill.category,
+      projects: n.skill.relatedProjects ?? [],
+      cssX: sx, cssY: sy + (below ? nr + 6 : -nr - 8), below,
     });
   }
 
-  // ─── Simulation builder ────────────────────────────────────────────────────
+  // ─── Simulation ───────────────────────────────────────────────────────────
 
-  function buildGraph(cx: number, cy: number) {
-    const nodes: GraphNode[] = skills.map(s => ({
-      id:    s.name,
-      skill: s,
-      r:     weightToRadius(s.weight),
-      x:     cx + (Math.random() - 0.5) * 40,
-      y:     cy + (Math.random() - 0.5) * 40,
-    }));
+  function startSimulation(cw: number, ch: number) {
+    simRef.current?.stop();
+    const cx = cw / 2, cy = ch / 2;
+
+    // Start nodes near their cluster center to reduce initial overlap chaos
+    const nodes: GraphNode[] = skills.map(s => {
+      const [ox, oy] = CLUSTER_OFFSET[s.category];
+      return {
+        id:    s.name,
+        skill: s,
+        r:     weightToRadius(s.weight),
+        x:     cx + ox * cw * 0.5 + (Math.random() - 0.5) * 60,
+        y:     cy + oy * ch * 0.5 + (Math.random() - 0.5) * 60,
+      };
+    });
 
     const nodeMap = new Map(nodes.map(n => [n.id, n]));
     const links: GraphLink[] = [];
-
     for (const n of nodes) {
       for (const conn of n.skill.connections ?? []) {
-        const target = nodeMap.get(conn);
-        if (target && target.id > n.id) {
-          links.push({ source: n, target });
-        }
+        const t = nodeMap.get(conn);
+        if (t && t.id > n.id) links.push({ source: n, target: t });
       }
     }
 
     nodesRef.current = nodes;
     linksRef.current = links;
-    return { nodes, links };
-  }
-
-  function startSimulation(canvasW: number, canvasH: number) {
-    simRef.current?.stop();
-
-    const cx = canvasW / 2;
-    const cy = canvasH / 2;
-    const { nodes, links } = buildGraph(cx, cy);
 
     const sim = forceSimulation<GraphNode>(nodes)
       .force('link', forceLink<GraphNode, GraphLink>(links)
         .id(d => d.id)
-        .distance(d => (d.source as GraphNode).r + (d.target as GraphNode).r + 28)
-        .strength(0.35))
-      .force('charge',  forceManyBody<GraphNode>().strength(d => -(d.r * 14)))
-      .force('center',  forceCenter(cx, cy).strength(0.04))
-      .force('collide', forceCollide<GraphNode>(d => d.r + 4).strength(0.9))
-      // Intra-cluster gravity: each node pulled toward its category quadrant
+        // Longer link distance to spread connected nodes apart
+        .distance(d => (d.source as GraphNode).r + (d.target as GraphNode).r + 60)
+        .strength(0.25))
+      // Strong repulsion — must overcome the label clearance
+      .force('charge', forceManyBody<GraphNode>().strength(d => -(d.r * 35 + 200)))
+      .force('center', forceCenter(cx, cy).strength(0.03))
+      // LABEL_CLEARANCE added so no two nodes can get close enough for labels to overlap
+      .force('collide', forceCollide<GraphNode>(d => d.r + LABEL_CLEARANCE).strength(1.0))
       .force('clusterX', forceX<GraphNode>(d => {
         const [ox] = CLUSTER_OFFSET[d.skill.category];
-        return cx + ox * canvasW;
-      }).strength(0.08))
+        return cx + ox * cw;
+      }).strength(0.10))
       .force('clusterY', forceY<GraphNode>(d => {
         const [, oy] = CLUSTER_OFFSET[d.skill.category];
-        return cy + oy * canvasH;
-      }).strength(0.08))
-      .alphaDecay(0.02)
+        return cy + oy * ch;
+      }).strength(0.10))
+      .alphaDecay(0.015)
       .stop();
 
     simRef.current = sim;
 
-    // Settle synchronously so all nodes are positioned on first paint
-    sim.tick(400);
-    fitAll(canvasW, canvasH);
+    // Settle synchronously — 800 ticks ensures nodes stop overlapping
+    sim.tick(800);
+    fitAll(cw, ch);
     draw();
 
     if (!prefersReduced) {
-      // Brief re-heat for a subtle settling animation
-      sim.alpha(0.06).on('tick', draw).restart();
+      sim.alpha(0.04).on('tick', draw).restart();
     }
   }
 
-  // ─── Effects ───────────────────────────────────────────────────────────────
+  // ─── Effects ─────────────────────────────────────────────────────────────
 
   useEffect(() => {
     const container = containerRef.current;
     const canvas    = canvasRef.current;
     if (!container || !canvas) return;
 
-    // Resize: re-size canvas physical buffer and restart sim
     const ro = new ResizeObserver(entries => {
-      const w = entries[0].contentRect.width;
+      const w   = entries[0].contentRect.width;
       const dpr = window.devicePixelRatio || 1;
-      canvas.width  = w * dpr;
-      canvas.height = height * dpr;
+      canvas.width        = w * dpr;
+      canvas.height       = height * dpr;
       canvas.style.width  = `${w}px`;
       canvas.style.height = `${height}px`;
       startSimulation(w, height);
     });
     ro.observe(container);
 
-    // ── Mouse events ─────────────────────────────────────────────────────────
-
+    // Mouse
     function onMouseMove(e: MouseEvent) {
       const [cx, cy] = cssCoord(e, canvas!);
-
       if (draggedRef.current) {
-        const [sx, sy] = toSim(cx, cy);
-        draggedRef.current.x  = sx;
-        draggedRef.current.y  = sy;
-        draggedRef.current.fx = sx;
-        draggedRef.current.fy = sy;
+        const [sx, sy]       = toSim(cx, cy);
+        draggedRef.current.x = sx; draggedRef.current.y = sy;
+        draggedRef.current.fx = sx; draggedRef.current.fy = sy;
         simRef.current?.alpha(0.2).restart();
         showTooltip(draggedRef.current);
         draw();
         return;
       }
-
-      if (isPanningRef.current) {
+      if (isPanRef.current) {
         const { camX, camY, mx, my } = panStartRef.current;
         cameraRef.current.x = camX + (cx - mx);
         cameraRef.current.y = camY + (cy - my);
-        draw();
-        // Update tooltip position if hovering
         if (hoveredRef.current) showTooltip(hoveredRef.current);
+        draw();
         return;
       }
-
       const hit = nodeAt(cx, cy);
       if (hit?.id !== hoveredRef.current?.id) {
-        hoveredRef.current = hit;
+        hoveredRef.current        = hit;
         canvas!.style.cursor = hit ? 'grab' : 'default';
         hit ? showTooltip(hit) : setTooltip(null);
         draw();
       }
     }
-
     function onMouseDown(e: MouseEvent) {
       const [cx, cy] = cssCoord(e, canvas!);
       const hit = nodeAt(cx, cy);
       if (hit) {
-        draggedRef.current = hit;
-        hit.fx = hit.x;
-        hit.fy = hit.y;
+        draggedRef.current = hit; hit.fx = hit.x; hit.fy = hit.y;
         simRef.current?.alphaTarget(0.3).restart();
         canvas!.style.cursor = 'grabbing';
       } else {
-        isPanningRef.current = true;
-        panStartRef.current  = {
-          camX: cameraRef.current.x, camY: cameraRef.current.y,
-          mx: cx, my: cy,
-        };
+        isPanRef.current = true;
+        panStartRef.current = { camX: cameraRef.current.x, camY: cameraRef.current.y, mx: cx, my: cy };
         canvas!.style.cursor = 'move';
       }
     }
-
     function onMouseUp() {
       if (draggedRef.current) {
-        // Node stays pinned at dragged location (fx/fy NOT cleared)
+        // Node stays pinned — fx/fy intentionally kept
         simRef.current?.alphaTarget(0);
         draggedRef.current = null;
       }
-      isPanningRef.current    = false;
-      canvas!.style.cursor    = hoveredRef.current ? 'grab' : 'default';
+      isPanRef.current = false;
+      canvas!.style.cursor = hoveredRef.current ? 'grab' : 'default';
     }
-
     function onDblClick(e: MouseEvent) {
       const [cx, cy] = cssCoord(e, canvas!);
       const hit = nodeAt(cx, cy);
-      if (hit) {
-        // Double-click unpins a manually placed node
-        hit.fx = null;
-        hit.fy = null;
-        simRef.current?.alpha(0.3).restart();
-      }
+      if (hit) { hit.fx = null; hit.fy = null; simRef.current?.alpha(0.3).restart(); }
     }
-
     function onMouseLeave() {
-      if (draggedRef.current) {
-        simRef.current?.alphaTarget(0);
-        draggedRef.current  = null;
-      }
-      isPanningRef.current  = false;
-      hoveredRef.current    = null;
-      setTooltip(null);
-      canvas!.style.cursor  = 'default';
-      draw();
+      if (draggedRef.current) { simRef.current?.alphaTarget(0); draggedRef.current = null; }
+      isPanRef.current = false;
+      hoveredRef.current = null; setTooltip(null);
+      canvas!.style.cursor = 'default'; draw();
     }
-
     function onWheel(e: WheelEvent) {
       e.preventDefault();
       const [cx, cy] = cssCoord(e, canvas!);
-      const factor = Math.pow(0.999, e.deltaY);
-      zoomAt(cx, cy, factor);
-      // Reposition tooltip if node is hovered
+      zoomAt(cx, cy, Math.pow(0.999, e.deltaY));
       if (hoveredRef.current) showTooltip(hoveredRef.current);
       draw();
     }
 
-    // ── Touch events ─────────────────────────────────────────────────────────
-
+    // Touch
     function onTouchStart(e: TouchEvent) {
       e.preventDefault();
-      const touches = e.touches;
-
-      if (touches.length === 2) {
-        // Begin pinch-zoom; cancel any single-touch interactions
-        draggedRef.current    = null;
-        isPanningRef.current  = false;
-        const dist            = touchDist(touches[0], touches[1]);
-        const [mx, my]        = touchMid(touches[0], touches[1], canvas!);
-        pinchRef.current      = { dist, mx, my };
+      const ts = e.touches;
+      if (ts.length === 2) {
+        draggedRef.current = null; isPanRef.current = false;
+        const [mx, my] = touchMid(ts[0], ts[1], canvas!);
+        pinchRef.current = { dist: touchDist(ts[0], ts[1]), mx, my };
         return;
       }
-
-      if (touches.length === 1) {
-        pinchRef.current  = null;
-        const [cx, cy]    = cssCoord(touches[0], canvas!);
-        const hit         = nodeAt(cx, cy);
-        if (hit) {
-          draggedRef.current = hit;
-          hoveredRef.current = hit;
-          hit.fx = hit.x;
-          hit.fy = hit.y;
-          simRef.current?.alphaTarget(0.3).restart();
-          showTooltip(hit);
-        } else {
-          isPanningRef.current = true;
-          panStartRef.current  = {
-            camX: cameraRef.current.x, camY: cameraRef.current.y,
-            mx: cx, my: cy,
-          };
-          hoveredRef.current = null;
-          setTooltip(null);
-        }
-        draw();
+      pinchRef.current = null;
+      const [cx, cy] = cssCoord(ts[0], canvas!);
+      const hit = nodeAt(cx, cy);
+      if (hit) {
+        draggedRef.current = hit; hoveredRef.current = hit;
+        hit.fx = hit.x; hit.fy = hit.y;
+        simRef.current?.alphaTarget(0.3).restart();
+        showTooltip(hit);
+      } else {
+        isPanRef.current = true;
+        panStartRef.current = { camX: cameraRef.current.x, camY: cameraRef.current.y, mx: cx, my: cy };
+        hoveredRef.current = null; setTooltip(null);
       }
+      draw();
     }
-
     function onTouchMove(e: TouchEvent) {
       e.preventDefault();
-      const touches = e.touches;
-
-      if (touches.length === 2 && pinchRef.current) {
-        const newDist         = touchDist(touches[0], touches[1]);
-        const [mx, my]        = touchMid(touches[0], touches[1], canvas!);
-        const factor          = newDist / pinchRef.current.dist;
-        zoomAt(mx, my, factor);
-        pinchRef.current      = { dist: newDist, mx, my };
+      const ts = e.touches;
+      if (ts.length === 2 && pinchRef.current) {
+        const nd = touchDist(ts[0], ts[1]);
+        const [mx, my] = touchMid(ts[0], ts[1], canvas!);
+        zoomAt(mx, my, nd / pinchRef.current.dist);
+        pinchRef.current = { dist: nd, mx, my };
         if (hoveredRef.current) showTooltip(hoveredRef.current);
-        draw();
-        return;
+        draw(); return;
       }
-
-      if (touches.length === 1) {
-        const [cx, cy] = cssCoord(touches[0], canvas!);
-
+      if (ts.length === 1) {
+        const [cx, cy] = cssCoord(ts[0], canvas!);
         if (draggedRef.current) {
-          const [sx, sy]         = toSim(cx, cy);
-          draggedRef.current.x   = sx;
-          draggedRef.current.y   = sy;
-          draggedRef.current.fx  = sx;
-          draggedRef.current.fy  = sy;
+          const [sx, sy] = toSim(cx, cy);
+          draggedRef.current.x = sx; draggedRef.current.y = sy;
+          draggedRef.current.fx = sx; draggedRef.current.fy = sy;
           simRef.current?.alpha(0.2).restart();
-          showTooltip(draggedRef.current);
-          draw();
-        } else if (isPanningRef.current) {
+          showTooltip(draggedRef.current); draw();
+        } else if (isPanRef.current) {
           const { camX, camY, mx, my } = panStartRef.current;
           cameraRef.current.x = camX + (cx - mx);
           cameraRef.current.y = camY + (cy - my);
@@ -615,19 +477,10 @@ export default function SkillGraph({ height = 700 }: Props) {
         }
       }
     }
-
     function onTouchEnd(e: TouchEvent) {
       if (e.touches.length < 2) pinchRef.current = null;
-
-      if (draggedRef.current) {
-        // Node stays pinned (fx/fy NOT cleared)
-        simRef.current?.alphaTarget(0);
-        draggedRef.current = null;
-      }
-
-      if (e.touches.length === 0) {
-        isPanningRef.current = false;
-      }
+      if (draggedRef.current) { simRef.current?.alphaTarget(0); draggedRef.current = null; }
+      if (e.touches.length === 0) isPanRef.current = false;
     }
 
     canvas.addEventListener('mousemove',  onMouseMove);
@@ -635,7 +488,7 @@ export default function SkillGraph({ height = 700 }: Props) {
     canvas.addEventListener('mouseup',    onMouseUp);
     canvas.addEventListener('dblclick',   onDblClick);
     canvas.addEventListener('mouseleave', onMouseLeave);
-    canvas.addEventListener('wheel',      onWheel, { passive: false });
+    canvas.addEventListener('wheel',      onWheel,      { passive: false });
     canvas.addEventListener('touchstart', onTouchStart, { passive: false });
     canvas.addEventListener('touchmove',  onTouchMove,  { passive: false });
     canvas.addEventListener('touchend',   onTouchEnd,   { passive: false });
@@ -653,239 +506,181 @@ export default function SkillGraph({ height = 700 }: Props) {
       canvas.removeEventListener('touchmove',  onTouchMove);
       canvas.removeEventListener('touchend',   onTouchEnd);
     };
-  }, []); // run once; ResizeObserver handles re-layout
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Redraw when active category changes (legend filter)
   useEffect(() => {
     activeCatRef.current = activeCategory;
     draw();
-  }, [activeCategory]);
+  }, [activeCategory]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // ─── Zoom button handlers ──────────────────────────────────────────────────
+  // ─── Zoom button handlers ─────────────────────────────────────────────────
 
   function handleZoomIn() {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    zoomAt(canvas.clientWidth / 2, canvas.clientHeight / 2, 1.3);
-    draw();
+    const c = canvasRef.current;
+    if (c) { zoomAt(c.clientWidth / 2, c.clientHeight / 2, 1.3); draw(); }
   }
-
   function handleZoomOut() {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    zoomAt(canvas.clientWidth / 2, canvas.clientHeight / 2, 1 / 1.3);
-    draw();
+    const c = canvasRef.current;
+    if (c) { zoomAt(c.clientWidth / 2, c.clientHeight / 2, 1 / 1.3); draw(); }
   }
-
   function handleFit() {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    fitAll(canvas.clientWidth, canvas.clientHeight);
-    draw();
+    const c = canvasRef.current;
+    if (c) { fitAll(c.clientWidth, c.clientHeight); draw(); }
   }
 
-  // ─── Render ────────────────────────────────────────────────────────────────
+  // ─── Style helpers ────────────────────────────────────────────────────────
 
-  const meta   = tooltip ? CATEGORY_META[tooltip.category] : null;
   const btnBase: React.CSSProperties = {
-    display:     'inline-flex',
-    alignItems:  'center',
-    justifyContent: 'center',
-    width:       32,
-    height:      32,
-    padding:     0,
-    fontFamily:  'var(--font-display)',
-    fontSize:    '1rem',
-    background:  'var(--bg-elevated)',
-    border:      '1px solid var(--border)',
-    borderRadius: 'var(--radius)',
-    color:       'var(--text-secondary)',
-    cursor:      'pointer',
-    transition:  'all 0.15s ease',
-    lineHeight:  1,
+    display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+    width: 32, height: 32, padding: 0,
+    fontFamily: 'var(--font-display)', fontSize: '1rem',
+    background: 'var(--bg-elevated)', border: '1px solid var(--border)',
+    borderRadius: 'var(--radius)', color: 'var(--text-secondary)',
+    cursor: 'pointer', transition: 'all 0.15s ease', lineHeight: 1,
   };
 
-  return (
-    <div ref={containerRef} style={{ position: 'relative', width: '100%' }}>
-      {/* Canvas */}
-      <canvas
-        ref={canvasRef}
-        role="img"
-        aria-label="Interactive skill graph. Hover nodes to highlight connections; drag to pin; double-click to unpin; scroll or use buttons to zoom."
-        style={{ display: 'block', width: '100%', cursor: 'default' }}
-      />
+  const tooltipMeta = tooltip ? CATEGORY_META[tooltip.category] : null;
 
-      {/* Zoom controls — top-right corner */}
-      <div
-        aria-label="Zoom controls"
-        style={{
-          position:       'absolute',
-          top:            12,
-          right:          12,
-          display:        'flex',
-          flexDirection:  'column',
-          gap:            4,
-          zIndex:         5,
-        }}
-      >
-        <button
-          onClick={handleZoomIn}
-          aria-label="Zoom in"
-          disabled={zoomLevel >= MAX_ZOOM}
-          style={btnBase}
-          title="Zoom in"
-        >+</button>
-        <button
-          onClick={handleFit}
-          aria-label="Fit all nodes"
-          style={btnBase}
-          title="Fit all"
-        >⊙</button>
-        <button
-          onClick={handleZoomOut}
-          aria-label="Zoom out"
-          disabled={zoomLevel <= MIN_ZOOM}
-          style={btnBase}
-          title="Zoom out"
-        >−</button>
-      </div>
+  const cats = Object.keys(CATEGORY_META) as SkillCategory[];
 
-      {/* Tooltip */}
-      {tooltip && meta && (
-        <div
-          role="tooltip"
-          style={{
-            position:       'absolute',
-            left:           tooltip.cssX,
-            top:            tooltip.cssY,
-            transform:      tooltip.below
-              ? 'translate(-50%, 0)'
-              : 'translate(-50%, -100%)',
-            background:     'var(--bg-elevated)',
-            border:         `1px solid ${meta.color}`,
-            borderRadius:   'var(--radius)',
-            padding:        '8px 12px',
-            pointerEvents:  'none',
-            fontFamily:     'var(--font-display)',
-            fontSize:       '0.75rem',
-            color:          meta.color,
-            whiteSpace:     'nowrap',
-            zIndex:         10,
-            boxShadow:      `0 0 12px ${hexToRgba(meta.color, 0.25)}`,
-            maxWidth:       220,
-          }}
-        >
-          <div style={{ marginBottom: tooltip.projects.length ? 4 : 0 }}>
-            <strong>{tooltip.name}</strong>
-            <span style={{ color: 'var(--text-secondary)', marginLeft: 8 }}>
-              lvl {tooltip.weight}/10
-            </span>
-          </div>
-          {tooltip.projects.length > 0 && (
-            <ul style={{
-              margin:     0,
-              padding:    0,
-              listStyle:  'none',
-              borderTop:  '1px solid var(--border)',
-              paddingTop: 4,
-              marginTop:  2,
-            }}>
-              {tooltip.projects.map(p => (
-                <li
-                  key={p}
-                  style={{
-                    color:      'var(--text-secondary)',
-                    fontSize:   '0.7rem',
-                    lineHeight: 1.5,
-                    whiteSpace: 'normal',
-                  }}
-                >
-                  › {p}
-                </li>
-              ))}
+  // ─── List view ────────────────────────────────────────────────────────────
+
+  function ListView() {
+    return (
+      <div className="skills-grid" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))' }}>
+        {cats.map(cat => (
+          <div key={cat} className="skill-category">
+            <h3 style={{ color: CATEGORY_META[cat].color }}>{CATEGORY_META[cat].label}</h3>
+            <ul className="skill-list">
+              {skills
+                .filter(s => s.category === cat)
+                .sort((a, b) => b.weight - a.weight)
+                .map(s => (
+                  <li key={s.name} title={s.relatedProjects?.join(', ')}>{s.name}</li>
+                ))}
             </ul>
-          )}
-        </div>
-      )}
+          </div>
+        ))}
+      </div>
+    );
+  }
 
-      {/* Legend / category filter */}
-      <div
-        role="group"
-        aria-label="Filter by category"
-        style={{
-          display:         'flex',
-          flexWrap:        'wrap',
-          gap:             '0.5rem',
-          marginTop:       '0.875rem',
-          justifyContent:  'center',
-        }}
-      >
-        {(Object.keys(CATEGORY_META) as SkillCategory[]).map(cat => {
-          const { label, color } = CATEGORY_META[cat];
-          const on = activeCategory === cat;
-          return (
-            <button
-              key={cat}
-              onClick={() => setActiveCategory(prev => prev === cat ? null : cat)}
-              aria-pressed={on}
-              style={{
-                display:        'flex',
-                alignItems:     'center',
-                gap:            '0.4rem',
-                padding:        '5px 14px',
-                fontSize:       '0.75rem',
-                fontFamily:     'var(--font-display)',
-                background:     on ? hexToRgba(color, 0.15) : 'var(--bg-elevated)',
-                border:         `1px solid ${on ? color : 'var(--border)'}`,
-                borderRadius:   'var(--radius)',
-                color:          on ? color : 'var(--text-secondary)',
-                cursor:         'pointer',
-                transition:     'all 0.15s ease',
-                minHeight:      44, // 44px touch target on mobile
-              }}
-            >
-              <span style={{
-                width:      8,
-                height:     8,
-                borderRadius: '50%',
-                background: color,
-                flexShrink: 0,
-                boxShadow:  on ? `0 0 6px ${color}` : 'none',
-              }} />
-              {label}
-            </button>
-          );
-        })}
-        {activeCategory && (
+  // ─── Render ──────────────────────────────────────────────────────────────
+
+  return (
+    <div style={{ width: '100%' }}>
+      {/* ── View toggle ── */}
+      <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '0.75rem', gap: '0.5rem' }}>
+        {(['graph', 'list'] as ViewMode[]).map(m => (
           <button
-            onClick={() => setActiveCategory(null)}
+            key={m}
+            onClick={() => setViewMode(m)}
+            aria-pressed={viewMode === m}
             style={{
-              padding:      '5px 14px',
-              fontSize:     '0.75rem',
-              fontFamily:   'var(--font-display)',
-              background:   'transparent',
-              border:       '1px solid var(--border)',
+              padding: '5px 14px',
+              fontSize: '0.72rem',
+              fontFamily: 'var(--font-display)',
+              textTransform: 'uppercase',
+              letterSpacing: '0.06em',
+              background: viewMode === m ? 'var(--accent-bg)' : 'var(--bg-elevated)',
+              border: `1px solid ${viewMode === m ? 'var(--accent)' : 'var(--border)'}`,
               borderRadius: 'var(--radius)',
-              color:        'var(--text-muted)',
-              cursor:       'pointer',
-              minHeight:    44,
+              color: viewMode === m ? 'var(--accent)' : 'var(--text-secondary)',
+              cursor: 'pointer',
+              transition: 'all 0.15s ease',
             }}
           >
-            clear
+            {m === 'graph' ? '⬡ Graph' : '≡ List'}
           </button>
-        )}
+        ))}
       </div>
 
-      {/* Hint */}
-      <p style={{
-        textAlign:  'center',
-        fontSize:   '0.68rem',
-        color:      'var(--text-muted)',
-        fontFamily: 'var(--font-display)',
-        marginTop:  '0.5rem',
-      }}>
-        scroll / pinch to zoom · drag to pin · double-click to release
-      </p>
+      {/* ── List view ── */}
+      {viewMode === 'list' && <ListView />}
+
+      {/* ── Graph view ── */}
+      {viewMode === 'graph' && (
+        <div ref={containerRef} style={{ position: 'relative', width: '100%' }}>
+          <canvas
+            ref={canvasRef}
+            role="img"
+            aria-label="Interactive skill graph. Hover to highlight, drag to pin, double-click to unpin, scroll or pinch to zoom."
+            style={{ display: 'block', width: '100%', cursor: 'default' }}
+          />
+
+          {/* Zoom buttons */}
+          <div aria-label="Zoom controls" style={{
+            position: 'absolute', top: 12, right: 12,
+            display: 'flex', flexDirection: 'column', gap: 4, zIndex: 5,
+          }}>
+            <button onClick={handleZoomIn}  disabled={zoomLevel >= MAX_ZOOM} aria-label="Zoom in"       style={btnBase} title="Zoom in">+</button>
+            <button onClick={handleFit}                                       aria-label="Fit all nodes" style={btnBase} title="Fit all">⊙</button>
+            <button onClick={handleZoomOut} disabled={zoomLevel <= MIN_ZOOM} aria-label="Zoom out"      style={btnBase} title="Zoom out">−</button>
+          </div>
+
+          {/* Tooltip */}
+          {tooltip && tooltipMeta && (
+            <div role="tooltip" style={{
+              position: 'absolute', left: tooltip.cssX, top: tooltip.cssY,
+              transform: tooltip.below ? 'translate(-50%,0)' : 'translate(-50%,-100%)',
+              background: 'var(--bg-elevated)', border: `1px solid ${tooltipMeta.color}`,
+              borderRadius: 'var(--radius)', padding: '8px 12px',
+              pointerEvents: 'none', fontFamily: 'var(--font-display)',
+              fontSize: '0.75rem', color: tooltipMeta.color, whiteSpace: 'nowrap',
+              zIndex: 10, boxShadow: `0 0 12px ${hexToRgba(tooltipMeta.color, 0.25)}`,
+              maxWidth: 230,
+            }}>
+              <div style={{ marginBottom: tooltip.projects.length ? 4 : 0 }}>
+                <strong>{tooltip.name}</strong>
+                <span style={{ color: 'var(--text-secondary)', marginLeft: 8 }}>lvl {tooltip.weight}/10</span>
+              </div>
+              {tooltip.projects.length > 0 && (
+                <ul style={{ margin: 0, padding: 0, listStyle: 'none', borderTop: '1px solid var(--border)', paddingTop: 4, marginTop: 2 }}>
+                  {tooltip.projects.map(p => (
+                    <li key={p} style={{ color: 'var(--text-secondary)', fontSize: '0.7rem', lineHeight: 1.5, whiteSpace: 'normal' }}>› {p}</li>
+                  ))}
+                </ul>
+              )}
+            </div>
+          )}
+
+          {/* Legend / filter */}
+          <div role="group" aria-label="Filter by category" style={{
+            display: 'flex', flexWrap: 'wrap', gap: '0.5rem',
+            marginTop: '0.875rem', justifyContent: 'center',
+          }}>
+            {cats.map(cat => {
+              const { label, color } = CATEGORY_META[cat];
+              const on = activeCategory === cat;
+              return (
+                <button key={cat} onClick={() => { const next = on ? null : cat; setActiveCategory(next); }} aria-pressed={on} style={{
+                  display: 'flex', alignItems: 'center', gap: '0.4rem',
+                  padding: '5px 14px', fontSize: '0.75rem', fontFamily: 'var(--font-display)',
+                  background: on ? hexToRgba(color, 0.15) : 'var(--bg-elevated)',
+                  border: `1px solid ${on ? color : 'var(--border)'}`,
+                  borderRadius: 'var(--radius)', color: on ? color : 'var(--text-secondary)',
+                  cursor: 'pointer', transition: 'all 0.15s ease', minHeight: 44,
+                }}>
+                  <span style={{ width: 8, height: 8, borderRadius: '50%', background: color, flexShrink: 0, boxShadow: on ? `0 0 6px ${color}` : 'none' }} />
+                  {label}
+                </button>
+              );
+            })}
+            {activeCategory && (
+              <button onClick={() => setActiveCategory(null)} style={{
+                padding: '5px 14px', fontSize: '0.75rem', fontFamily: 'var(--font-display)',
+                background: 'transparent', border: '1px solid var(--border)',
+                borderRadius: 'var(--radius)', color: 'var(--text-muted)',
+                cursor: 'pointer', minHeight: 44,
+              }}>clear</button>
+            )}
+          </div>
+
+          <p style={{ textAlign: 'center', fontSize: '0.68rem', color: 'var(--text-muted)', fontFamily: 'var(--font-display)', marginTop: '0.5rem' }}>
+            scroll / pinch to zoom · drag to pin · double-click to release
+          </p>
+        </div>
+      )}
     </div>
   );
 }

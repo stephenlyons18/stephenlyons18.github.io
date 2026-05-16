@@ -365,6 +365,9 @@ body.js-reveal-ready .reveal.revealed {
   transition: all 0.2s var(--ease);
   background: transparent;
   white-space: nowrap;
+  /* Same stacking-context fix as .nav-toggle */
+  position: relative;
+  z-index: 10000;
 }
 .nav-terminal-btn:hover,
 .nav-terminal-btn:focus-visible {
@@ -391,6 +394,10 @@ body.js-reveal-ready .reveal.revealed {
   border: none;
   cursor: pointer;
   padding: 4px;
+  /* Must sit above .nav-links (z-index 9998) within the header stacking context
+     that backdrop-filter creates. Without this the dropdown slides over these buttons. */
+  position: relative;
+  z-index: 10000;
 }
 .nav-toggle span {
   display: block;
@@ -1310,7 +1317,8 @@ body.js-reveal-ready .reveal.revealed {
     position: fixed;
     top: calc(var(--header-h) + env(safe-area-inset-top, 0px));
     left: 0; right: 0;
-    /* Sit just below the header in z-stacking */
+    /* Keep below the terminal btn / hamburger (z-index 10000) so they
+       remain clickable even while the dropdown is animating. */
     z-index: 9998;
     background: rgba(10, 10, 10, 0.97);
     backdrop-filter: blur(12px);
@@ -1320,9 +1328,12 @@ body.js-reveal-ready .reveal.revealed {
     border-bottom: 1px solid var(--border);
     transform: translateY(-110%);
     transition: transform 0.3s var(--ease);
+    /* Prevent intercepting pointer events while hidden */
+    pointer-events: none;
   }
   .nav-links.open {
     transform: translateY(0);
+    pointer-events: auto;
   }
   .nav-links a {
     /* Larger tap targets on mobile */

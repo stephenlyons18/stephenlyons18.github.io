@@ -367,7 +367,7 @@
     const categories = [
       {
         title: 'Languages',
-        items: 'TypeScript, Python, JavaScript, HTML5, CSS, Rust, PHP, Java, C++, C#',
+        items: 'TypeScript, Python, JavaScript, HTML, CSS, Rust, PHP, Java, C++, C#',
       },
       {
         title: 'Frameworks & Tools',
