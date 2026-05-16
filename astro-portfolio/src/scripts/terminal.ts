@@ -196,7 +196,11 @@ function buildTerminal(): void {
   inputEl = overlay.querySelector<HTMLInputElement>('#terminal-input')!;
 
   const redDot = overlay.querySelector<HTMLElement>('.terminal-bar__dot--red')!;
+  const yellowDot = overlay.querySelector<HTMLElement>('.terminal-bar__dot--yellow')!;
+  const greenDot = overlay.querySelector<HTMLElement>('.terminal-bar__dot--green')!;
   redDot.addEventListener('click', closeTerminal);
+  yellowDot.addEventListener('click', closeTerminal);
+  greenDot.addEventListener('click', closeTerminal);
   redDot.addEventListener('keydown', (e) => {
     if (e.key === 'Enter' || e.key === ' ') closeTerminal();
   });

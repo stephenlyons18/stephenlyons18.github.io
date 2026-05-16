@@ -1,5 +1,6 @@
 ---
 import BaseLayout from "../layouts/BaseLayout.astro";
+import SkillGraph from "../components/react/SkillGraph";
 
 interface Job {
 	date: string;
@@ -110,43 +111,6 @@ const jobs: Job[] = [
 	},
 ];
 
-const skillsLanguages = [
-	"TypeScript",
-	"Python",
-	"JavaScript",
-	"HTML5",
-	"CSS",
-	"Rust",
-	"PHP",
-	"Java",
-	"C++",
-	"C#",
-];
-const skillsFrameworks = [
-	"React.js",
-	"Next.js",
-	"React Native",
-	"Node.js",
-	"Docker",
-	"Git",
-	"Linux/UNIX",
-	"Unity",
-	"Adobe Suite",
-	"Excel",
-];
-const skillsSecurity = [
-	"CrowdStrike",
-	"Netskope",
-	"Zscaler",
-	"Azure",
-	"Intune",
-	"Infrastrcture as Code",
-	"GitHub Enterprise",
-	"SIEM Platforms",
-	"EDR",
-	"DLP",
-];
-const skillsCloud = ["AWS", "Azure", "Google Cloud", "Firebase", "Vercel"];
 ---
 
 <BaseLayout
@@ -229,34 +193,9 @@ const skillsCloud = ["AWS", "Azure", "Google Cloud", "Firebase", "Vercel"];
 					<div class='reveal' style='margin-bottom: 3rem;'>
 						<span class='section-label'>Technical Skills</span>
 						<h2 class='section-title' style='font-size:1.5rem;'>
-							Skills Matrix
+							Skill Graph
 						</h2>
-						<div class='skills-grid'>
-							<div class='skill-category'>
-								<h3>Languages</h3>
-								<ul class='skill-list'>
-									{skillsLanguages.map(s => <li>{s}</li>)}
-								</ul>
-							</div>
-							<div class='skill-category'>
-								<h3>Frameworks &amp; Tools</h3>
-								<ul class='skill-list'>
-									{skillsFrameworks.map(s => <li>{s}</li>)}
-								</ul>
-							</div>
-							<div class='skill-category'>
-								<h3>Security Tools</h3>
-								<ul class='skill-list'>
-									{skillsSecurity.map(s => <li>{s}</li>)}
-								</ul>
-							</div>
-							<div class='skill-category'>
-								<h3>Cloud Platforms</h3>
-								<ul class='skill-list'>
-									{skillsCloud.map(s => <li>{s}</li>)}
-								</ul>
-							</div>
-						</div>
+						<SkillGraph client:visible />
 					</div>
 
 					<div class='reveal' style='margin-bottom: 3rem;'>
