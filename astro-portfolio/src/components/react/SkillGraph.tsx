@@ -285,7 +285,7 @@ export default function SkillGraph({ height = 700 }: { height?: number }) {
       return {
         id:    s.name,
         skill: s,
-        r:     weightToRadius(s.weight),
+        r:     weightToRadius(s.weight * 2.5), // exaggerate radius differences for better visuals
         x:     cx + ox * cw * 0.5 + (Math.random() - 0.5) * 60,
         y:     cy + oy * ch * 0.5 + (Math.random() - 0.5) * 60,
       };
@@ -632,7 +632,7 @@ export default function SkillGraph({ height = 700 }: { height?: number }) {
             }}>
               <div style={{ marginBottom: tooltip.projects.length ? 4 : 0 }}>
                 <strong>{tooltip.name}</strong>
-                <span style={{ color: 'var(--text-secondary)', marginLeft: 8 }}>lvl {tooltip.weight}/10</span>
+                <span style={{ color: 'var(--text-secondary)', marginLeft: 8 }}> {tooltip.weight}/10</span>
               </div>
               {tooltip.projects.length > 0 && (
                 <ul style={{ margin: 0, padding: 0, listStyle: 'none', borderTop: '1px solid var(--border)', paddingTop: 4, marginTop: 2 }}>
