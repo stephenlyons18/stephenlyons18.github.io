@@ -20,29 +20,30 @@ export const skills: Skill[] = [
   // ── Languages ──────────────────────────────────────────────────
   {
     name: 'TypeScript', category: 'languages', weight: 10,
-    connections: ['React.js', 'Node.js', 'Jest', 'Next.js'],
+    connections: ['React.js', 'Node.js', 'Jest', 'Next.js', 'Astro.js', 'HTML', 'CSS', 'Git', 'JavaScript', 'React Native', 'App Security', 'GitHub Actions', 'GitHub Enterprise', 'DevSecOps', 'AWS'],
     relatedProjects: ['Thumbo.app', 'Portfolio Website', 'Down — Social Media App'],
   },
   {
     name: 'Python', category: 'languages', weight: 10,
-    connections: ['Docker', 'AWS', 'Azure'],
+    connections: ['Docker', 'AWS', 'Azure', 'DevSecOps', 'GitHub Actions', 'GitHub Enterprise', 'DataDog', 'Cloud Security', 'Wiz', 'Linux/UNIX', 'Git', 'App Security', 'GitHub CLI'],
   },
   {
     name: 'JavaScript', category: 'languages', weight: 8,
-    connections: ['React.js', 'Node.js', 'React Native'],
-    relatedProjects: ['CSULB ACM Website', 'Thumbo.app'],
+    connections: ['React.js', 'Node.js', 'React Native', 'Next.js', 'Astro.js', 'HTML', 'CSS', 'Git', 'TypeScript', 'App Security'],
+    relatedProjects: ['CSULB ACM Website', 'Thumbo.app', 'Portfolio Website', 'Down — Social Media App', 'FooDood'],
   },
   {
-    name: 'HTML', category: 'languages', weight: 6,
-    connections: ['CSS'],
-    relatedProjects: ['CSULB ACM Website'],
+    name: 'HTML', category: 'languages', weight: 9,
+    connections: ['CSS', 'Git', 'TypeScript', 'JavaScript', 'React.js', 'Next.js', 'Astro.js', 'PHP'],
+    relatedProjects: ['CSULB ACM Website', 'Portfolio Website', 'Thumbo.app', 'FooDood', 'Down — Social Media App', 'CSULB ACM Website'],
   },
   {
     name: 'CSS', category: 'languages', weight: 6,
-    connections: ['HTML', 'React.js'],
-    relatedProjects: ['CSULB ACM Website'],
+    connections: ['HTML', 'React.js', 'Next.js', 'Astro.js', 'Git', 'TypeScript', 'JavaScript'],
+    relatedProjects: ['CSULB ACM Website', 'Thumbo.app', 'FooDood', 'Down — Social Media App', 'Portfolio Website' ],
   },
   { name: 'Rust', category: 'languages', weight: 7 },
+  { name: 'Go',   category: 'languages', weight: 7, connections: ['Git'] },
   { name: 'PHP',  category: 'languages', weight: 4, connections: ['HTML'] },
   { name: 'Java', category: 'languages', weight: 4 },
   { name: 'C++',  category: 'languages', weight: 4, relatedProjects: ['Rosie the Wardriver'] },
@@ -57,7 +58,7 @@ export const skills: Skill[] = [
   },
   {
     name: 'Next.js', category: 'frameworks', weight: 7,
-    connections: ['React.js', 'TypeScript', 'Vercel'],
+    connections: ['React.js', 'TypeScript', 'Vercel', 'App Security', 'GitHub Actions', 'Git', 'JavaScript', 'HTML', 'CSS'],
     relatedProjects: ['Thumbo.app', 'FooDood'],
   },
   {
@@ -67,7 +68,7 @@ export const skills: Skill[] = [
   },
   {
     name: 'Jest', category: 'frameworks', weight: 5,
-    connections: ['TypeScript', 'React Native'],
+    connections: ['TypeScript', 'React Native', 'App Security'],
     relatedProjects: ['Down — Social Media App'],
   },
   {
@@ -77,7 +78,7 @@ export const skills: Skill[] = [
   },
   {
     name: 'React Native', category: 'frameworks', weight: 6,
-    connections: ['JavaScript', 'TypeScript', 'Firebase'],
+    connections: ['JavaScript', 'TypeScript', 'Firebase', 'Jest', 'Expo', 'App Security'],
     relatedProjects: ['FooDood', 'Down — Social Media App'],
   },
   {
@@ -91,30 +92,30 @@ export const skills: Skill[] = [
   },
   {
     name: 'Git', category: 'frameworks', weight: 10,
-    connections: ['GitHub Enterprise', 'DevSecOps'],
+    connections: ['GitHub Enterprise', 'DevSecOps', 'GitHub CLI', 'Python', 'TypeScript', 'JavaScript', 'HTML', 'CSS', 'Go', 'Astro.js', 'Next.js', 'React.js', 'AWS'],
     relatedProjects: ['GitHub Actions Security Pipelines'],
   },
   {
     name: 'GitHub CLI', category: 'frameworks', weight: 6,
-    connections: ['GitHub Enterprise', 'Git'],
+    connections: ['GitHub Enterprise', 'Git', 'DevSecOps', 'GitHub Actions', 'App Security', 'Python'],
   },
   {
     name: 'Linux/UNIX', category: 'frameworks', weight: 9,
-    connections: ['Python', 'Docker', 'AWS', 'Azure', 'DevSecOps'],
+    connections: ['Python', 'Docker', 'AWS', 'Azure', 'DevSecOps', 'AWS', 'Azure', 'Google Cloud'],
   },
 
   // ── Security Tools (named products) ───────────────────────────
   {
     name: 'CrowdStrike', category: 'security-tools', weight: 10,
-    connections: ['EDR', 'Incident Response', 'Malware Analysis'],
+    connections: ['Endpoint Detection & Response', 'Incident Response', 'Malware Analysis', 'Vulnerability Mgmt', 'Digital Forensics', 'SIEM', ''],
   },
   {
     name: 'Netskope', category: 'security-tools', weight: 8,
-    connections: ['DLP', 'Zscaler'],
+    connections: ['Data Loss Prevention', 'Zscaler'],
   },
   {
     name: 'Zscaler', category: 'security-tools', weight: 7,
-    connections: ['Netskope', 'DLP'],
+    connections: ['Netskope', 'Data Loss Prevention'],
   },
   {
     name: 'Microsoft Sentinel', category: 'security-tools', weight: 7,
@@ -151,22 +152,26 @@ export const skills: Skill[] = [
   },
   {
     name: 'GitHub Actions', category: 'security-tools', weight: 7,
-    connections: ['GitHub Enterprise', 'DevSecOps'],
+    connections: ['GitHub Enterprise', 'DevSecOps', 'GitHub CLI', 'TypeScript', 'JavaScript', 'App Security'],
     relatedProjects: ['GitHub Actions Security Pipelines'],
+  },
+  {
+    name: 'Wiz', category: 'security-skills', weight: 7,
+    connections: ['Cloud Security', 'AWS', 'Azure', 'DevSecOps', 'Vulnerability Mgmt', 'Python'],
   },
 
   // ── Security Skills (practices / concepts) ─────────────────────
   {
     name: 'SIEM', category: 'security-skills', weight: 9,
-    connections: ['Splunk', 'Microsoft Sentinel', 'Incident Response'],
+    connections: ['Splunk', 'Microsoft Sentinel', 'Incident Response', 'CrowdStrike', 'Zscaler', 'Netskope', 'Malware Analysis'],
   },
   {
-    name: 'EDR', category: 'security-skills', weight: 8,
-    connections: ['CrowdStrike', 'DLP', 'Incident Response'],
+    name: 'Endpoint Detection & Response', category: 'security-skills', weight: 8,
+    connections: ['CrowdStrike', 'Data Loss Prevention', 'Incident Response'],
   },
   {
-    name: 'DLP', category: 'security-skills', weight: 8,
-    connections: ['Netskope', 'Zscaler', 'EDR'],
+    name: 'Data Loss Prevention', category: 'security-skills', weight: 8,
+    connections: ['Netskope', 'Zscaler', 'Endpoint Detection & Response'],
   },
   {
     name: 'Incident Response', category: 'security-skills', weight: 9,
@@ -174,15 +179,15 @@ export const skills: Skill[] = [
   },
   {
     name: 'Malware Analysis', category: 'security-skills', weight: 7,
-    connections: ['Digital Forensics', 'Incident Response'],
+    connections: ['Digital Forensics', 'Incident Response', 'CrowdStrike', 'Splunk', 'SIEM'],
   },
   {
     name: 'Vulnerability Mgmt', category: 'security-skills', weight: 7,
-    connections: ['CrowdStrike', 'SIEM'],
+    connections: ['CrowdStrike', 'SIEM', 'Wiz', 'Cloud Security'],
   },
   {
     name: 'Digital Forensics', category: 'security-skills', weight: 6,
-    connections: ['Malware Analysis', 'Incident Response'],
+    connections: ['Malware Analysis', 'Incident Response', 'CrowdStrike', 'Splunk', 'SIEM'],
   },
   {
     name: 'AD Security', category: 'security-skills', weight: 7,
@@ -190,7 +195,7 @@ export const skills: Skill[] = [
   },
   {
     name: 'Cloud Security', category: 'security-skills', weight: 8,
-    connections: ['AWS', 'Azure', 'DevSecOps'],
+    connections: ['AWS', 'Azure', 'DevSecOps', 'DataDog', 'Wiz', 'Vulnerability Mgmt'],
     relatedProjects: ['Thumbo.app', 'FooDood'],
   },
   {
@@ -198,29 +203,35 @@ export const skills: Skill[] = [
     connections: ['Intune', 'Entra IAM'],
   },
   {
+    name: 'App Security', category: 'security-skills', weight: 7,
+     connections: ['DevSecOps', 'GitHub Enterprise', 'GitHub Actions', 'TypeScript', 'JavaScript', 'React.js', 'Next.js', 'Astro.js', 'AWS', 'Wiz', 'Cloud Security', 'DataDog', 'Jest', 'React Native', 'Python'],
+     relatedProjects: ['Thumbo.app', 'FooDood', 'Down — Social Media App'],
+  },
+
+  {
     name: 'DevSecOps', category: 'security-skills', weight: 9,
-    connections: ['GitHub Enterprise', 'Docker', 'Python', 'GitHub Actions'],
+    connections: ['GitHub Enterprise', 'Docker', 'Python', 'GitHub Actions', 'Ansible', 'Terraform', 'AWS', 'Azure', 'Google Cloud', 'Cloud Security', 'Wiz', 'TypeScript', 'JavaScript', 'App Security'],
     relatedProjects: ['GitHub Actions Security Pipelines'],
   },
 
   // ── Cloud ──────────────────────────────────────────────────────
   {
     name: 'AWS', category: 'cloud', weight: 9,
-    connections: ['Python', 'Docker', 'Azure', 'Terraform'],
+    connections: ['Python', 'Docker', 'Azure', 'Terraform', 'DataDog', 'Cloud Security', 'Wiz', 'Google Cloud'],
     relatedProjects: ['Thumbo.app'],
   },
   {
     name: 'Azure', category: 'cloud', weight: 9,
-    connections: ['Intune', 'Microsoft Sentinel', 'AWS', 'Entra IAM'],
+    connections: ['Intune', 'Microsoft Sentinel', 'AWS', 'Entra IAM', 'DataDog', 'Cloud Security', 'Wiz'],
   },
   {
     name: 'Google Cloud', category: 'cloud', weight: 5,
-    connections: ['Firebase'],
+    connections: ['Firebase', 'Cloud Security', 'Wiz', 'AWS', 'Linux/UNIX'],
     relatedProjects: ['FooDood'],
   },
   {
     name: 'Firebase', category: 'cloud', weight: 6,
-    connections: ['React Native', 'Google Cloud'],
+    connections: ['React Native', 'Google Cloud', 'AWS'],
     relatedProjects: ['Thumbo.app', 'FooDood', 'Down — Social Media App'],
   },
   {

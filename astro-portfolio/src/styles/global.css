@@ -312,6 +312,7 @@ body.js-reveal-ready .reveal.revealed {
   display: flex;
   align-items: center;
   gap: 0.5rem;
+  z-index: 10000;
 }
 .logo-bracket {
   opacity: 0.4;
