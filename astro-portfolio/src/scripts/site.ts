@@ -165,12 +165,14 @@ function initHeroTyping(): void {
     }
 
     el.appendChild(div);
+    el.scrollTop = el.scrollHeight;
     charIdx = 0;
 
     if (line.text) {
       typeChar(line);
     } else if (line.output !== undefined) {
       currentEl!.textContent = line.output;
+      el.scrollTop = el.scrollHeight;
       lineIdx++;
       setTimeout(createLine, line.delay || 100);
     }
@@ -180,6 +182,7 @@ function initHeroTyping(): void {
     if (!line.text) return;
     if (charIdx < line.text.length) {
       currentEl!.textContent = (currentEl!.textContent || '') + line.text[charIdx];
+      el.scrollTop = el.scrollHeight;
       charIdx++;
       setTimeout(() => typeChar(line), line.delay || 60);
     } else {

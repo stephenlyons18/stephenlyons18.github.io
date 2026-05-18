@@ -346,6 +346,8 @@ export default function SkillGraph({ height = 700 }: { height?: number }) {
 
     const ro = new ResizeObserver(entries => {
       const w   = entries[0].contentRect.width;
+      // Skip when the container is CSS-hidden (display:none → width=0)
+      if (w <= 0) return;
       const dpr = window.devicePixelRatio || 1;
       canvas.width        = w * dpr;
       canvas.height       = height * dpr;
@@ -595,12 +597,19 @@ export default function SkillGraph({ height = 700 }: { height?: number }) {
         ))}
       </div>
 
-      {/* ── List view ── */}
-      {viewMode === 'list' && <ListView />}
+      {/* ── List view — always mounted, shown/hidden via CSS ── */}
+      <div style={{ display: viewMode === 'list' ? 'block' : 'none' }}>
+        <ListView />
+      </div>
 
-      {/* ── Graph view ── */}
-      {viewMode === 'graph' && (
-        <div ref={containerRef} style={{ position: 'relative', width: '100%' }}>
+      {/* ── Graph view — always mounted so ResizeObserver stays alive ── */}
+      <div style={{ display: viewMode === 'graph' ? 'block' : 'none' }}>
+        <div ref={containerRef} style={{
+          position: 'relative', width: '100%',
+          background: 'rgba(27, 27, 27, 0.29)',
+          borderRadius: '12px',
+          border: '1px solid rgba(255,255,255,0.05)',
+        }}>
           <canvas
             ref={canvasRef}
             role="img"
@@ -680,7 +689,7 @@ export default function SkillGraph({ height = 700 }: { height?: number }) {
             scroll / pinch to zoom · drag to pin · double-click to release
           </p>
         </div>
-      )}
+      </div>   {/* end graph show/hide wrapper */}
     </div>
   );
 }
