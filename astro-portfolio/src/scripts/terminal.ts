@@ -226,11 +226,30 @@ function buildTerminal(): void {
   });
 }
 
+// ── Visual-viewport helper (keeps terminal above software keyboard) ───────
+
+function syncOverlayToViewport(): void {
+  const vv = window.visualViewport;
+  if (!vv || !isOpen) return;
+  overlay.style.top    = vv.offsetTop  + 'px';
+  overlay.style.left   = vv.offsetLeft + 'px';
+  overlay.style.width  = vv.width      + 'px';
+  overlay.style.height = vv.height     + 'px';
+}
+
+function resetOverlayViewport(): void {
+  overlay.style.top    = '';
+  overlay.style.left   = '';
+  overlay.style.width  = '';
+  overlay.style.height = '';
+}
+
 function openTerminal(): void {
   if (isOpen) return;
   isOpen = true;
   overlay.classList.add('active');
   inputEl.value = '';
+  syncOverlayToViewport();
   requestAnimationFrame(() => inputEl.focus({ preventScroll: true }));
 }
 
@@ -238,6 +257,7 @@ function closeTerminal(): void {
   if (!isOpen) return;
   isOpen = false;
   overlay.classList.remove('active');
+  resetOverlayViewport();
   if (streamTimer) clearTimeout(streamTimer);
 }
 
@@ -622,6 +642,12 @@ function init(): void {
   initialized = true;
 
   buildTerminal();
+
+  // Keep the overlay pinned above the software keyboard on mobile
+  if (window.visualViewport) {
+    window.visualViewport.addEventListener('resize', syncOverlayToViewport);
+    window.visualViewport.addEventListener('scroll', syncOverlayToViewport);
+  }
 
   try {
     const saved = localStorage.getItem('sl-theme');
