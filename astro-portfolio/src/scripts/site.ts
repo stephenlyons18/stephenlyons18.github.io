@@ -124,7 +124,7 @@ function initHeroTyping(): void {
     { output: '', delay: 200 },
     { prompt: 'stephen@lyons:~$ ', text: 'ls skills/', delay: 70 },
     {
-      output: 'Infrastrcture as Code/  crowdstrike/  netskope/  github-enterprise/  azure/',
+      output: 'infrastructure as Code/  crowdstrike/  netskope/  github-enterprise/  azure/',
       delay: 30,
     },
     {
