@@ -475,6 +475,27 @@ body.js-reveal-ready .reveal.revealed {
   min-height: 260px;
   overflow-y: auto;
   max-height: 380px;
+  scroll-behavior: smooth;
+}
+
+/* Themed scrollbar for hero terminal — matches site accent */
+.hero-terminal__body::-webkit-scrollbar {
+  width: 6px;
+}
+.hero-terminal__body::-webkit-scrollbar-track {
+  background: var(--bg-secondary);
+}
+.hero-terminal__body::-webkit-scrollbar-thumb {
+  background: var(--accent-dim);
+  border-radius: 3px;
+}
+.hero-terminal__body::-webkit-scrollbar-thumb:hover {
+  background: var(--accent);
+}
+/* Firefox */
+.hero-terminal__body {
+  scrollbar-width: thin;
+  scrollbar-color: var(--accent-dim) var(--bg-secondary);
 }
 
 /* Input row inside the hero terminal (shown after typing animation) */
@@ -644,10 +665,13 @@ body.js-reveal-ready .reveal.revealed {
   border-color: var(--accent-dim);
   box-shadow: 0 0 12px var(--accent-glow);
 }
+.card__image-item {
+  aspect-ratio: 16 / 9;
+}
 .card__image-item img {
   display: block;
   width: 100%;
-  height: 200px;
+  height: 100%;
   object-fit: cover;
   object-position: center top;
 }
@@ -689,8 +713,11 @@ body.js-reveal-ready .reveal.revealed {
     overflow-y: auto;
     -webkit-overflow-scrolling: touch;
     align-items: flex-start;
-    padding: env(safe-area-inset-top, 1.5rem) 1rem
-             env(safe-area-inset-bottom, 1.5rem);
+    /* Push image below the site header (~64px) + safe-area inset + breathing room */
+    padding-top: max(4.5rem, calc(env(safe-area-inset-top, 0px) + 4rem));
+    padding-left: 1rem;
+    padding-right: 1rem;
+    padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 1.5rem);
   }
   .lightbox-figure {
     margin: auto;
@@ -706,6 +733,7 @@ body.js-reveal-ready .reveal.revealed {
   overflow: hidden;
   max-width: min(90vw, 1000px);
   width: 100%;
+  aspect-ratio: unset; /* override thumbnail aspect-ratio so content sets height */
   background: var(--bg-card);
   border: 1px solid var(--accent-dim);
   box-shadow: 0 0 60px var(--accent-glow), 0 24px 60px rgba(0, 0, 0, 0.6);
@@ -1367,7 +1395,8 @@ body.js-reveal-ready .reveal.revealed {
   .hero-terminal__body {
     font-size: 0.78rem;
     padding: 1rem;
-    min-height: 220px;
+    min-height: 120px;
+    max-height: 260px;
     /* Wrap long ASCII / paths instead of horizontal scroll */
     word-break: break-word;
   }

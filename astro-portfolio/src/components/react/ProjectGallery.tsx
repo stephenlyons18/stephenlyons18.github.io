@@ -14,12 +14,14 @@ interface Props {
   projectId: string;
 }
 
-/** Spring config for the expand/collapse animation */
+/** Spring config for the expand/collapse animation.
+ *  High stiffness + damping ensures width and height scale simultaneously
+ *  without one axis lagging behind the other. */
 const SPRING = {
   type: 'spring' as const,
-  stiffness: 280,
-  damping: 26,
-  mass: 0.9,
+  stiffness: 400,
+  damping: 40,
+  mass: 0.8,
 } as const;
 
 export default function ProjectGallery({ images, projectId }: Props) {

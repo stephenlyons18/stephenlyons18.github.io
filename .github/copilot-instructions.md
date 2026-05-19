@@ -1,4 +1,5 @@
 # Copilot Instructions
+You are an expert full-stack developer working on a personal portfolio website built with Astro, React, and D3. The site is statically deployed on GitHub Pages and must be performant, mobile-friendly, and secure. Your task is to implement new features, fix bugs, and maintain the codebase according to the guidelines outlined in this document.
 
 ## ⚠️ Top priorities (read before doing anything else)
 
@@ -8,13 +9,13 @@ Every feature, layout change, and new component must work correctly on mobile be
 
 - Design for 320px–430px viewport widths first, then scale up.
 - Touch targets must be ≥ 44×44 px.
-- Avoid hover-only interactions — pair every hover state with a tap/focus equivalent.
+- Avoid hover-only interactions — pair every hover state with a tap/focus equivalent for mobile.
 - Test responsive breakpoints at 375px (iPhone SE), 390px (iPhone 14), 768px (tablet), and 1280px+ (desktop) for every UI change.
 - Canvas animations (`matrix-canvas`, `SkillGraph`) must degrade gracefully on mobile — reduce particle counts, disable non-essential animation on `prefers-reduced-motion`, and never block the main thread.
 
 ### 2. Performance and efficiency
 
-- Keep the site fast. It is statically deployed with minimal server infrastructure.
+- Keep the site fast. It is statically deployed with no server-side processing, so all optimizations must be client-side.
 - Prefer static Astro components over hydrated React islands. Only add `client:load` when interactivity genuinely requires it.
 - Images must be appropriately sized; avoid loading full-resolution images on mobile.
 - Avoid large synchronous computations on the main thread — use `requestAnimationFrame`, `requestIdleCallback`, or Web Workers for heavy work (e.g. D3-force simulations).
@@ -46,7 +47,7 @@ Never commit secrets, tokens, or credentials. The `trufflehog.yml` workflow will
 
 This repo has two layers:
 
-- **Root** (`index.html`, `styles.css`, `main.js`, `terminal.js`) — legacy static site, kept for reference but no longer deployed.
+- **Root** - under 'old-html': (`index.html`, `styles.css`, `main.js`, `terminal.js`) — legacy static site, kept for reference but no longer deployed.
 - **`astro-portfolio/`** — the active site. All work should happen here. The build output goes to the `build` branch (not `gh-pages`), which GitHub Pages serves.
 
 ## Build commands
@@ -57,9 +58,23 @@ All commands run from `astro-portfolio/`:
 npm run dev        # esbuild scripts → astro dev server
 npm run build      # esbuild → astro build → postbuild.mjs (URL relativization)
 npm run preview    # serve the dist/ output locally
+npm run test       # run Jest tests (local only — NOT used by CI deploy)
+npm run build:local  # run tests then build (use this for local development)
 ```
 
-There is no test suite.
+> **Important:** `npm run build` (used by the deploy CI) does **not** run tests. Use `npm run build:local` when building locally to catch data integrity issues before pushing.
+
+### Jest testing
+
+A Jest test suite runs locally to catch data integrity issues before they reach the graph or UI.
+
+- Config: `astro-portfolio/jest.config.cjs` (uses `ts-jest` with `tsconfig.jest.json`)
+- Tests live in `astro-portfolio/src/__tests__/`
+- Current suites:
+  - `skills.test.ts` — no self-connections, no duplicates, all connection names are real skills, **all connections are bidirectional**, weights in range
+  - `projects.test.ts` — required fields, unique IDs, image paths start with `/`
+- **Never add Jest to the `build` script** — tests must not run during CI deployment.
+- Add tests for any new data file you create in `src/data/`.
 
 ### Prettier (formatting)
 
@@ -115,6 +130,9 @@ The `build` branch **must** contain `.nojekyll`. Without it, GitHub Pages runs J
 
 ## Key conventions
 
+- **Skill connections are bidirectional** — every entry in a skill's `connections` array must have the reverse connection in the target skill's array. The `skills.test.ts` test enforces this. Run `npm run test` after editing `skills.ts`.
+- **Terminal auto-scroll** — `scrollTop = scrollHeight` assignments in `site.ts` must be wrapped in `requestAnimationFrame` so they fire after DOM repaint. Use `MutationObserver` for continuous scroll during async output.
+- **Skill graph layout** — the cluster force targets use `0.5 × canvas-half-dimension` to keep nodes on-screen. `LABEL_CLEARANCE` (collision padding) is 32px. When adjusting layout, avoid increasing CLUSTER_OFFSET past `±0.65` or nodes will be pushed off-canvas on small screens.
 - **Theme system** — the terminal supports `green` / `cyan` / `amber` accent themes stored in `localStorage`. CSS custom properties drive the theme; when adding new styled elements use the existing `--accent` / `--accent-dim` variables.
 - **`BaseLayout.astro`** wraps every page. It accepts `fixedFooter`, `fullFooter`, `showHeader`, and `showScrollProgress` props. Set `showScrollProgress={false}` on pages with no scrollable content to avoid loading the React + Motion bundle.
 - **Terminal commands** are implemented in `src/scripts/terminal.ts` (Astro site) and `terminal.js` (legacy root). Add new commands to the Astro version only.
@@ -186,3 +204,17 @@ Use browser DevTools on `stephenlyons.dev` to confirm the deployed build matches
 - `.nojekyll` presence (confirm no Jekyll-stripped assets)
 - Canvas elements initializing (Matrix rain, SkillGraph)
 - React islands hydrating (`ProjectGallery`, `ScrollProgress`, `SkillGraph`)
+
+### Documentation of changes
+
+When implementing a new feature or fixing a bug, add a comment in a file called `CHANGELOG.md` at the root of the repo with a brief description of the change, the files affected, and any relevant links (e.g. PRs, issue numbers). This helps maintain a human-readable history of changes outside of commit messages.
+Example entry:
+
+```markdown
+## [2024-06-15] Added new "Contact" page with form validation
+- Created `src/pages/contact.astro` with a contact form
+- Implemented client-side validation in `site.ts`
+- Updated navigation in `BaseLayout.astro` to include "Contact"
+
+This entry documents the addition of a new Contact page, which includes both the Astro component and the associated client-side logic for form validation.
+```

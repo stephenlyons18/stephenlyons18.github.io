@@ -165,14 +165,14 @@ function initHeroTyping(): void {
     }
 
     el.appendChild(div);
-    el.scrollTop = el.scrollHeight;
+    requestAnimationFrame(() => { el!.scrollTop = el!.scrollHeight; });
     charIdx = 0;
 
     if (line.text) {
       typeChar(line);
     } else if (line.output !== undefined) {
       currentEl!.textContent = line.output;
-      el.scrollTop = el.scrollHeight;
+      requestAnimationFrame(() => { el!.scrollTop = el!.scrollHeight; });
       lineIdx++;
       setTimeout(createLine, line.delay || 100);
     }
@@ -182,7 +182,7 @@ function initHeroTyping(): void {
     if (!line.text) return;
     if (charIdx < line.text.length) {
       currentEl!.textContent = (currentEl!.textContent || '') + line.text[charIdx];
-      el.scrollTop = el.scrollHeight;
+      requestAnimationFrame(() => { el!.scrollTop = el!.scrollHeight; });
       charIdx++;
       setTimeout(() => typeChar(line), line.delay || 60);
     } else {
@@ -259,7 +259,7 @@ function initHeroTerminalInteractive(): void {
         const outputAnchor = document.createElement('div');
         heroBody.appendChild(outputAnchor);
         window.runInElement(raw, outputAnchor, () => {
-          heroBody.scrollTop = heroBody.scrollHeight;
+          requestAnimationFrame(() => { heroBody.scrollTop = heroBody.scrollHeight; });
           input.focus();
         });
       } else {
@@ -269,8 +269,14 @@ function initHeroTerminalInteractive(): void {
         err.textContent = 'Terminal engine not loaded yet — try again in a moment.';
         heroBody.appendChild(err);
       }
-      heroBody.scrollTop = heroBody.scrollHeight;
+      requestAnimationFrame(() => { heroBody.scrollTop = heroBody.scrollHeight; });
     });
+
+    // Auto-scroll whenever new content is appended to heroBody
+    const scrollObserver = new MutationObserver(() => {
+      requestAnimationFrame(() => { heroBody.scrollTop = heroBody.scrollHeight; });
+    });
+    scrollObserver.observe(heroBody, { childList: true, subtree: true, characterData: true });
 
     // Focus input on click of the terminal widget
     heroTerminal.addEventListener('click', () => input.focus());
