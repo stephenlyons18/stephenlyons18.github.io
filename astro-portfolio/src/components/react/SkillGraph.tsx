@@ -43,23 +43,24 @@ const LABEL_PX = 12;   // fixed screen-space label font size
 const MIN_ZOOM = 0.15;
 const MAX_ZOOM = 4;
 
-// Extra sim-space padding added to forceCollide radius to prevent label overlap.
-// At a typical initial fit scale of ~0.55–0.75, 50 sim-units ≈ 28–38 screen-px,
-// which is enough clearance for 12px labels.
-const LABEL_CLEARANCE = 50;
+// Collision radius padding: allows labels to breathe without overcrowding.
+// Reduced from 50 → 32 because the improved cluster forces spread nodes further apart.
+const LABEL_CLEARANCE = 32;
 
 function weightToRadius(w: number): number {
   return MIN_R + ((w - 1) / 9) * (MAX_R - MIN_R);
 }
 
 // Five-cluster layout: each category is pulled toward a quadrant.
-// Fractions are of half-canvas width/height from center.
+// Values are fractions of half-canvas width/height from center.
+// These are intentionally larger (0.55-0.65 range) to push clusters to the
+// edges of the canvas and maximise use of the available space.
 const CLUSTER_OFFSET: Record<SkillCategory, [number, number]> = {
-  languages:        [-0.42, -0.34],   // top-left
-  frameworks:       [ 0.36, -0.34],   // top-right
-  'security-tools': [-0.30,  0.32],   // bottom-left
-  'security-skills':[ 0.10,  0.38],   // bottom-center
-  cloud:            [ 0.42,  0.08],   // center-right
+  languages:        [-0.60, -0.48],   // top-left
+  frameworks:       [ 0.52, -0.48],   // top-right
+  'security-tools': [-0.44,  0.46],   // bottom-left
+  'security-skills':[ 0.14,  0.54],   // bottom-center-right
+  cloud:            [ 0.60,  0.12],   // center-right
 };
 
 // ─── Pure helpers ─────────────────────────────────────────────────────────────
@@ -94,6 +95,8 @@ export default function SkillGraph({ height = 700 }: { height?: number }) {
   const simRef       = useRef<Simulation<GraphNode, GraphLink> | null>(null);
   const nodesRef     = useRef<GraphNode[]>([]);
   const linksRef     = useRef<GraphLink[]>([]);
+  // Bidirectional adjacency: maps skill-name → Set of all connected skill-names (both directions)
+  const biAdjRef     = useRef<Map<string, Set<string>>>(new Map());
   const cameraRef    = useRef<Camera>({ x: 0, y: 0, scale: 1 });
   const hoveredRef   = useRef<GraphNode | null>(null);
   const draggedRef   = useRef<GraphNode | null>(null);
@@ -181,9 +184,14 @@ export default function SkillGraph({ height = 700 }: { height?: number }) {
     const cam     = cameraRef.current;
     const hovered = hoveredRef.current;
     const active  = activeCatRef.current;
+    // hlSet: the hovered node + its direct neighbors — used for NODE dimming/highlighting only
     const hlSet   = hovered
-      ? new Set([hovered.id, ...(hovered.skill.connections ?? [])])
+      ? new Set([hovered.id, ...(biAdjRef.current.get(hovered.id) ?? [])])
       : null;
+
+    // Read accent color from CSS for edge tinting
+    const accentColor = getComputedStyle(document.documentElement)
+      .getPropertyValue('--accent').trim() || '#00FF41';
 
     // Pass 1 — edges (sim space via camera)
     ctx.save();
@@ -195,14 +203,31 @@ export default function SkillGraph({ height = 700 }: { height?: number }) {
       const s = lk.source as GraphNode;
       const t = lk.target as GraphNode;
       if (s.x == null || s.y == null || t.x == null || t.y == null) continue;
+      // An edge is highlighted only when the hovered node is one of its own endpoints.
+      // Using hlSet here would also highlight edges between two neighbors, which is wrong.
+      const isHighlighted = hovered !== null && (s.id === hovered.id || t.id === hovered.id);
       const dim =
         (active !== null && s.skill.category !== active && t.skill.category !== active) ||
-        (hlSet !== null && !hlSet.has(s.id) && !hlSet.has(t.id));
+        (hovered !== null && !isHighlighted);
       ctx.beginPath();
       ctx.moveTo(s.x, s.y);
       ctx.lineTo(t.x, t.y);
-      ctx.strokeStyle = dim ? 'rgba(46,58,74,0.2)' : 'rgba(46,58,74,0.7)';
-      ctx.lineWidth   = 1;
+      if (dim) {
+        ctx.strokeStyle = 'rgba(46,58,74,0.18)';
+        ctx.lineWidth   = 1 / cam.scale;
+      } else if (isHighlighted) {
+        // Blend the two category colours for the highlighted edge
+        const sc = CATEGORY_META[s.skill.category].color;
+        const tc = CATEGORY_META[t.skill.category].color;
+        const grad = ctx.createLinearGradient(s.x, s.y, t.x, t.y);
+        grad.addColorStop(0, hexToRgba(sc, 0.85));
+        grad.addColorStop(1, hexToRgba(tc, 0.85));
+        ctx.strokeStyle = grad;
+        ctx.lineWidth   = 2.5 / cam.scale;
+      } else {
+        ctx.strokeStyle = hexToRgba(accentColor, 0.22);
+        ctx.lineWidth   = 1.5 / cam.scale;
+      }
       ctx.stroke();
     }
 
@@ -292,11 +317,30 @@ export default function SkillGraph({ height = 700 }: { height?: number }) {
     });
 
     const nodeMap = new Map(nodes.map(n => [n.id, n]));
-    const links: GraphLink[] = [];
+
+    // Build bidirectional adjacency (normalises any remaining data asymmetries)
+    const biAdj = new Map<string, Set<string>>();
     for (const n of nodes) {
+      if (!biAdj.has(n.id)) biAdj.set(n.id, new Set());
       for (const conn of n.skill.connections ?? []) {
-        const t = nodeMap.get(conn);
-        if (t && t.id > n.id) links.push({ source: n, target: t });
+        if (conn === n.id) continue; // ignore self-connections
+        biAdj.get(n.id)!.add(conn);
+        if (!biAdj.has(conn)) biAdj.set(conn, new Set());
+        biAdj.get(conn)!.add(n.id);
+      }
+    }
+    biAdjRef.current = biAdj;
+
+    // Build de-duplicated edge list using bidirectional adjacency
+    const seenEdges = new Set<string>();
+    const links: GraphLink[] = [];
+    for (const [aid, neighbours] of biAdj) {
+      for (const bid of neighbours) {
+        const edgeKey = aid < bid ? `${aid}||${bid}` : `${bid}||${aid}`;
+        if (seenEdges.has(edgeKey)) continue;
+        seenEdges.add(edgeKey);
+        const s = nodeMap.get(aid), t = nodeMap.get(bid);
+        if (s && t) links.push({ source: s, target: t });
       }
     }
 
@@ -306,29 +350,31 @@ export default function SkillGraph({ height = 700 }: { height?: number }) {
     const sim = forceSimulation<GraphNode>(nodes)
       .force('link', forceLink<GraphNode, GraphLink>(links)
         .id(d => d.id)
-        // Longer link distance to spread connected nodes apart
-        .distance(d => (d.source as GraphNode).r + (d.target as GraphNode).r + 60)
-        .strength(0.25))
-      // Strong repulsion — must overcome the label clearance
-      .force('charge', forceManyBody<GraphNode>().strength(d => -(d.r * 35 + 200)))
-      .force('center', forceCenter(cx, cy).strength(0.03))
-      // LABEL_CLEARANCE added so no two nodes can get close enough for labels to overlap
-      .force('collide', forceCollide<GraphNode>(d => d.r + LABEL_CLEARANCE).strength(1.0))
+        // Longer link distance spreads connected nodes apart
+        .distance(d => (d.source as GraphNode).r + (d.target as GraphNode).r + 80)
+        .strength(0.18))
+      // Stronger repulsion pushes nodes further from each other
+      .force('charge', forceManyBody<GraphNode>().strength(d => -(d.r * 45 + 280)))
+      .force('center', forceCenter(cx, cy).strength(0.02))
+      // LABEL_CLEARANCE ensures no two nodes are close enough for label overlap
+      .force('collide', forceCollide<GraphNode>(d => d.r + LABEL_CLEARANCE).strength(0.9))
+      // Cluster forces: use 0.5× canvas half-dimensions (matching the comment intent)
+      // to pull categories toward their designated quadrant without going off-screen.
       .force('clusterX', forceX<GraphNode>(d => {
         const [ox] = CLUSTER_OFFSET[d.skill.category];
-        return cx + ox * cw;
-      }).strength(0.10))
+        return cx + ox * cw * 0.5;
+      }).strength(0.15))
       .force('clusterY', forceY<GraphNode>(d => {
         const [, oy] = CLUSTER_OFFSET[d.skill.category];
-        return cy + oy * ch;
-      }).strength(0.10))
-      .alphaDecay(0.015)
+        return cy + oy * ch * 0.5;
+      }).strength(0.15))
+      .alphaDecay(0.012)
       .stop();
 
     simRef.current = sim;
 
-    // Settle synchronously — 800 ticks ensures nodes stop overlapping
-    sim.tick(800);
+    // Settle synchronously — more ticks for better initial layout
+    sim.tick(1200);
     fitAll(cw, ch);
     draw();
 
@@ -548,21 +594,94 @@ export default function SkillGraph({ height = 700 }: { height?: number }) {
   // ─── List view ────────────────────────────────────────────────────────────
 
   function ListView() {
+    const [listHovered, setListHovered] = useState<{
+      skill: Skill; x: number; y: number;
+    } | null>(null);
+
+    const listMeta = listHovered ? CATEGORY_META[listHovered.skill.category] : null;
+
     return (
-      <div className="skills-grid" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))' }}>
-        {cats.map(cat => (
-          <div key={cat} className="skill-category">
-            <h3 style={{ color: CATEGORY_META[cat].color }}>{CATEGORY_META[cat].label}</h3>
-            <ul className="skill-list">
-              {skills
-                .filter(s => s.category === cat)
-                .sort((a, b) => b.weight - a.weight)
-                .map(s => (
-                  <li key={s.name} title={s.relatedProjects?.join(', ')}>{s.name}</li>
+      <div style={{ position: 'relative' }}>
+        <div className="skills-grid" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))' }}>
+          {cats.map(cat => (
+            <div key={cat} className="skill-category">
+              <h3 style={{ color: CATEGORY_META[cat].color }}>{CATEGORY_META[cat].label}</h3>
+              <ul className="skill-list">
+                {skills
+                  .filter(s => s.category === cat)
+                  .sort((a, b) => b.weight - a.weight)
+                  .map(s => (
+                    <li
+                      key={s.name}
+                      tabIndex={0}
+                      style={{ cursor: 'pointer' }}
+                      onMouseEnter={(e) => setListHovered({ skill: s, x: e.clientX, y: e.clientY })}
+                      onMouseLeave={() => setListHovered(null)}
+                      onFocus={(e) => {
+                        const r = (e.currentTarget as HTMLLIElement).getBoundingClientRect();
+                        setListHovered({ skill: s, x: r.right, y: r.top + r.height / 2 });
+                      }}
+                      onBlur={() => setListHovered(null)}
+                      onMouseMove={(e) => {
+                        if (listHovered?.skill.name === s.name) {
+                          setListHovered({ skill: s, x: e.clientX, y: e.clientY });
+                        }
+                      }}
+                    >
+                      {s.name}
+                    </li>
+                  ))}
+              </ul>
+            </div>
+          ))}
+        </div>
+
+        {/* Skill detail tooltip — fixed so it escapes overflow:hidden parents */}
+        {listHovered && listMeta && (
+          <div
+            role="tooltip"
+            style={{
+              position: 'fixed',
+              left: Math.min(listHovered.x + 14, (typeof window !== 'undefined' ? window.innerWidth : 1200) - 260),
+              top: listHovered.y + 12,
+              background: 'var(--bg-elevated)',
+              border: `1px solid ${listMeta.color}`,
+              borderRadius: 'var(--radius)',
+              padding: '8px 12px',
+              pointerEvents: 'none',
+              fontFamily: 'var(--font-display)',
+              fontSize: '0.75rem',
+              color: listMeta.color,
+              zIndex: 9999,
+              boxShadow: `0 0 12px ${hexToRgba(listMeta.color, 0.25)}`,
+              maxWidth: 240,
+            }}
+          >
+            <div style={{ marginBottom: 2 }}>
+              <strong>{listHovered.skill.name}</strong>
+              <span style={{ color: 'var(--text-secondary)', marginLeft: 8 }}>
+                {listHovered.skill.weight}/10
+              </span>
+            </div>
+            <div style={{ color: 'var(--text-muted)', fontSize: '0.68rem', marginBottom: 4 }}>
+              {listMeta.label}
+            </div>
+            {(listHovered.skill.relatedProjects?.length ?? 0) > 0 && (
+              <ul style={{ margin: 0, padding: 0, listStyle: 'none', borderTop: '1px solid var(--border)', paddingTop: 4, marginTop: 2 }}>
+                {listHovered.skill.relatedProjects!.map(p => (
+                  <li key={p} style={{ color: 'var(--text-secondary)', fontSize: '0.7rem', lineHeight: 1.5, whiteSpace: 'normal' }}>
+                    › {p}
+                  </li>
                 ))}
-            </ul>
+              </ul>
+            )}
+            {(listHovered.skill.connections?.length ?? 0) > 0 && (
+              <div style={{ color: 'var(--text-muted)', fontSize: '0.68rem', marginTop: 4, borderTop: '1px solid var(--border)', paddingTop: 4 }}>
+                {listHovered.skill.connections!.length} connection{listHovered.skill.connections!.length !== 1 ? 's' : ''}
+              </div>
+            )}
           </div>
-        ))}
+        )}
       </div>
     );
   }
