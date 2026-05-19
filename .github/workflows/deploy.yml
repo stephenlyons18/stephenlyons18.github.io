@@ -20,6 +20,10 @@ concurrency:
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
+# Default token scope for all jobs unless overridden at job level.
+permissions:
+  contents: read
+
 jobs:
   # ─────────────────────────────────────────────────────────────
   # JOB 1 — Build
