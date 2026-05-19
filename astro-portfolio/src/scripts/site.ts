@@ -124,7 +124,7 @@ function initHeroTyping(): void {
     { output: '', delay: 200 },
     { prompt: 'stephen@lyons:~$ ', text: 'ls skills/', delay: 70 },
     {
-      output: 'Infrastrcture as Code/  crowdstrike/  netskope/  github-enterprise/  azure/',
+      output: 'infrastructure as Code/  crowdstrike/  netskope/  github-enterprise/  azure/',
       delay: 30,
     },
     {
@@ -165,12 +165,14 @@ function initHeroTyping(): void {
     }
 
     el.appendChild(div);
+    requestAnimationFrame(() => { el!.scrollTop = el!.scrollHeight; });
     charIdx = 0;
 
     if (line.text) {
       typeChar(line);
     } else if (line.output !== undefined) {
       currentEl!.textContent = line.output;
+      requestAnimationFrame(() => { el!.scrollTop = el!.scrollHeight; });
       lineIdx++;
       setTimeout(createLine, line.delay || 100);
     }
@@ -180,6 +182,7 @@ function initHeroTyping(): void {
     if (!line.text) return;
     if (charIdx < line.text.length) {
       currentEl!.textContent = (currentEl!.textContent || '') + line.text[charIdx];
+      requestAnimationFrame(() => { el!.scrollTop = el!.scrollHeight; });
       charIdx++;
       setTimeout(() => typeChar(line), line.delay || 60);
     } else {
@@ -189,6 +192,97 @@ function initHeroTyping(): void {
   }
 
   setTimeout(createLine, 800);
+}
+
+function initHeroTerminalInteractive(): void {
+  const heroTerminal = document.querySelector<HTMLElement>('.hero-terminal');
+  const heroBody = document.getElementById('hero-typed');
+  if (!heroTerminal || !heroBody) return;
+
+  // Wait until the intro animation inserts the cursor, then activate
+  const observer = new MutationObserver(() => {
+    const cursor = heroBody.querySelector('.typed-cursor');
+    if (!cursor) return;
+    observer.disconnect();
+
+    // Remove blinking cursor — we'll replace with an input row
+    cursor.remove();
+    // Make container accessible for interaction
+    heroTerminal.removeAttribute('role');
+    heroTerminal.removeAttribute('aria-label');
+
+    // Input row — appended to heroTerminal (parent), NOT inside scrollable heroBody,
+    // so it's always visible at the bottom of the widget regardless of scroll position.
+    const row = document.createElement('div');
+    row.className = 'hero-terminal__input-row';
+    row.innerHTML =
+      '<span class="hero-prompt">stephen@lyons:~$ </span>' +
+      '<input class="hero-terminal__input" type="text" autocomplete="off" ' +
+      'autocorrect="off" autocapitalize="off" spellcheck="false" ' +
+      'aria-label="Terminal input" placeholder="type a command…" />';
+    heroTerminal.appendChild(row);
+
+    const input = row.querySelector<HTMLInputElement>('.hero-terminal__input')!;
+    const heroHistory: string[] = [];
+    let heroHistIdx = -1;
+
+    input.addEventListener('keydown', (e: KeyboardEvent) => {
+      if (e.key === 'ArrowUp') {
+        e.preventDefault();
+        if (heroHistIdx < heroHistory.length - 1) heroHistIdx++;
+        input.value = heroHistory[heroHistory.length - 1 - heroHistIdx] ?? '';
+        return;
+      }
+      if (e.key === 'ArrowDown') {
+        e.preventDefault();
+        if (heroHistIdx > 0) { heroHistIdx--; input.value = heroHistory[heroHistory.length - 1 - heroHistIdx] ?? ''; }
+        else { heroHistIdx = -1; input.value = ''; }
+        return;
+      }
+      if (e.key !== 'Enter') return;
+      e.preventDefault();
+      const raw = input.value.trim();
+      input.value = '';
+      heroHistIdx = -1;
+      if (!raw) return;
+      heroHistory.push(raw);
+
+      // Echo the command into the scrollable body
+      const echo = document.createElement('div');
+      echo.innerHTML =
+        '<span class="hero-prompt">stephen@lyons:~$ </span>' +
+        '<span class="hero-command">' + raw.replace(/</g, '&lt;').replace(/>/g, '&gt;') + '</span>';
+      heroBody.appendChild(echo);
+
+      // Dispatch via shared terminal engine (loaded by terminal.js)
+      if (typeof window.runInElement === 'function') {
+        const outputAnchor = document.createElement('div');
+        heroBody.appendChild(outputAnchor);
+        window.runInElement(raw, outputAnchor, () => {
+          requestAnimationFrame(() => { heroBody.scrollTop = heroBody.scrollHeight; });
+          input.focus();
+        });
+      } else {
+        const err = document.createElement('div');
+        err.className = 'hero-output';
+        err.style.color = 'var(--text-muted)';
+        err.textContent = 'Terminal engine not loaded yet — try again in a moment.';
+        heroBody.appendChild(err);
+      }
+      requestAnimationFrame(() => { heroBody.scrollTop = heroBody.scrollHeight; });
+    });
+
+    // Auto-scroll whenever new content is appended to heroBody
+    const scrollObserver = new MutationObserver(() => {
+      requestAnimationFrame(() => { heroBody.scrollTop = heroBody.scrollHeight; });
+    });
+    scrollObserver.observe(heroBody, { childList: true, subtree: true, characterData: true });
+
+    // Focus input on click of the terminal widget
+    heroTerminal.addEventListener('click', () => input.focus());
+  });
+
+  observer.observe(heroBody, { childList: true, subtree: true });
 }
 
 function initGlitch(): void {
@@ -301,6 +395,7 @@ function init(): void {
   initMobileNav();
   initReveal();
   initHeroTyping();
+  initHeroTerminalInteractive();
   initGlitch();
   initHeaderScroll();
   setTimeout(initTerminalHint, 100);

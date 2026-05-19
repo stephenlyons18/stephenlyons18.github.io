@@ -28,6 +28,7 @@ import ProjectGallery from "../components/react/ProjectGallery";
 			{
 				projects.map((p, i) => (
 					<article
+						id={p.id}
 						class='card reveal'
 						style={
 							i < projects.length - 1

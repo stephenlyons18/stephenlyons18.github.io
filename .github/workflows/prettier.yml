@@ -1,0 +1,81 @@
+name: Format Code (Prettier)
+
+on:
+  workflow_run:
+    workflows: ["Build and Deploy to GitHub Pages"]
+    types: [completed]
+    branches: [main]
+  workflow_dispatch:
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
+jobs:
+  prettier:
+    name: Prettier Format
+    runs-on: ubuntu-latest
+    # Only run after a successful deploy (skip on PR builds that don't deploy)
+    if: ${{ github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success' }}
+
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v4
+        with:
+          # Full history so the commit push works correctly
+          fetch-depth: 0
+          ref: main
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+          cache-dependency-path: astro-portfolio/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+        working-directory: astro-portfolio
+
+      - name: Install Prettier + Astro plugin
+        run: npm install --no-save prettier prettier-plugin-astro
+        working-directory: astro-portfolio
+
+      - name: Write Prettier config
+        run: |
+          cat > astro-portfolio/.prettierrc.json << 'EOF'
+          {
+            "tabWidth": 4,
+            "useTabs": false,
+            "singleQuote": true,
+            "trailingComma": "all",
+            "printWidth": 100,
+            "plugins": ["prettier-plugin-astro"],
+            "overrides": [
+              {
+                "files": "*.astro",
+                "options": { "parser": "astro" }
+              }
+            ]
+          }
+          EOF
+
+      - name: Run Prettier
+        run: |
+          npx prettier --write \
+            "astro-portfolio/src/**/*.{astro,ts,tsx,js,mjs,css}" \
+            "astro-portfolio/scripts/**/*.mjs"
+
+      - name: Commit formatted files (if any changed)
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add -A
+          if git diff --cached --quiet; then
+            echo "No formatting changes."
+          else
+            git commit -m "style: auto-format with Prettier [skip ci]"
+            git push origin main
+          fi

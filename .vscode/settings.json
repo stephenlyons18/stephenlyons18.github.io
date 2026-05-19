@@ -1,0 +1,8 @@
+{
+    "chat.tools.terminal.autoApprove": {
+        "/^pnpm run test$/": {
+            "approve": true,
+            "matchCommandLine": true
+        }
+    }
+}

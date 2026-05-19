@@ -367,7 +367,7 @@
     const categories = [
       {
         title: 'Languages',
-        items: 'TypeScript, Python, JavaScript, HTML5, CSS, Rust, PHP, Java, C++, C#',
+        items: 'TypeScript, Python, JavaScript, HTML, CSS, Rust, PHP, Java, C++, C#',
       },
       {
         title: 'Frameworks & Tools',
@@ -375,7 +375,7 @@
       },
       {
         title: 'Security Tools',
-        items: 'CrowdStrike, Netskope, Zscaler, Azure, Intune, Infrastrcture as Code, GitHub Enterprise, SIEM, EDR, DLP',
+        items: 'CrowdStrike, Netskope, Zscaler, Azure, Intune, infrastructure as Code, GitHub Enterprise, SIEM, EDR, DLP',
       },
       {
         title: 'Cloud Platforms',
@@ -427,7 +427,7 @@
         highlights: [
           'Manages on-prem and cloud security operations',
           'Implements DevSecOps practices using GitHub Actions & GitHub Enterprise',
-          'Develops infrastructure as code using Infrastrcture as Code',
+          'Develops infrastructure as code using infrastructure as Code',
           'Oversees CrowdStrike, Netskope, Zscaler deployments',
           'Manages Azure infrastructure, groups, and Intune MDM',
           'Builds & maintains CI/CD pipelines with security checks',

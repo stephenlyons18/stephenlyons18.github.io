@@ -9,22 +9,29 @@
     "dev": "npm run build:scripts && astro dev",
     "build:scripts": "esbuild src/scripts/site.ts src/scripts/terminal.ts --bundle --format=iife --target=es2020 --minify --outdir=public/scripts --log-level=warning",
     "build": "npm run build:scripts && astro build && node scripts/postbuild.mjs",
+    "build:local": "npm run test && npm run build",
+    "test": "jest --config jest.config.cjs",
     "preview": "astro preview",
     "astro": "astro"
   },
   "dependencies": {
     "@astrojs/react": "^5.0.4",
     "@tailwindcss/vite": "^4.2.4",
+    "@types/d3-force": "^3.0.10",
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
-    "astro": "^6.1.10",
+    "astro": "^6.1.9",
+    "d3-force": "^3.0.0",
     "motion": "^12.38.0",
     "react": "^19.2.6",
     "react-dom": "^19.2.6",
     "tailwindcss": "^4.2.4"
   },
   "devDependencies": {
+    "@types/jest": "^29.5.14",
     "esbuild": "^0.28.0",
+    "jest": "^29.7.0",
+    "ts-jest": "^29.3.4",
     "typescript": "^6.0.3"
   }
 }

@@ -1,0 +1,58 @@
+name: Secret Scan (TruffleHog)
+
+on:
+  workflow_run:
+    workflows: ["Build and Deploy to GitHub Pages"]
+    types: [completed]
+    branches: [main]
+  workflow_dispatch:
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
+jobs:
+  trufflehog:
+    name: TruffleHog Secret Scan
+    runs-on: ubuntu-latest
+    if: ${{ github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success' }}
+
+    permissions:
+      contents: read
+      # Required to post scan results as check runs (optional but useful)
+      checks: write
+
+    steps:
+      - name: Checkout main branch
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+
+      # Scans all commits reachable from HEAD on the main branch.
+      # base: "" + head: means "scan entire branch history".
+      # extra_args reports both verified and unknown (not just verified) secrets
+      # so you can triage potential leaks before they're confirmed externally.
+      - name: Scan main branch with TruffleHog
+        uses: trufflesecurity/trufflehog@main
+        with:
+          base: ""
+          head: main
+          extra_args: --results=verified,unknown
+
+      # ── Scan the build branch (compiled/deployed output) ──────────
+      - name: Checkout build branch
+        uses: actions/checkout@v4
+        with:
+          ref: build
+          fetch-depth: 0
+          path: build-branch
+
+      # path: points at the checked-out build branch directory;
+      # base: "" + head: build scans the full build branch history.
+      - name: Scan build branch with TruffleHog
+        uses: trufflesecurity/trufflehog@main
+        with:
+          path: ./build-branch
+          base: ""
+          head: build
+          extra_args: --results=verified,unknown

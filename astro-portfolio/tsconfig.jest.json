@@ -1,0 +1,11 @@
+{
+    "extends": "./tsconfig.json",
+    "compilerOptions": {
+        "module": "commonjs",
+        "moduleResolution": "node",
+        "ignoreDeprecations": "6.0",
+        "esModuleInterop": true,
+        "rootDir": "."
+    },
+    "exclude": ["dist", "public/scripts", "**/*.astro"]
+}
