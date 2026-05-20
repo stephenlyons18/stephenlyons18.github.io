@@ -1,0 +1,15 @@
+{
+  "servers": {
+    "ascii-motion": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "ascii-motion-mcp",
+        "--live",
+        "--project-dir",
+        "${workspaceFolder}"
+      ],
+      "type": "stdio"
+    }
+  }
+}
