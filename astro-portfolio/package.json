@@ -15,23 +15,23 @@
     "astro": "astro"
   },
   "dependencies": {
-    "@astrojs/react": "^5.0.4",
-    "@tailwindcss/vite": "^4.2.4",
+    "@astrojs/react": "^6.0.5",
+    "@tailwindcss/vite": "^4.3.3",
     "@types/d3-force": "^3.0.10",
-    "@types/react": "^19.2.14",
-    "@types/react-dom": "^19.2.3",
-    "astro": "^6.1.9",
+    "@types/react": "^19.2.18",
+    "@types/react-dom": "^19.2.7",
+    "astro": "^7.3.1",
     "d3-force": "^3.0.0",
-    "motion": "^12.38.0",
-    "react": "^19.2.6",
-    "react-dom": "^19.2.6",
-    "tailwindcss": "^4.2.4"
+    "motion": "^13.2.0",
+    "react": "^19.2.8",
+    "react-dom": "^19.2.8",
+    "tailwindcss": "^4.3.3"
   },
   "devDependencies": {
-    "@types/jest": "^29.5.14",
-    "esbuild": "^0.28.0",
-    "jest": "^29.7.0",
-    "ts-jest": "^29.3.4",
-    "typescript": "^6.0.3"
+    "@types/jest": "^30.0.0",
+    "esbuild": "^0.28.2",
+    "jest": "^30.5.1",
+    "ts-jest": "^29.4.12",
+    "typescript": "^7.0.2"
   }
 }

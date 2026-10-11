@@ -142,7 +142,7 @@ const projects: Project[] = [
     featuredTag: 'Mobile App',
     featuredDesc:
       'Food-finding swiper mobile application that recommends personalized dishes from nearby restaurants using Google Business Profile and Yelp APIs.',
-    featuredTech: ['React Native', 'Expo', 'Next.js', 'Google Cloud', 'Firebase'],
+    featuredTech: ['React Native', 'Expo', 'Next.js', 'Google Cloud', 'Firebase', ''],
   },
   {
     id: 'security-automation',
@@ -163,7 +163,7 @@ const projects: Project[] = [
       },
     ],
     tech: ['GitHub Actions', 'TruffleHog', 'Prettier', 'YAML', 'CI/CD'],
-    featured: true,
+    featured: false,
     featuredTitle: 'Security Automation',
     featuredDesc:
       'GitHub Actions pipelines for secret scanning, code formatting, and broken link detection. CI/CD with security gates baked into every workflow.',

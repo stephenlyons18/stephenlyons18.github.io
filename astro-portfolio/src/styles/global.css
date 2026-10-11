@@ -857,13 +857,14 @@ body.js-reveal-ready .reveal.revealed {
 .timeline-item::before {
   content: '';
   position: absolute;
-  left: -2rem;
+  left: calc(-2rem + 1px);
   top: 6px;
   width: 12px; height: 12px;
   border-radius: 50%;
   background: var(--bg-primary);
   border: 2px solid var(--accent);
   box-shadow: 0 0 8px var(--accent-glow);
+  transform: translateX(-50%);
 }
 
 .timeline-item__date {
@@ -1021,6 +1022,30 @@ body.js-reveal-ready .reveal.revealed {
   color: var(--text-secondary);
   text-transform: uppercase;
   letter-spacing: 0.06em;
+}
+
+.footer-social {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 1.25rem;
+  margin-bottom: 0.75rem;
+}
+.footer-social__link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  transition: color 0.2s var(--ease);
+  text-shadow: none;
+}
+.footer-social__link:hover,
+.footer-social__link:focus-visible {
+  color: var(--accent);
+  text-shadow: none;
 }
 
 /* ---------- Glitch Text ---------- */

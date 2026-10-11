@@ -3,7 +3,8 @@ export type SkillCategory =
   | 'frameworks'
   | 'security-tools'
   | 'security-skills'
-  | 'cloud';
+  | 'cloud'
+  | 'experience';
 
 export interface Skill {
   name: string;
@@ -20,31 +21,31 @@ export const skills: Skill[] = [
   // ── Languages ──────────────────────────────────────────────────
   {
     name: 'TypeScript', category: 'languages', weight: 10,
-    connections: ['React.js', 'Node.js', 'Jest', 'Next.js', 'Astro.js', 'HTML', 'CSS', 'Git', 'JavaScript', 'React Native', 'App Security', 'GitHub Actions', 'GitHub Enterprise', 'DevSecOps', 'AWS', 'Expo'],
+    connections: ['React.js', 'Node.js', 'Jest', 'Next.js', 'Astro.js', 'HTML', 'CSS', 'Git', 'JavaScript', 'React Native', 'App Security', 'GitHub Actions', 'GitHub Enterprise', 'DevSecOps', 'AWS', 'Expo', 'Down — Lead Security Engineer'],
     relatedProjects: ['Thumbo.app', 'Portfolio Website', 'Down — Social Media App'],
   },
   {
     name: 'Python', category: 'languages', weight: 10,
-    connections: ['Docker', 'AWS', 'Azure', 'DevSecOps', 'GitHub Actions', 'GitHub Enterprise', 'DataDog', 'Cloud Security', 'Wiz', 'Linux/UNIX', 'Git', 'App Security', 'GitHub CLI', 'CrowdStrike', 'SIEM'],
+    connections: ['Docker', 'AWS', 'Azure', 'DevSecOps', 'GitHub Actions', 'GitHub Enterprise', 'DataDog', 'Cloud Security', 'Wiz', 'Linux/UNIX', 'Git', 'App Security', 'GitHub CLI', 'CrowdStrike', 'SIEM', 'Yamaha — Cybersecurity Engineer', 'Yamaha — SAP Intern'],
   },
   {
     name: 'JavaScript', category: 'languages', weight: 8,
-    connections: ['React.js', 'Node.js', 'React Native', 'Next.js', 'Astro.js', 'HTML', 'CSS', 'Git', 'TypeScript', 'App Security', 'Jest', 'Expo', 'GitHub Actions', 'DevSecOps'],
+    connections: ['React.js', 'Node.js', 'React Native', 'Next.js', 'Astro.js', 'HTML', 'CSS', 'Git', 'TypeScript', 'App Security', 'Jest', 'Expo', 'GitHub Actions', 'DevSecOps', 'Down Friend Groups — Dev Lead'],
     relatedProjects: ['CSULB ACM Website', 'Thumbo.app', 'Portfolio Website', 'Down — Social Media App', 'FooDood'],
   },
   {
     name: 'HTML', category: 'languages', weight: 9,
-    connections: ['CSS', 'Git', 'TypeScript', 'JavaScript', 'React.js', 'Next.js', 'Astro.js', 'PHP'],
+    connections: ['CSS', 'Git', 'TypeScript', 'JavaScript', 'React.js', 'Next.js', 'Astro.js', 'PHP', 'ASI — Web Developer'],
     relatedProjects: ['CSULB ACM Website', 'Portfolio Website', 'Thumbo.app', 'FooDood', 'Down — Social Media App', 'CSULB ACM Website'],
   },
   {
     name: 'CSS', category: 'languages', weight: 6,
-    connections: ['HTML', 'React.js', 'Next.js', 'Astro.js', 'Git', 'TypeScript', 'JavaScript'],
+    connections: ['HTML', 'React.js', 'Next.js', 'Astro.js', 'Git', 'TypeScript', 'JavaScript', 'ASI — Web Developer'],
     relatedProjects: ['CSULB ACM Website', 'Thumbo.app', 'FooDood', 'Down — Social Media App', 'Portfolio Website' ],
   },
   { name: 'Rust', category: 'languages', weight: 7 },
   { name: 'Go',   category: 'languages', weight: 7, connections: ['Git'] },
-  { name: 'PHP',  category: 'languages', weight: 4, connections: ['HTML'] },
+  { name: 'PHP',  category: 'languages', weight: 4, connections: ['HTML', 'ASI — Web Developer'] },
   { name: 'Java', category: 'languages', weight: 4 },
   { name: 'C++',  category: 'languages', weight: 4, relatedProjects: ['Rosie the Wardriver'] },
   { name: 'C#',   category: 'languages', weight: 3 },
@@ -53,7 +54,7 @@ export const skills: Skill[] = [
   // ── Frameworks & Tools ─────────────────────────────────────────
   {
     name: 'React.js', category: 'frameworks', weight: 9,
-    connections: ['TypeScript', 'JavaScript', 'Next.js', 'Astro.js', 'Node.js', 'HTML', 'CSS', 'App Security', 'Jest', 'React Native', 'Git'],
+    connections: ['TypeScript', 'JavaScript', 'Next.js', 'Astro.js', 'Node.js', 'HTML', 'CSS', 'App Security', 'Jest', 'React Native', 'Git', 'Yamaha — SAP Intern', 'ASI — Web Developer'],
     relatedProjects: ['CSULB ACM Website', 'Portfolio Website', 'Thumbo.app', 'FooDood', 'Down — Social Media App'],
   },
   {
@@ -68,17 +69,17 @@ export const skills: Skill[] = [
   },
   {
     name: 'Jest', category: 'frameworks', weight: 5,
-    connections: ['TypeScript', 'React Native', 'App Security', 'JavaScript', 'React.js', 'Next.js', 'Node.js'],
+    connections: ['TypeScript', 'React Native', 'App Security', 'JavaScript', 'React.js', 'Next.js', 'Node.js', 'Down — Lead Security Engineer'],
     relatedProjects: ['Down — Social Media App'],
   },
   {
     name: 'Expo', category: 'frameworks', weight: 5,
-    connections: ['React Native', 'TypeScript', 'JavaScript', 'App Security'],
+    connections: ['React Native', 'TypeScript', 'JavaScript', 'App Security', 'Down — Lead Security Engineer'],
     relatedProjects: ['FooDood', 'Down — Social Media App'],
   },
   {
     name: 'React Native', category: 'frameworks', weight: 6,
-    connections: ['JavaScript', 'TypeScript', 'Firebase', 'Jest', 'Expo', 'App Security', 'React.js'],
+    connections: ['JavaScript', 'TypeScript', 'Firebase', 'Jest', 'Expo', 'App Security', 'React.js', 'Down — Lead Security Engineer', 'Down Friend Groups — Dev Lead'],
     relatedProjects: ['FooDood', 'Down — Social Media App'],
   },
   {
@@ -92,7 +93,7 @@ export const skills: Skill[] = [
   },
   {
     name: 'Git', category: 'frameworks', weight: 10,
-    connections: ['GitHub Enterprise', 'DevSecOps', 'GitHub CLI', 'Python', 'TypeScript', 'JavaScript', 'HTML', 'CSS', 'Go', 'Astro.js', 'Next.js', 'React.js', 'AWS', 'Docker'],
+    connections: ['GitHub Enterprise', 'DevSecOps', 'GitHub CLI', 'Python', 'TypeScript', 'JavaScript', 'HTML', 'CSS', 'Go', 'Astro.js', 'Next.js', 'React.js', 'AWS', 'Docker', 'Down — Lead Security Engineer'],
     relatedProjects: ['GitHub Actions Security Pipelines'],
   },
   {
@@ -107,15 +108,15 @@ export const skills: Skill[] = [
   // ── Security Tools (named products) ───────────────────────────
   {
     name: 'CrowdStrike', category: 'security-tools', weight: 10,
-    connections: ['Endpoint Detection & Response', 'Incident Response', 'Malware Analysis', 'Vulnerability Mgmt', 'Digital Forensics', 'SIEM', 'Python', 'AD Security', 'Azure AD'],
+    connections: ['Endpoint Detection & Response', 'Incident Response', 'Malware Analysis', 'Vulnerability Mgmt', 'Digital Forensics', 'SIEM', 'Python', 'AD Security', 'Azure AD', 'Yamaha — Cybersecurity Engineer'],
   },
   {
     name: 'Netskope', category: 'security-tools', weight: 8,
-    connections: ['Data Loss Prevention', 'Zscaler', 'Endpoint Detection & Response', 'SIEM'],
+    connections: ['Data Loss Prevention', 'Zscaler', 'Endpoint Detection & Response', 'SIEM', 'Yamaha — Cybersecurity Engineer'],
   },
   {
     name: 'Zscaler', category: 'security-tools', weight: 7,
-    connections: ['Netskope', 'Data Loss Prevention', 'Endpoint Detection & Response', 'SIEM'],
+    connections: ['Netskope', 'Data Loss Prevention', 'Endpoint Detection & Response', 'SIEM', 'Yamaha — Cybersecurity Engineer'],
   },
   {
     name: 'Microsoft Sentinel', category: 'security-tools', weight: 7,
@@ -127,7 +128,7 @@ export const skills: Skill[] = [
   },
   {
     name: 'Intune', category: 'security-tools', weight: 8,
-    connections: ['Azure AD', 'Entra IAM', 'Azure', 'Mobile Security', 'AD Security'],
+    connections: ['Azure AD', 'Entra IAM', 'Azure', 'Mobile Security', 'AD Security', 'Yamaha — Cybersecurity Engineer'],
   },
   {
     name: 'Azure AD', category: 'security-tools', weight: 7,
@@ -139,20 +140,20 @@ export const skills: Skill[] = [
   },
   {
     name: 'GitHub Enterprise', category: 'security-tools', weight: 7,
-    connections: ['Git', 'DevSecOps', 'GitHub Actions', 'GitHub CLI', 'App Security', 'Python', 'Splunk', 'SIEM', 'AWS', 'Terraform', 'TypeScript',  'Incident Response'],
+    connections: ['Git', 'DevSecOps', 'GitHub Actions', 'GitHub CLI', 'App Security', 'Python', 'Splunk', 'SIEM', 'AWS', 'Terraform', 'TypeScript',  'Incident Response', 'Yamaha — Cybersecurity Engineer'],
     relatedProjects: ['GitHub Actions Security Pipelines'],
   },
   {
     name: 'Ansible', category: 'security-tools', weight: 5,
-    connections: ['AWS', 'Azure', 'Terraform', 'DevSecOps'],
+    connections: ['AWS', 'Azure', 'Terraform', 'DevSecOps', 'Yamaha — Cybersecurity Engineer'],
   },
   {
     name: 'Terraform', category: 'security-tools', weight: 6,
-    connections: ['AWS', 'Azure', 'GitHub Enterprise', 'Ansible', 'DevSecOps'],
+    connections: ['AWS', 'Azure', 'GitHub Enterprise', 'Ansible', 'DevSecOps', 'Yamaha — Cybersecurity Engineer'],
   },
   {
     name: 'GitHub Actions', category: 'security-tools', weight: 7,
-    connections: ['GitHub Enterprise', 'DevSecOps', 'GitHub CLI', 'TypeScript', 'JavaScript', 'App Security', 'Python', 'Next.js', 'Astro.js', 'AWS'],
+    connections: ['GitHub Enterprise', 'DevSecOps', 'GitHub CLI', 'TypeScript', 'JavaScript', 'App Security', 'Python', 'Next.js', 'Astro.js', 'AWS', 'Yamaha — Cybersecurity Engineer'],
     relatedProjects: ['GitHub Actions Security Pipelines'],
   },
   {
@@ -163,19 +164,19 @@ export const skills: Skill[] = [
   // ── Security Skills (practices / concepts) ─────────────────────
   {
     name: 'SIEM', category: 'security-skills', weight: 9,
-    connections: ['Splunk', 'Microsoft Sentinel', 'Incident Response', 'CrowdStrike', 'Zscaler', 'Netskope', 'Malware Analysis', 'Python', 'GitHub Enterprise', 'Endpoint Detection & Response', 'Data Loss Prevention', 'Vulnerability Mgmt', 'Digital Forensics'],
+    connections: ['Splunk', 'Microsoft Sentinel', 'Incident Response', 'CrowdStrike', 'Zscaler', 'Netskope', 'Malware Analysis', 'Python', 'GitHub Enterprise', 'Endpoint Detection & Response', 'Data Loss Prevention', 'Vulnerability Mgmt', 'Digital Forensics', 'Yamaha — Cybersecurity Engineer'],
   },
   {
     name: 'Endpoint Detection & Response', category: 'security-skills', weight: 8,
-    connections: ['CrowdStrike', 'Data Loss Prevention', 'Incident Response', 'Malware Analysis', 'Netskope', 'Zscaler', 'SIEM'],
+    connections: ['CrowdStrike', 'Data Loss Prevention', 'Incident Response', 'Malware Analysis', 'Netskope', 'Zscaler', 'SIEM', 'Yamaha — Cybersecurity Engineer'],
   },
   {
     name: 'Data Loss Prevention', category: 'security-skills', weight: 8,
-    connections: ['Netskope', 'Zscaler', 'Endpoint Detection & Response', 'SIEM'],
+    connections: ['Netskope', 'Zscaler', 'Endpoint Detection & Response', 'SIEM', 'Yamaha — Cybersecurity Engineer'],
   },
   {
     name: 'Incident Response', category: 'security-skills', weight: 9,
-    connections: ['CrowdStrike', 'Splunk', 'SIEM', 'Digital Forensics', 'GitHub Enterprise', 'Endpoint Detection & Response', 'Malware Analysis'],
+    connections: ['CrowdStrike', 'Splunk', 'SIEM', 'Digital Forensics', 'GitHub Enterprise', 'Endpoint Detection & Response', 'Malware Analysis', 'Yamaha — Cybersecurity Engineer'],
   },
   {
     name: 'Malware Analysis', category: 'security-skills', weight: 7,
@@ -204,25 +205,25 @@ export const skills: Skill[] = [
   },
   {
     name: 'App Security', category: 'security-skills', weight: 7,
-     connections: ['DevSecOps', 'GitHub Enterprise', 'GitHub Actions', 'TypeScript', 'JavaScript', 'React.js', 'Next.js', 'Astro.js', 'AWS', 'Wiz', 'Cloud Security', 'DataDog', 'Jest', 'React Native', 'Python', 'Expo', 'GitHub CLI'],
+     connections: ['DevSecOps', 'GitHub Enterprise', 'GitHub Actions', 'TypeScript', 'JavaScript', 'React.js', 'Next.js', 'Astro.js', 'AWS', 'Wiz', 'Cloud Security', 'DataDog', 'Jest', 'React Native', 'Python', 'Expo', 'GitHub CLI', 'Down — Lead Security Engineer'],
      relatedProjects: ['Thumbo.app', 'FooDood', 'Down — Social Media App'],
   },
 
   {
     name: 'DevSecOps', category: 'security-skills', weight: 9,
-    connections: ['GitHub Enterprise', 'Docker', 'Python', 'GitHub Actions', 'Ansible', 'Terraform', 'AWS', 'Azure', 'Google Cloud', 'Cloud Security', 'Wiz', 'TypeScript', 'JavaScript', 'App Security', 'Linux/UNIX', 'Git', 'GitHub CLI'],
+    connections: ['GitHub Enterprise', 'Docker', 'Python', 'GitHub Actions', 'Ansible', 'Terraform', 'AWS', 'Azure', 'Google Cloud', 'Cloud Security', 'Wiz', 'TypeScript', 'JavaScript', 'App Security', 'Linux/UNIX', 'Git', 'GitHub CLI', 'Yamaha — Cybersecurity Engineer'],
     relatedProjects: ['GitHub Actions Security Pipelines'],
   },
 
   // ── Cloud ──────────────────────────────────────────────────────
   {
     name: 'AWS', category: 'cloud', weight: 9,
-    connections: ['Python', 'Docker', 'Azure', 'Terraform', 'DataDog', 'Cloud Security', 'Wiz', 'Google Cloud', 'Next.js', 'Linux/UNIX', 'App Security', 'DevSecOps', 'GitHub Actions', 'GitHub Enterprise', 'Vercel', 'Firebase', 'TypeScript', 'Git', 'JavaScript'],
+    connections: ['Python', 'Docker', 'Azure', 'Terraform', 'DataDog', 'Cloud Security', 'Wiz', 'Google Cloud', 'Next.js', 'Linux/UNIX', 'App Security', 'DevSecOps', 'GitHub Actions', 'GitHub Enterprise', 'Vercel', 'Firebase', 'TypeScript', 'Git', 'JavaScript', 'Yamaha — Cybersecurity Engineer'],
     relatedProjects: ['Thumbo.app'],
   },
   {
     name: 'Azure', category: 'cloud', weight: 9,
-    connections: ['Intune', 'Microsoft Sentinel', 'AWS', 'Entra IAM', 'DataDog', 'Cloud Security', 'Wiz', 'Python', 'Terraform', 'DevSecOps'],
+    connections: ['Intune', 'Microsoft Sentinel', 'AWS', 'Entra IAM', 'DataDog', 'Cloud Security', 'Wiz', 'Python', 'Terraform', 'DevSecOps', 'Yamaha — Cybersecurity Engineer'],
   },
   {
     name: 'Google Cloud', category: 'cloud', weight: 5,
@@ -231,7 +232,7 @@ export const skills: Skill[] = [
   },
   {
     name: 'Firebase', category: 'cloud', weight: 6,
-    connections: ['React Native', 'Google Cloud', 'AWS', 'Vercel', 'TypeScript', 'JavaScript', 'Next.js'],
+    connections: ['React Native', 'Google Cloud', 'AWS', 'Vercel', 'TypeScript', 'JavaScript', 'Next.js', 'Down — Lead Security Engineer'],
     relatedProjects: ['Thumbo.app', 'FooDood', 'Down — Social Media App'],
   },
   {
@@ -243,6 +244,35 @@ export const skills: Skill[] = [
     name: 'DataDog', category: 'cloud', weight: 6,
     connections: ['AWS', 'Azure', 'Python'],
   },
+
+  // ── Experience (roles, linked to the skills/tools used in each) ─
+  {
+    name: 'Yamaha — Cybersecurity Engineer', category: 'experience', weight: 10,
+    connections: [
+      'GitHub Enterprise', 'Netskope', 'CrowdStrike', 'Zscaler', 'Azure', 'Intune',
+      'Python', 'AWS', 'DevSecOps', 'GitHub Actions', 'SIEM', 'Incident Response',
+      'Data Loss Prevention', 'Endpoint Detection & Response', 'Terraform', 'Ansible',
+    ],
+  },
+  {
+    name: 'Yamaha — SAP Intern', category: 'experience', weight: 4,
+    connections: ['Python', 'React.js'],
+  },
+  {
+    name: 'ASI — Web Developer', category: 'experience', weight: 5,
+    connections: ['HTML', 'CSS', 'PHP', 'React.js'],
+  },
+  {
+    name: 'Down — Lead Security Engineer', category: 'experience', weight: 7,
+    connections: ['TypeScript', 'React Native', 'Expo', 'Jest', 'Firebase', 'Git', 'App Security'],
+  },
+  {
+    name: 'Down Friend Groups — Dev Lead', category: 'experience', weight: 4,
+    connections: ['React Native', 'JavaScript'],
+  },
+  {
+    name: 'M.R. Mold — Laser Technician', category: 'experience', weight: 3,
+  },
 ];
 
 /** Display metadata per category */
@@ -252,4 +282,5 @@ export const CATEGORY_META: Record<SkillCategory, { label: string; color: string
   'security-tools': { label: 'Security Tools',     color: '#FF6B6B' },
   'security-skills':{ label: 'Security Skills',    color: '#FF9F43' },
   cloud:            { label: 'Cloud',              color: '#B48EFF' },
+  experience:       { label: 'Experience',         color: '#2DD4BF' },
 };
