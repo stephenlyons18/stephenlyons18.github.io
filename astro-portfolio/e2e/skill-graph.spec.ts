@@ -45,13 +45,16 @@ async function findNode(page: Page, canvas: Locator, tap: boolean) {
         for (let x = 60; x < c.width - 60; x += 20) {
             await page.mouse.move(c.x + x, c.y + y);
             if (!(await card.count())) continue;
+            // The sweep can catch a node by its rim; tap/return its exact centre (data-anchor).
+            const [ax, ay] = (await canvas.getAttribute('data-anchor'))!.split(',').map(Number);
+            const at = { x: c.x + ax!, y: c.y + ay! };
             if (tap) {
                 await page.mouse.move(c.x + c.width + 50, c.y - 50); // leave → card closes
                 await expect(card).toHaveCount(0);
-                await page.touchscreen.tap(c.x + x, c.y + y);
+                await page.touchscreen.tap(at.x, at.y);
                 await expect(card).toHaveCount(1);
             }
-            return { x: c.x + x, y: c.y + y };
+            return at;
         }
     }
     throw new Error('no node found');

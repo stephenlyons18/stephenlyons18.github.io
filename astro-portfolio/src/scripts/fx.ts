@@ -4,10 +4,11 @@
    rAF loop) plus its spring generator. ~5 KB gzipped.
 
    Drips (AnsiDrips.astro) hang still in the static HTML. Here they:
-   - run out of their bar/edge with a springy overshoot the first time they scroll into view;
-   - now and then swell a drop that stretches, detaches, falls under gravity and splats;
-   - release a drop when poked: pointer over a divider (swipe across it to make it rain) or
-     hovering/focusing a card.
+   - dividers: run out of their bar with a springy overshoot the first time they scroll into view,
+     then now and then swell a teardrop that stretches, detaches, falls under gravity and splats;
+     a pointer over a divider releases drops (swipe across it to make it rain; tap on touch);
+   - cards: drips exist only while the card is hovered/focused (CSS runs them out); then they
+     drop steadily, and stop the moment the pointer leaves.
    Cards tilt toward the pointer and squash on press (CSS springs, global.css .card.is-live), and
    [data-drag] art can be grabbed and flung; it snaps home on a Motion spring.
    Everything stops offscreen, in a hidden tab, and the moment reduced motion turns on.
@@ -32,6 +33,9 @@ interface Strip {
     visible: boolean;
     grown: boolean;
     timer: number;
+    /** Card drips only drip while their card is hovered/focused; divider drips always may. */
+    card: boolean;
+    active: boolean;
 }
 
 const root = document.documentElement;
@@ -65,14 +69,17 @@ async function release(d: Drip) {
     if (d.busy || stopped) return;
     d.busy = true;
     const fall = rand(2.5, 4.5); // em, in the strip's own cell size: stays in the gap below
-    // The bulb sags as the drop pulls away, then springs back.
+    // The bulb sags as the drop pulls away, then springs back. Motion leaves the last keyframe as
+    // an inline style; on a card that would pin the drip out after hover, so hand it back to CSS.
     track(
         animate(
             d.paint,
             { transform: ['translateY(0)', 'translateY(0.35em)', 'translateY(0)'] },
             { duration: 0.9, ease: ['easeIn', 'easeOut'] },
         ),
-    );
+    ).then(() => {
+        if (d.el.closest('.card-drips')) d.paint.style.removeProperty('transform');
+    });
     try {
         await track(
             animate(
@@ -102,7 +109,7 @@ async function release(d: Drip) {
 
 function schedule(s: Strip) {
     clearTimeout(s.timer);
-    if (!s.visible || stopped || document.hidden) return;
+    if (!s.visible || !s.active || stopped || document.hidden) return;
     s.timer = window.setTimeout(
         () => {
             const idle = s.drips.filter((d) => !d.busy);
@@ -110,7 +117,7 @@ function schedule(s: Strip) {
             if (d) void release(d);
             schedule(s);
         },
-        rand(1800, 6000),
+        s.card ? rand(500, 1400) : rand(1800, 6000),
     );
 }
 
@@ -125,18 +132,27 @@ function setup(rootEl: HTMLElement): Strip {
             return r.left + r.width / 2;
         },
     }));
-    const s: Strip = { root: rootEl, drips, visible: false, grown: false, timer: 0 };
+    const host = rootEl.closest<HTMLElement>('.ansi-divider, .card') ?? rootEl;
+    const card = host.classList.contains('card');
+    // Card drips are hidden at rest and run out on hover in CSS, so they never "grow in" here.
+    const s: Strip = {
+        root: rootEl,
+        drips,
+        visible: false,
+        grown: card,
+        timer: 0,
+        card,
+        active: !card,
+    };
 
-    // Drips below the fold start "inside" the bar, so they can run out when they're seen.
+    // Divider drips below the fold start "inside" the bar, so they can run out when they're seen.
     const r = rootEl.getBoundingClientRect();
-    if (r.top > innerHeight || r.bottom < 0)
-        for (const d of drips) d.paint.style.transform = 'translateY(-100%)';
-    else s.grown = true;
+    if (card || r.top <= innerHeight) s.grown = true;
+    else for (const d of drips) d.paint.style.transform = 'translateY(-100%)';
 
     // Divider: whichever drip is under the pointer lets go (a swipe makes it rain). The strip
     // itself ignores pointers (art never blocks), so listen on its divider/card host.
-    const host = rootEl.closest<HTMLElement>('.ansi-divider, .card') ?? rootEl;
-    if (host.classList.contains('ansi-divider')) {
+    if (!card) {
         const poke = (e: PointerEvent) => {
             const near = drips.find((d) => Math.abs(d.cx() - e.clientX) < 10);
             if (near) void release(near);
@@ -144,13 +160,28 @@ function setup(rootEl: HTMLElement): Strip {
         host.addEventListener('pointermove', poke);
         host.addEventListener('pointerdown', poke); // a tap on touch screens
     } else {
-        // Card: hovering or focusing it shakes two or three drops loose.
-        const poke = () => {
-            const idle = drips.filter((d) => !d.busy && d.cx() > 0 && d.cx() < innerWidth);
-            for (const d of idle.sort(() => Math.random() - 0.5).slice(0, 3)) void release(d);
+        // Card: while hovered or focused, the drips (run out by CSS) keep dropping; once the
+        // spring has run them out, two or three let go at once.
+        let kick = 0;
+        const on = () => {
+            if (s.active) return;
+            s.active = true;
+            kick = window.setTimeout(() => {
+                const idle = drips.filter((d) => !d.busy && d.cx() > 0 && d.cx() < innerWidth);
+                for (const d of idle.sort(() => Math.random() - 0.5).slice(0, 3)) void release(d);
+                schedule(s);
+            }, 450);
         };
-        host.addEventListener('pointerenter', (e) => e.pointerType === 'mouse' && poke());
-        host.closest('a')?.addEventListener('focus', poke);
+        const off = () => {
+            s.active = false;
+            clearTimeout(kick);
+            schedule(s); // clears the timer
+        };
+        host.addEventListener('pointerenter', (e) => e.pointerType === 'mouse' && on());
+        host.addEventListener('pointerleave', off);
+        const focusHost = host.closest('a') ?? host;
+        focusHost.addEventListener('focusin', on);
+        focusHost.addEventListener('focusout', off);
     }
     return s;
 }
