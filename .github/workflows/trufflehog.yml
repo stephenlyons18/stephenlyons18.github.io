@@ -23,7 +23,7 @@ jobs:
 
     steps:
       - name: Checkout main branch
-        uses: actions/checkout@v4
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           ref: main
           fetch-depth: 0
@@ -33,7 +33,7 @@ jobs:
       # extra_args reports both verified and unknown (not just verified) secrets
       # so you can triage potential leaks before they're confirmed externally.
       - name: Scan main branch with TruffleHog
-        uses: trufflesecurity/trufflehog@main
+        uses: trufflesecurity/trufflehog@e76dff8a7e57d6df0c60ad8cbf5d5cba505a8fc9 # v3.99.2
         with:
           base: ""
           head: main
@@ -41,7 +41,7 @@ jobs:
 
       # ── Scan the build branch (compiled/deployed output) ──────────
       - name: Checkout build branch
-        uses: actions/checkout@v4
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           ref: build
           fetch-depth: 0
@@ -50,7 +50,7 @@ jobs:
       # path: points at the checked-out build branch directory;
       # base: "" + head: build scans the full build branch history.
       - name: Scan build branch with TruffleHog
-        uses: trufflesecurity/trufflehog@main
+        uses: trufflesecurity/trufflehog@e76dff8a7e57d6df0c60ad8cbf5d5cba505a8fc9 # v3.99.2
         with:
           path: ./build-branch
           base: ""
