@@ -121,6 +121,7 @@ export function svgDataUrl(svg: string): string {
  * A paint drip, 3 cells wide and centred on its middle cell: a 1-cell stem, then a teardrop built
  * from quadrant blocks. In half-cell pixels the drop is 2-4-4-6-6-4 wide: it tapers in gently from
  * the stem and swells to a rounded bottom, so it reads as a hanging drop of paint, not a ball.
+ * (Strips only: dividers and cards. Title drips stay thin `█▓▒░` runs, see generator.ts.)
  *
  *      █      stem (× stem)
  *     ▗█▖     neck
@@ -129,38 +130,57 @@ export function svgDataUrl(svg: string): string {
  */
 export const DRIP_BULB = ['▗█▖', '▟█▙', '▜█▛'] as const;
 
-/** The falling drop: the same teardrop, smaller (2-4-6-4 half-cell pixels). */
-export const DROP = ['▗█▖', '▜█▛'] as const;
-
 export function dripRows(stem: number): string[] {
     return [...Array.from({ length: stem }, () => ' █ '), ...DRIP_BULB];
 }
+
+function shuffle<T>(a: T[], rand: () => number): T[] {
+    for (let i = a.length - 1; i > 0; i--) {
+        const j = Math.floor(rand() * (i + 1));
+        [a[i], a[j]] = [a[j]!, a[i]!];
+    }
+    return a;
+}
+
+/** Drips in a strip are split into this many runs; each run animates as one compositor layer. */
+export const DRIP_RUNS = 4;
 
 export interface DripStrip {
     cols: number;
     /** Rows below the bar the tallest drip can reach (stem + bulb). */
     rows: number;
-    /** Drips by centre column; each hangs `stem` cells, then the 2-row bulb. */
-    drips: { x: number; stem: number }[];
+    /** Drips by centre column; each hangs `stem` cells, then the bulb. `run`: its animation group. */
+    drips: { x: number; stem: number; run: number }[];
 }
 
 /**
  * Where drips hang along a strip `cols` cells wide: never closer than `minGap` cells (bulbs are 3
- * wide), never at the very ends. Deterministic per seed. Used by the divider (under a sprayed
- * bar) and by cards (off their bottom edge).
+ * wide), never at the very ends, stems between `minStem` and `maxStem`. Neighbours go to different
+ * runs, so each run is spread along the whole strip. Deterministic per seed. Used by the divider
+ * (under a sprayed bar) and by cards (off their bottom edge).
  */
 export function renderDripStrip(
     cols = 120,
     seed = 1,
-    { maxStem = 2, density = 0.16, minGap = 5 } = {},
+    { maxStem = 2, minStem = 0, density = 0.16, minGap = 5 } = {},
 ): DripStrip {
     const rand = rng(seed * 7919 + cols);
-    const drips: { x: number; stem: number }[] = [];
+    const drips: DripStrip['drips'] = [];
+    let deck: number[] = [];
     let last = -minGap;
     for (let x = 2; x < cols - 2; x++) {
         if (x - last < minGap || rand() > density) continue;
         last = x;
-        drips.push({ x, stem: Math.floor(rand() * (maxStem + 1)) });
+        const stem = minStem + Math.floor(rand() * (maxStem - minStem + 1));
+        // Runs are dealt in shuffled rounds of DRIP_RUNS, so each run spreads along the strip and
+        // a drip never shares a run with its neighbour.
+        if (!deck.length) {
+            const prev = drips.at(-1)?.run;
+            do deck = shuffle([...Array(DRIP_RUNS).keys()], rand);
+            while (deck[0] === prev);
+        }
+        const run = deck.shift()!;
+        drips.push({ x, stem, run });
     }
     return { cols, rows: maxStem + DRIP_BULB.length, drips };
 }

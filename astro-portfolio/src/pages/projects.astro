@@ -47,7 +47,7 @@ const galleries = Object.fromEntries(
                 <article
                     id={p.id}
                     class="card reveal"
-                    style={i < projects.length - 1 ? 'margin-bottom: 2rem;' : undefined}
+                    style={i < projects.length - 1 ? 'margin-bottom: 3.5rem;' : undefined}
                 >
                     <div style="display:flex;justify-content:space-between;align-items:start;flex-wrap:wrap;gap:1rem;margin-bottom:1rem;">
                         <div>
@@ -108,7 +108,8 @@ const galleries = Object.fromEntries(
                     <AnsiDrips
                         cols={280}
                         seed={i + 31}
-                        maxStem={0}
+                        maxStem={4}
+                        minStem={1}
                         density={0.08}
                         class="card-drips"
                     />

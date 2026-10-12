@@ -113,7 +113,16 @@ const ld =
         />
     </head>
     <body>
-        {showScrollProgress && <div class="scroll-progress-bar" aria-hidden="true"></div>}
+        {showScrollProgress && (
+            <>
+                <div class="scroll-progress" aria-hidden="true">
+                    <div class="scroll-progress__fill" />
+                </div>
+                <div class="scrub" aria-hidden="true">
+                    <div class="scrub__thumb" />
+                </div>
+            </>
+        )}
         <AnsiWall />
 
         {showHeader && <Header />}

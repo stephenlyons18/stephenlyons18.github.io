@@ -68,7 +68,8 @@ function loadTerminal(): Promise<void> {
     return terminalLoading ?? Promise.resolve();
 }
 
-// fx.js (drip physics + interactive motion, Motion) — only on pages with something to animate,
+// fx.js (interactive motion, Motion: card tilt, draggable art, drip taps) — only on pages with
+// something to animate,
 // only when motion is allowed, on idle.
 const FX_SRC = TERMINAL_SRC?.replace(/terminal\.js$/, 'fx.js');
 let fxLoaded = false;
@@ -111,25 +112,94 @@ function initTerminalLoader(): void {
     idle(() => void loadTerminal());
 }
 
-// ── Scroll progress: CSS scroll-driven animation where supported; rAF fallback otherwise.
-function initScrollProgress(): void {
-    const bar = document.querySelector<HTMLElement>('.scroll-progress-bar');
-    if (!bar || CSS.supports('animation-timeline: scroll()')) return;
+// ── Scroll progress (a pixel strip across the top) and the touch scrubber (a grip on the right
+// edge). Both are positioned by CSS scroll-driven animations where supported, which run off the
+// main thread; this rAF fallback only runs while scrolling, elsewhere.
+const scrollTimeline = () => CSS.supports('animation-timeline: scroll()');
+const scrollMax = () => document.documentElement.scrollHeight - window.innerHeight;
+const progress = () => {
+    const max = scrollMax();
+    return max > 0 ? Math.min(1, Math.max(0, window.scrollY / max)) : 0;
+};
+function onScrollFrame(cb: () => void): void {
     let ticking = false;
-    const update = () => {
-        const max = document.documentElement.scrollHeight - window.innerHeight;
-        bar.style.transform = `scaleX(${max > 0 ? window.scrollY / max : 0})`;
-        ticking = false;
-    };
     window.addEventListener(
         'scroll',
         () => {
-            if (!ticking) requestAnimationFrame(update);
+            if (!ticking) requestAnimationFrame(() => ((ticking = false), cb()));
             ticking = true;
         },
         { passive: true },
     );
-    update();
+    cb();
+}
+
+function initScrollProgress(): void {
+    const bar = document.querySelector<HTMLElement>('.scroll-progress');
+    const fill = bar?.firstElementChild as HTMLElement | null;
+    if (!bar || !fill || scrollTimeline()) return;
+    onScrollFrame(() => {
+        const p = progress();
+        bar.style.transform = `translateX(${(p - 1) * 100}%)`;
+        fill.style.transform = `translateX(${(1 - p) * 100}%)`;
+    });
+}
+
+/**
+ * Touch screens have no scrollbar to grab, so long pages get one: a grip on the right edge that
+ * shows while the page scrolls (or is touched) and drags the page directly, like a phone's fast
+ * scroller. Decorative to assistive tech (the page scrolls normally); never on mouse devices.
+ */
+function initScrubber(): void {
+    const rail = document.querySelector<HTMLElement>('.scrub');
+    const thumb = rail?.firstElementChild as HTMLElement | null;
+    if (!rail || !thumb || !matchMedia('(pointer: coarse)').matches) return;
+    let hide = 0;
+    let drag: { from: number; top: number; span: number } | null = null;
+    let want = -1;
+    const show = () => {
+        // Only worth it on pages a few screens long.
+        if (scrollMax() < window.innerHeight * 1.5) return;
+        rail.classList.add('is-on');
+        clearTimeout(hide);
+        if (!drag) hide = window.setTimeout(() => rail.classList.remove('is-on'), 1500);
+    };
+    window.addEventListener('scroll', show, { passive: true });
+    if (!scrollTimeline())
+        onScrollFrame(() => {
+            if (!drag)
+                thumb.style.transform = `translateY(${progress() * rail.clientHeight - progress() * thumb.offsetHeight}px)`;
+        });
+    thumb.addEventListener('pointerdown', (e) => {
+        const r = rail.getBoundingClientRect();
+        const t = thumb.getBoundingClientRect();
+        drag = { from: e.clientY - t.top, top: r.top, span: r.height - t.height };
+        thumb.setPointerCapture(e.pointerId);
+        rail.classList.add('is-on', 'is-drag');
+        clearTimeout(hide);
+        e.preventDefault();
+    });
+    thumb.addEventListener('pointermove', (e) => {
+        if (!drag) return;
+        const p = Math.min(1, Math.max(0, (e.clientY - drag.top - drag.from) / drag.span));
+        if (want < 0)
+            requestAnimationFrame(() => {
+                // Instant, even though the page uses smooth scrolling: the grip follows the finger.
+                window.scrollTo({ top: want * scrollMax(), behavior: 'instant' });
+                if (!scrollTimeline())
+                    thumb.style.transform = `translateY(${want * (rail.clientHeight - thumb.offsetHeight)}px)`;
+                want = -1;
+            });
+        want = p;
+    });
+    const end = () => {
+        if (!drag) return;
+        drag = null;
+        rail.classList.remove('is-drag');
+        show();
+    };
+    thumb.addEventListener('pointerup', end);
+    thumb.addEventListener('pointercancel', end);
 }
 
 function initHeroTyping(): void {
@@ -337,33 +407,20 @@ function initHeroTerminalInteractive(): void {
     observer.observe(heroBody, { childList: true, subtree: true });
 }
 
-function initGlitch(): void {
-    document.querySelectorAll<HTMLElement>('.glitch').forEach((el) => {
-        el.addEventListener('mouseenter', () => {
-            el.style.animation = 'none';
-            void el.offsetWidth;
-            el.style.animation = 'glitch-skew 0.5s ease';
-        });
-    });
-}
+// (Title glitch: pure CSS, .glitch:hover. It used to restart from JS with a forced reflow on every
+// mouseenter, which stalled scrolling over cards.)
 
 function initHeaderScroll(): void {
     const header = document.querySelector<HTMLElement>('.site-header');
     if (!header) return;
-    let ticking = false;
-    window.addEventListener('scroll', () => {
-        if (!ticking) {
-            requestAnimationFrame(() => {
-                if (window.scrollY > 50) {
-                    header.style.borderBottomColor = 'var(--ui-dim)';
-                } else {
-                    header.style.borderBottomColor = 'var(--border)';
-                }
-                ticking = false;
-            });
-            ticking = true;
-        }
-    });
+    // One class flip when crossing the threshold, not a style write on every scroll frame.
+    let past: boolean | null = null;
+    const update = () => {
+        const now = window.scrollY > 50;
+        if (now !== past) header.classList.toggle('is-scrolled', (past = now));
+    };
+    window.addEventListener('scroll', update, { passive: true });
+    update();
 }
 
 function initBootSequence(): void {
@@ -511,11 +568,11 @@ function init(): void {
     initReveal();
     initHeroTyping();
     initHeroTerminalInteractive();
-    initGlitch();
     initHeaderScroll();
     initTerminalLoader();
     initFx();
     initScrollProgress();
+    initScrubber();
 }
 
 if (document.readyState === 'loading') {
