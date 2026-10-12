@@ -117,9 +117,12 @@ pnpm preview        # serve dist/
   `https://github.com/stephenlyons18/stephenlyons18.github.io/blob/pr-media/R<n>/<file>?raw=true`. That branch
   is never merged.
 - **Suites:** `smoke` (load, console, overflow, art fits its box), `skill-graph` (card anchoring, 0 label
-  overlaps), `terminal`, `ux` (axe WCAG 2.2 AA, nav, mobile menu, keyboard, reduced motion, no idle rAF), and
-  `perf` (scroll frame timing, run after everything else in the `perf-*` projects so it isn't measuring other
-  tests' CPU).
+  overlaps), `terminal`, `ux` (axe WCAG 2.2 AA, nav, mobile menu, keyboard, reduced motion, no idle rAF),
+  `budget` (bytes per page by kind vs `e2e/budget.json`, plus LCP/CLS/blocking time on a throttled phone) and
+  `perf` (scroll frame timing).
+  - The last two run after the functional tests, in the `budget-*` and then `perf-*` projects, so they measure
+    the site rather than other tests' CPU.
+  - Raising a budget needs a reason in the PR; lower it when a PR wins bytes back.
 - **Measure feel with numbers:** frame-interval p95 from rAF during scroll and graph interaction, JS bytes per
   page from `dist/`, and Lighthouse for LCP/a11y. Quote before/after in perf PRs.
 
@@ -175,6 +178,16 @@ Workflow rules: pin third-party actions to a **SHA with a version comment**; set
   a palette colour in a component; canvas code reads tokens once per theme change, not per frame.
 - **Terminal UX:** `scrollTop = scrollHeight` goes inside `requestAnimationFrame`; use a `MutationObserver` for
   streamed output. Escape every user-supplied string before it touches `innerHTML`.
+
+## Never publish
+
+The repo, PRs, issues, board cards and the site are public or shareable. Never write in any of them:
+- Claude/agent session URLs (no `Claude-Session:` trailers or session links in PR footers);
+- tokens, passwords or keys;
+- local machine paths or usernames;
+- anything else not needed to understand the change.
+
+Commits end with only the `Co-Authored-By:` line. Grep a PR body for `claude.ai/code/session` before posting it.
 
 ## Security (OWASP Top 10, applied to a static site)
 

@@ -281,43 +281,40 @@ body::after {
     );
 }
 
-/* ANSI brick wall (AnsiWall.astro): one fixed, static <pre> behind everything. Font size is chosen
-   so 160 × 60 cells always cover the viewport; opacity keeps it a texture, never a pattern you read. */
+/* ANSI brick wall (AnsiWall.astro): three layers (bricks, mortar, chips) masked by a seamless
+   80 × 30-cell tile from /art/wall.css. It spans the whole document and scrolls with it. The tile
+   keeps the old cell size: a 0.6-aspect cell of max(12px, 100vw / 96) font. Opacity keeps it a
+   texture, never a pattern you read. */
+body {
+    position: relative;
+}
 .ansi-wall {
-    position: fixed;
+    --wall-fs: max(12px, 100vw / 96);
+    position: absolute;
     inset: 0;
     z-index: -1;
-    /* clip (not hidden) + paint containment: the oversized <pre> must never add to the page's
-       scrollable width (with overflow:hidden it did, on short mobile pages). */
     overflow: clip;
     pointer-events: none;
     opacity: 0.07;
     contain: strict;
-    /* Own compositor layer: scrolling never repaints ~10k glyphs (measurable on software/low-end
-       GPUs — the frame test's parallel run dropped to ~15fps on / without it). */
-    will-change: transform;
 }
-.ansi-wall pre {
+.ansi-wall > div {
     position: absolute;
-    top: 0;
-    left: 0;
-    margin: 0;
-    font-family: var(--font-display);
-    line-height: 1;
-    white-space: pre;
-    font-size: max(12px, calc(100vw / 160 / 0.6), calc(100vh / 60));
-    text-rendering: geometricPrecision;
-    font-variant-ligatures: none;
+    inset: 0;
+    mask-repeat: repeat;
+    mask-size: calc(var(--wall-fs) * 0.6 * 80) calc(var(--wall-fs) * 30);
+    /* Nothing paints until /art/wall.css supplies the masks (no flash of solid colour). */
+    mask-image: linear-gradient(transparent, transparent);
 }
-.w-b {
-    color: var(--ui);
+.ansi-wall .w-b {
+    background: var(--ui);
 }
-.w-m {
-    color: var(--ui-3);
+.ansi-wall .w-m {
+    background: var(--ui-3);
     opacity: 0.6;
 }
-.w-c {
-    color: var(--ui-2);
+.ansi-wall .w-c {
+    background: var(--ui-2);
 }
 
 /* Drip divider (AnsiDivider.astro) */

@@ -76,8 +76,10 @@ slots only; the wall and text stay.
 
 ## Site-wide pieces (all build-time, zero JS)
 
-- **Wall** (`AnsiWall.astro`, `renderWall`): a running-bond brick wall of `▓`/`░`/`▒` behind every page,
-  fixed and static at 7% opacity. It replaces the matrix rain, which ran a rAF loop forever. The `matrix`
+- **Wall** (`AnsiWall.astro`, `renderWallTile`): a running-bond brick wall of `▓`/`░`/`▒` behind every page
+  at 7% opacity. It **scrolls with the content**, like paint on a real wall. The cells are drawn as a seamless
+  80 × 30-cell SVG tile, where each shade glyph becomes its 2 × 2 dither. The tile is served as three CSS masks
+  (`/art/wall.css`, generated at build) over theme-coloured layers, so there are no glyphs in the DOM. It replaces the matrix rain, which ran a rAF loop forever. The `matrix`
   terminal command still plays the rain once, as an easter egg.
 - **Drip divider** (`AnsiDivider.astro`, `renderDivider`): a sprayed `▄` bar with thin drips. Used under page
   headers and between home sections.

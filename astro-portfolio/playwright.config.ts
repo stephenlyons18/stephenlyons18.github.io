@@ -38,14 +38,20 @@ export default defineConfig({
         screenshot: 'only-on-failure',
     },
     projects: [
-        ...DEVICES.map(([name, use]) => ({ name, use, testIgnore: /perf\.spec\.ts/ })),
-        // Frame-timing checks run last and alone per device, so they measure the site, not the
-        // other tests competing for CPU.
+        ...DEVICES.map(([name, use]) => ({ name, use, testIgnore: /(perf|budget)\.spec\.ts/ })),
+        // Measurements run after the functional tests, in two waves, so they measure the site and
+        // not other tests competing for CPU: page weight + throttled load first, then frame timing.
+        ...DEVICES.map(([name, use]) => ({
+            name: `budget-${name}`,
+            use,
+            testMatch: /budget\.spec\.ts/,
+            dependencies: DEVICES.map(([n]) => n),
+        })),
         ...DEVICES.map(([name, use]) => ({
             name: `perf-${name}`,
             use,
             testMatch: /perf\.spec\.ts/,
-            dependencies: DEVICES.map(([n]) => n),
+            dependencies: DEVICES.map(([n]) => `budget-${n}`),
         })),
     ],
     webServer: {
