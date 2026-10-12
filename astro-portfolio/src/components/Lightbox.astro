@@ -1,0 +1,90 @@
+---
+/**
+ * The one lightbox for every [data-lightbox] thumbnail on the page. A native modal <dialog>:
+ * focus trap, Escape, top layer and inertness come from the browser. The thumbnail → full-size
+ * zoom is a same-document View Transition (one shared view-transition-name), so it costs no
+ * library; browsers without it, and reduced motion, get a plain fade.
+ */
+---
+
+<dialog class="lightbox" aria-label="Image viewer">
+    <figure class="lightbox-figure">
+        <img class="lightbox-img" alt="" sizes="min(90vw, 1000px)" />
+        <figcaption class="lightbox-caption" hidden></figcaption>
+        <button type="button" class="lightbox-close" aria-label="Close image">
+            ✕
+        </button>
+    </figure>
+</dialog>
+
+<script>
+    const dialog = document.querySelector<HTMLDialogElement>('dialog.lightbox')!;
+    const big = dialog.querySelector<HTMLImageElement>('.lightbox-img')!;
+    const caption = dialog.querySelector<HTMLElement>('.lightbox-caption')!;
+    let opener: HTMLButtonElement | null = null;
+    let running: ViewTransition | null = null;
+
+    const calm = () =>
+        matchMedia('(prefers-reduced-motion: reduce)').matches ||
+        document.documentElement.hasAttribute('data-reduce-motion');
+
+    /** Run `update` inside a view transition that morphs `from` into `to` (or just run it). */
+    function morph(from: HTMLElement, to: HTMLElement, update: () => void) {
+        running?.skipTransition();
+        if (!document.startViewTransition || calm()) return update();
+        from.style.viewTransitionName = 'lightbox-zoom';
+        dialog.dataset.zooming = '';
+        const vt = (running = document.startViewTransition(() => {
+            from.style.viewTransitionName = '';
+            update();
+            to.style.viewTransitionName = 'lightbox-zoom';
+        }));
+        vt.finished.finally(() => {
+            to.style.viewTransitionName = '';
+            if (running === vt) {
+                running = null;
+                delete dialog.dataset.zooming;
+            }
+        });
+    }
+
+    function open(btn: HTMLButtonElement) {
+        const thumb = btn.querySelector('img')!;
+        const d = btn.dataset;
+        opener = btn;
+        morph(thumb, big, () => {
+            big.src = d.src!;
+            if (d.srcset) big.srcset = d.srcset;
+            else big.removeAttribute('srcset');
+            if (d.width) big.width = +d.width;
+            if (d.height) big.height = +d.height;
+            big.alt = thumb.alt;
+            caption.textContent = d.caption ?? '';
+            caption.hidden = !d.caption;
+            dialog.showModal();
+        });
+    }
+
+    function close() {
+        if (!dialog.open) return;
+        const thumb = opener?.querySelector('img');
+        const done = () => {
+            dialog.close();
+            opener?.focus({ preventScroll: true });
+        };
+        if (thumb) morph(big, thumb, done);
+        else done();
+    }
+
+    document.addEventListener('click', (e) => {
+        const btn = (e.target as Element).closest<HTMLButtonElement>('[data-lightbox]');
+        if (btn) open(btn);
+    });
+    // Any click in the dialog closes it (the image itself is zoom-out, the rest is backdrop).
+    dialog.addEventListener('click', close);
+    // Escape: animate the close instead of the browser's instant one.
+    dialog.addEventListener('cancel', (e) => {
+        e.preventDefault();
+        close();
+    });
+</script>
