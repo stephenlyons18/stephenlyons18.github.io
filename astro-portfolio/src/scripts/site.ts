@@ -44,11 +44,67 @@ function initMobileNav(): void {
     });
 }
 
-function initTerminalHint(): void {
-    const btn = document.querySelector<HTMLButtonElement>('[data-open-terminal]');
-    if (btn && typeof window.openTerminal === 'function') {
-        btn.addEventListener('click', () => window.openTerminal && window.openTerminal());
+// ── Terminal: loaded lazily so its bundle (command engine + site data) never blocks first paint.
+// URL is derived from this script's own src, so it works under postbuild's relative paths too.
+const TERMINAL_SRC = (document.currentScript as HTMLScriptElement | null)?.src.replace(
+    /site\.js(\?.*)?$/,
+    'terminal.js',
+);
+let terminalLoading: Promise<void> | null = null;
+function loadTerminal(): Promise<void> {
+    if (window.openTerminal) return Promise.resolve();
+    if (!terminalLoading && TERMINAL_SRC) {
+        terminalLoading = new Promise((resolve, reject) => {
+            const s = document.createElement('script');
+            s.src = TERMINAL_SRC;
+            s.onload = () => resolve();
+            s.onerror = () => reject(new Error('terminal failed to load'));
+            document.head.appendChild(s);
+        });
     }
+    return terminalLoading ?? Promise.resolve();
+}
+
+function initTerminalLoader(): void {
+    // Every [data-open-terminal] button (the 404 page has two), loading on demand.
+    document
+        .querySelectorAll<HTMLElement>('[data-open-terminal]')
+        .forEach((btn) =>
+            btn.addEventListener('click', () => loadTerminal().then(() => window.openTerminal?.())),
+        );
+    // Ctrl+K / ⌘K before the bundle arrives: load it, then open. (terminal.ts owns the shortcut
+    // once it's loaded; this listener stands down then.)
+    document.addEventListener('keydown', (e) => {
+        if (window.openTerminal || !(e.ctrlKey || e.metaKey) || e.key !== 'k') return;
+        e.preventDefault();
+        loadTerminal().then(() => window.openTerminal?.());
+    });
+    const idle = (cb: () => void) =>
+        'requestIdleCallback' in window
+            ? (window as Window & typeof globalThis).requestIdleCallback(cb, { timeout: 2500 })
+            : setTimeout(cb, 1200);
+    idle(() => void loadTerminal());
+}
+
+// ── Scroll progress: CSS scroll-driven animation where supported; rAF fallback otherwise.
+function initScrollProgress(): void {
+    const bar = document.querySelector<HTMLElement>('.scroll-progress-bar');
+    if (!bar || CSS.supports('animation-timeline: scroll()')) return;
+    let ticking = false;
+    const update = () => {
+        const max = document.documentElement.scrollHeight - window.innerHeight;
+        bar.style.transform = `scaleX(${max > 0 ? window.scrollY / max : 0})`;
+        ticking = false;
+    };
+    window.addEventListener(
+        'scroll',
+        () => {
+            if (!ticking) requestAnimationFrame(update);
+            ticking = true;
+        },
+        { passive: true },
+    );
+    update();
 }
 
 function initHeroTyping(): void {
@@ -218,22 +274,24 @@ function initHeroTerminalInteractive(): void {
             heroBody.appendChild(echo);
 
             // Dispatch via shared terminal engine (loaded by terminal.js)
-            if (typeof window.runInElement === 'function') {
-                const outputAnchor = document.createElement('div');
-                heroBody.appendChild(outputAnchor);
-                window.runInElement(raw, outputAnchor, () => {
-                    requestAnimationFrame(() => {
-                        heroBody.scrollTop = heroBody.scrollHeight;
-                    });
-                    input.focus();
+            // Shared command engine from terminal.js (lazy-loaded; usually ready long before the
+            // intro finishes typing).
+            const outputAnchor = document.createElement('div');
+            heroBody.appendChild(outputAnchor);
+            loadTerminal()
+                .then(() =>
+                    window.runInElement?.(raw, outputAnchor, () => {
+                        requestAnimationFrame(() => {
+                            heroBody.scrollTop = heroBody.scrollHeight;
+                        });
+                        input.focus();
+                    }),
+                )
+                .catch(() => {
+                    outputAnchor.className = 'hero-output';
+                    outputAnchor.style.color = 'var(--text-muted)';
+                    outputAnchor.textContent = 'Terminal engine failed to load — try reloading.';
                 });
-            } else {
-                const err = document.createElement('div');
-                err.className = 'hero-output';
-                err.style.color = 'var(--text-muted)';
-                err.textContent = 'Terminal engine not loaded yet — try again in a moment.';
-                heroBody.appendChild(err);
-            }
             requestAnimationFrame(() => {
                 heroBody.scrollTop = heroBody.scrollHeight;
             });
@@ -366,7 +424,8 @@ function init(): void {
     initHeroTerminalInteractive();
     initGlitch();
     initHeaderScroll();
-    setTimeout(initTerminalHint, 100);
+    initTerminalLoader();
+    initScrollProgress();
 }
 
 if (document.readyState === 'loading') {

@@ -3,7 +3,6 @@ import '../styles/global.css';
 import Header from '../components/Header.astro';
 import Footer from '../components/Footer.astro';
 import AnsiWall from '../components/AnsiWall.astro';
-import ScrollProgress from '../components/react/ScrollProgress';
 
 interface Props {
     title: string;
@@ -57,7 +56,7 @@ const {
         />
     </head>
     <body>
-        {showScrollProgress && <ScrollProgress client:load />}
+        {showScrollProgress && <div class="scroll-progress-bar" aria-hidden="true"></div>}
         <AnsiWall />
 
         {showHeader && <Header />}
@@ -66,7 +65,7 @@ const {
 
         <Footer fixed={fixedFooter} full={fullFooter} />
 
-        <script is:inline src="/scripts/terminal.js" defer></script>
+        <!-- terminal.js is loaded by site.js on idle (or on first Ctrl+K / terminal button). -->
         <script is:inline src="/scripts/site.js" defer></script>
     </body>
 </html>
