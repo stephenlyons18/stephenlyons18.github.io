@@ -436,9 +436,10 @@ body {
     white-space: pre;
 }
 .drip__drop {
+    /* The falling teardrop (DROP): starts over the bulb's lower rows, invisible until released. */
     position: absolute;
-    left: 0.6em;
-    top: calc((var(--h) - 1.5) * 1em);
+    left: 0;
+    top: calc((var(--h) - 2) * 1em);
     opacity: 0;
 }
 
@@ -462,7 +463,21 @@ body {
 .card-drips .ansi {
     font-size: 7px;
 }
+/* Card drips only exist while the card is hovered or focused. At rest the paint sits up inside the
+   edge (clipped); on hover it runs out on the bouncy spring, staggered drip by drip, and fx.ts
+   starts dropping. On leave it pulls back quickly. Reduced motion: it just appears. */
+.card-drips .drip__paint {
+    transform: translateY(-101%);
+    transition: transform 0.25s var(--ease);
+}
+.card:hover .card-drips .drip__paint,
+.card:focus-within .card-drips .drip__paint,
+.card-link:focus-visible .card-drips .drip__paint {
+    transform: translateY(0);
+    transition: transform var(--spring-bouncy-t) var(--spring-bouncy) calc(var(--i) * 18ms);
+}
 .card:hover .card-drips,
+.card:focus-within .card-drips,
 .card-link:focus-visible .card-drips {
     --drip-color: var(--ui-dim);
 }

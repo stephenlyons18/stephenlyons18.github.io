@@ -1,5 +1,5 @@
 import type { AnsiArt } from './generator';
-import { dripRows, type DripStrip } from './wall';
+import { DROP, dripRows, type DripStrip } from './wall';
 
 const esc = (s: string) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 
@@ -23,13 +23,13 @@ export function artToHtml(art: AnsiArt): string {
 export function dripsToHtml(strip: DripStrip, bar: boolean): string {
     const head = bar ? `<span class="d-bar">${'▄'.repeat(strip.cols)}</span>` : '';
     const drips = strip.drips
-        .map(({ x, stem }) => {
+        .map(({ x, stem }, i) => {
             const rows = dripRows(stem);
             return (
                 // <i>: the shortest inline tag — there are ~100 of these on the home page.
-                `<i class="drip" style="--x:${x};--h:${rows.length}">` +
+                `<i class="drip" style="--x:${x};--h:${rows.length};--i:${i}">` +
                 `<i class="drip__clip"><i class="drip__paint">${esc(rows.join('\n'))}</i></i>` +
-                `<i class="drip__drop">${esc('▄\n▀')}</i></i>`
+                `<i class="drip__drop">${esc(DROP.join('\n'))}</i></i>`
             );
         })
         .join('');

@@ -100,3 +100,64 @@ test('turning reduced motion on from the menu stops every drip animation', async
     );
     expect(running).toBe(0);
 });
+
+/** Vertical offset (px) of the first card's drip paint: < 0 means tucked away inside the edge. */
+const paintY = (page: Page) =>
+    page
+        .locator('.featured-grid .card .drip__paint')
+        .first()
+        .evaluate((el) => new DOMMatrixReadOnly(getComputedStyle(el).transform).m42);
+
+test('card drips are hidden at rest and run out (and drop) only while hovered', async ({
+    page,
+    isMobile,
+}) => {
+    test.skip(isMobile, 'hover');
+    await page.goto('/');
+    await expect.poll(() => fxLoaded(page), { timeout: 5000 }).toBe(true);
+    const card = page.locator('.featured-grid .card').first();
+    await card.scrollIntoViewIfNeeded();
+    await page.waitForTimeout(600);
+    expect(await paintY(page)).toBeLessThan(-5);
+    // Divider drips, by contrast, are always out (once they've run out on first view).
+    const divider = page.locator('.ansi-divider').first();
+    await divider.scrollIntoViewIfNeeded();
+    await expect
+        .poll(
+            () =>
+                divider
+                    .locator('.drip__paint')
+                    .first()
+                    .evaluate((el) => new DOMMatrixReadOnly(getComputedStyle(el).transform).m42),
+            { timeout: 3000 },
+        )
+        .toBeCloseTo(0, 0);
+    await card.scrollIntoViewIfNeeded();
+    await page.waitForTimeout(300);
+
+    const b = (await card.boundingBox())!;
+    await page.mouse.move(b.x + b.width / 2, b.y + b.height / 2);
+    await expect.poll(() => paintY(page), { timeout: 2500 }).toBeGreaterThan(-1);
+    await expect
+        .poll(
+            () =>
+                card.evaluate((el) =>
+                    [...el.querySelectorAll<HTMLElement>('.drip__drop')].some(
+                        (d) => +getComputedStyle(d).opacity > 0.3,
+                    ),
+                ),
+            { timeout: 3000, intervals: [50] },
+        )
+        .toBe(true);
+
+    await page.mouse.move(2, 2);
+    await expect.poll(() => paintY(page), { timeout: 2000 }).toBeLessThan(-5);
+});
+
+test('keyboard focus on a card link shows its drips too', async ({ page, isMobile }) => {
+    test.skip(isMobile, 'no hardware keyboard on phones');
+    await page.emulateMedia({ reducedMotion: 'reduce' });
+    await page.goto('/');
+    await page.locator('.featured-grid .card-link').first().focus();
+    await expect.poll(() => paintY(page), { timeout: 1000 }).toBeGreaterThan(-1);
+});

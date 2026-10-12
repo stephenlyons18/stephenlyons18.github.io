@@ -118,15 +118,19 @@ export function svgDataUrl(svg: string): string {
 }
 
 /**
- * A paint drip, 3 cells wide and centred on its middle cell: a 1-cell stem, then a rounded bulb
- * built from quadrant blocks, so the tip reads as a drop of paint rather than a cut-off bar.
- * In half-cell pixels the bulb is 2-4-4-2 wide: a chamfered oval.
+ * A paint drip, 3 cells wide and centred on its middle cell: a 1-cell stem, then a teardrop built
+ * from quadrant blocks. In half-cell pixels the drop is 2-4-4-6-6-4 wide: it tapers in gently from
+ * the stem and swells to a rounded bottom, so it reads as a hanging drop of paint, not a ball.
  *
  *      █      stem (× stem)
- *     ▗█▖     shoulder
- *     ▝█▘     round bottom
+ *     ▗█▖     neck
+ *     ▟█▙     swelling
+ *     ▜█▛     rounded bottom
  */
-export const DRIP_BULB = ['▗█▖', '▝█▘'] as const;
+export const DRIP_BULB = ['▗█▖', '▟█▙', '▜█▛'] as const;
+
+/** The falling drop: the same teardrop, smaller (2-4-6-4 half-cell pixels). */
+export const DROP = ['▗█▖', '▜█▛'] as const;
 
 export function dripRows(stem: number): string[] {
     return [...Array.from({ length: stem }, () => ' █ '), ...DRIP_BULB];

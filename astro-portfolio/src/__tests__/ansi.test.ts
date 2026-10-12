@@ -63,7 +63,7 @@ describe('renderAnsi', () => {
         for (const style of ['bubble', 'wild', 'block'] as const) {
             for (const t of TITLES) {
                 const s = toPlainText(renderAnsi(t, { style })).replace(/\n/g, '');
-                expect(s).toMatch(/^[ █▓▒░▀▖▗▘▝·]*$/);
+                expect(s).toMatch(/^[ █▓▒░▀▖▗▘▝▟▙▜▛·]*$/);
             }
         }
     });
@@ -154,9 +154,9 @@ describe('wall tile', () => {
 });
 
 describe('drips', () => {
-    test('a drip is a 1-cell stem over a rounded 3-cell bulb', () => {
-        expect(dripRows(0)).toEqual(['▗█▖', '▝█▘']);
-        expect(dripRows(2)).toEqual([' █ ', ' █ ', '▗█▖', '▝█▘']);
+    test('a drip is a 1-cell stem over a 3-cell teardrop', () => {
+        expect(dripRows(0)).toEqual(['▗█▖', '▟█▙', '▜█▛']);
+        expect(dripRows(2)).toEqual([' █ ', ' █ ', '▗█▖', '▟█▙', '▜█▛']);
         for (const r of dripRows(3)) expect([...r]).toHaveLength(3);
     });
 
@@ -182,16 +182,43 @@ describe('drips', () => {
         expect(html.match(/class="drip__drop"/g)).toHaveLength(s.drips.length);
         expect(html).toContain(`<span class="d-bar">${'▄'.repeat(60)}</span>`);
         expect(dripsToHtml(s, false)).not.toContain('d-bar');
-        expect(html).toContain(`--x:${s.drips[0]!.x};--h:${s.drips[0]!.stem + 2}`);
+        expect(html).toContain(`--x:${s.drips[0]!.x};--h:${s.drips[0]!.stem + 3};--i:0`);
+        expect(html).toContain('<i class="drip__drop">▗█▖\n▜█▛</i>');
     });
 
-    test('title drips end in a full bulb (▗█▖ over ▝█▘) or a half-block tip', () => {
+    test('the teardrop tapers in from the stem and swells to a rounded bottom', () => {
+        // Half-cell pixel widths per half-row: each glyph → [top, bottom] lit halves of its cell.
+        const width = (row: string, top: boolean) =>
+            [...row].reduce((n, ch) => {
+                const t: Record<string, [number, number]> = {
+                    ' ': [0, 0],
+                    '█': [2, 2],
+                    '▗': [0, 1],
+                    '▖': [0, 1],
+                    '▟': [1, 2],
+                    '▙': [1, 2],
+                    '▜': [2, 1],
+                    '▛': [2, 1],
+                    '▝': [1, 0],
+                    '▘': [1, 0],
+                };
+                return n + t[ch]![top ? 0 : 1];
+            }, 0);
+        const profile = DRIP_BULB.flatMap((r) => [width(r, true), width(r, false)]);
+        expect(profile).toEqual([2, 4, 4, 6, 6, 4]);
+    });
+
+    test('title drips end in a full teardrop or a half-block tip', () => {
         let bulbs = 0;
         for (const t of TITLES) {
             const rows = toPlainText(renderAnsi(t, { style: 'wild', drips: 0.6 })).split('\n');
             rows.forEach((row, y) => {
-                for (let x = row.indexOf('▗█▖'); x >= 0; x = row.indexOf('▗█▖', x + 1)) {
-                    expect(rows[y + 1]?.slice(x, x + 3)).toBe('▝█▘');
+                for (
+                    let x = row.indexOf(DRIP_BULB[0]);
+                    x >= 0;
+                    x = row.indexOf(DRIP_BULB[0], x + 1)
+                ) {
+                    DRIP_BULB.forEach((b, k) => expect(rows[y + k]?.slice(x, x + 3)).toBe(b));
                     bulbs++;
                 }
             });
