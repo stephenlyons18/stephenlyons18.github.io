@@ -1,0 +1,17 @@
+---
+/**
+ * The brick wall behind every page: three theme-coloured layers masked by a seamless ANSI tile
+ * (bricks ▓, mortar ░, chips ▒ — see src/lib/ansi/wall.ts). It covers the whole document and
+ * scrolls with it, like paint on a real wall. Static: no JS, no glyphs in the DOM.
+ */
+---
+
+<div class="ansi-wall" aria-hidden="true">
+    <div class="w-b"></div>
+    <div class="w-m"></div>
+    <div class="w-c"></div>
+</div>
+<link rel="stylesheet" href="/art/wall.css" media="print" onload="this.media='all'" />
+<noscript>
+    <link rel="stylesheet" href="/art/wall.css" />
+</noscript>

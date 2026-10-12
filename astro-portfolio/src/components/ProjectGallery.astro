@@ -1,0 +1,50 @@
+---
+/**
+ * Project screenshots: a grid of thumbnail buttons that open one shared native <dialog> lightbox
+ * (Lightbox.astro). Static HTML; the open/close + zoom morph is ~1 KB of vanilla TS there.
+ */
+export interface ProjectImage {
+    src: string;
+    alt: string;
+    /** Build-time WebP variants (see src/lib/responsiveImages.ts). */
+    srcset?: string;
+    width?: number;
+    height?: number;
+    caption?: string;
+}
+interface Props {
+    images: ProjectImage[];
+}
+const { images } = Astro.props;
+---
+
+<div class="card__images">
+    {images.map((img) => (
+        <figure class="card__image-item">
+            <button
+                type="button"
+                class="card__image-btn"
+                data-lightbox
+                data-src={img.src}
+                data-srcset={img.srcset}
+                data-width={img.width}
+                data-height={img.height}
+                data-caption={img.caption}
+                aria-haspopup="dialog"
+                aria-label={`Enlarge image: ${img.alt}`}
+            >
+                <img
+                    src={img.src}
+                    srcset={img.srcset}
+                    sizes="(max-width: 768px) 92vw, 480px"
+                    width={img.width}
+                    height={img.height}
+                    alt={img.alt}
+                    loading="lazy"
+                    decoding="async"
+                />
+            </button>
+            {img.caption && <figcaption>{img.caption}</figcaption>}
+        </figure>
+    ))}
+</div>

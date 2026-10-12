@@ -1,55 +1,128 @@
 ---
-import "../styles/global.css";
-import Header from "../components/Header.astro";
-import Footer from "../components/Footer.astro";
-import ScrollProgress from "../components/react/ScrollProgress";
+import '../styles/global.css';
+import Header from '../components/Header.astro';
+import Footer from '../components/Footer.astro';
+import AnsiWall from '../components/AnsiWall.astro';
+import { ROUTES, SITE, absUrl, type PageKind } from '../data/site';
+import projects from '../data/projects';
+import { skills } from '../data/skills';
+import { ldJson, pageLd } from '../lib/seo';
 
 interface Props {
-	title: string;
-	description: string;
-	fixedFooter?: boolean;
-	fullFooter?: boolean;
-	showHeader?: boolean;
-	/** Set to false on pages with no scrollable content (e.g. 404) to avoid
-	 *  loading the React + Motion bundle unnecessarily. Defaults to true. */
-	showScrollProgress?: boolean;
+    title: string;
+    description: string;
+    /** What the page is, for canonical URL, JSON-LD type and indexing (error pages are noindex). */
+    kind: PageKind;
+    fixedFooter?: boolean;
+    fullFooter?: boolean;
+    showHeader?: boolean;
+    /** Set to false on pages with no scrollable content (e.g. 404) to avoid
+     *  loading the React + Motion bundle unnecessarily. Defaults to true. */
+    showScrollProgress?: boolean;
 }
 
 const {
-	title,
-	description,
-	fixedFooter = false,
-	fullFooter = true,
-	showHeader = true,
-	showScrollProgress = true,
+    title,
+    description,
+    kind,
+    fixedFooter = false,
+    fullFooter = true,
+    showHeader = true,
+    showScrollProgress = true,
 } = Astro.props;
+
+const path = ROUTES.find((r) => r.kind === kind)?.path ?? Astro.url.pathname;
+const canonical = absUrl(path);
+const ogImage = absUrl('/og.png');
+const ld =
+    kind === 'error'
+        ? null
+        : pageLd(
+              kind,
+              { path, title, description },
+              {
+                  ...(kind === 'projects' ? { projects } : {}),
+                  ...(kind === 'about' || kind === 'home' ? { skills } : {}),
+              },
+          );
 ---
 
 <!doctype html>
-<html lang='en'>
-	<head>
-		<meta charset='UTF-8' />
-		<meta name='viewport' content='width=device-width, initial-scale=1.0' />
-		<meta name='description' content={description} />
-		<meta name='author' content='Stephen Lyons' />
-		<meta name='theme-color' content='#0A0A0A' />
-		<title>{title}</title>
-		<link
-			rel='icon'
-			href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🛡️</text></svg>"
-		/>
-	</head>
-	<body>
-		{showScrollProgress && <ScrollProgress client:load />}
-		<canvas id='matrix-canvas' aria-hidden='true'></canvas>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <meta name="description" content={description} />
+        <meta name="author" content={SITE.name} />
+        <meta name="theme-color" content="#070b12" />
+        {kind === 'error' ? (
+            <meta name="robots" content="noindex, follow" />
+        ) : (
+            <>
+                <meta name="robots" content="index, follow, max-image-preview:large" />
+                <link rel="canonical" href={canonical} />
+            </>
+        )}
+        <!-- Social cards (og:image is drawn at build from the ANSI art: src/pages/og.png.ts) -->
+        <meta property="og:type" content={kind === 'about' ? 'profile' : 'website'} />
+        <meta property="og:site_name" content={SITE.title} />
+        <meta property="og:title" content={title} />
+        <meta property="og:description" content={description} />
+        <meta property="og:url" content={canonical} />
+        <meta property="og:locale" content={SITE.locale} />
+        <meta property="og:image" content={ogImage} />
+        <meta property="og:image:width" content="1200" />
+        <meta property="og:image:height" content="630" />
+        <meta
+            property="og:image:alt"
+            content={`${SITE.name} — ${SITE.jobTitle}, in ANSI graffiti letters`}
+        />
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:title" content={title} />
+        <meta name="twitter:description" content={description} />
+        <meta name="twitter:image" content={ogImage} />
+        <!-- For AI search and assistants: a Markdown map of the site (llmstxt.org). -->
+        <link rel="alternate" type="text/markdown" href="/llms.txt" title="llms.txt" />
+        {ld && <script type="application/ld+json" set:html={ldJson(ld)} />}
+        {[
+            'press-start-2p-subset.woff2',
+            'departure-mono-subset.woff2',
+            'jetbrains-mono-art.woff2',
+        ].map((f) => (
+            <link rel="preload" href={`/fonts/${f}`} as="font" type="font/woff2" crossorigin />
+        ))}
+        <!-- Before first paint (no flash): the saved theme, and the accessibility menu's choices
+             (Header.astro / site.ts). Old values from the green-era themes fall back to default.
+             Reduced motion is on when the OS asks for it, or when the user turned it on here. -->
+        <script is:inline>
+            try {
+                var d = document.documentElement;
+                var t = localStorage.getItem('sl-theme');
+                if (t && /^(bubble|ansi|sunset|green)$/.test(t)) d.setAttribute('data-theme', t);
+                var a = JSON.parse(localStorage.getItem('sl-a11y') || '{}');
+                for (var k in a)
+                    if (a[k] && /^[a-z-]+$/.test(k)) d.setAttribute('data-a11y-' + k, '');
+                if (a.motion || matchMedia('(prefers-reduced-motion: reduce)').matches)
+                    d.setAttribute('data-reduce-motion', '');
+            } catch (e) {}
+        </script>
+        <title>{title}</title>
+        <link
+            rel="icon"
+            href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🛡️</text></svg>"
+        />
+    </head>
+    <body>
+        {showScrollProgress && <div class="scroll-progress-bar" aria-hidden="true"></div>}
+        <AnsiWall />
 
-		{showHeader && <Header />}
+        {showHeader && <Header />}
 
-		<slot />
+        <slot />
 
-		<Footer fixed={fixedFooter} full={fullFooter} />
+        <Footer fixed={fixedFooter} full={fullFooter} />
 
-		<script is:inline src='/scripts/terminal.js' defer></script>
-		<script is:inline src='/scripts/site.js' defer></script>
-	</body>
+        <!-- terminal.js is loaded by site.js on idle (or on first Ctrl+K / terminal button). -->
+        <script is:inline src="/scripts/site.js" defer></script>
+    </body>
 </html>
