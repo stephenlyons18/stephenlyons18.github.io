@@ -281,7 +281,7 @@ function toggleTerminal(): void {
 function dispatchCommand(raw: string, outputEl: HTMLElement, onDone?: () => void): void {
     appendHTML(
         outputEl,
-        '<span style="color:var(--accent);font-weight:600;">stephen@lyons:~$</span>&nbsp;' +
+        '<span style="color:var(--ui);font-weight:600;">stephen@lyons:~$</span>&nbsp;' +
             escapeHTML(raw),
     );
     if (!raw) {
@@ -472,9 +472,9 @@ function cmdProjects(_args: string[], outputEl: HTMLElement, onDone?: () => void
         // Clickable title — links to /projects#{id}
         appendHTML(
             outputEl,
-            `  <span style="color:var(--accent);font-weight:600;">&gt;</span> ` +
+            `  <span style="color:var(--ui);font-weight:600;">&gt;</span> ` +
                 `<a href="/projects#${encodeURIComponent(p.id)}" ` +
-                `style="color:var(--accent);text-decoration:underline;text-decoration-color:var(--accent-dim);" ` +
+                `style="color:var(--ui);text-decoration:underline;text-decoration-color:var(--ui-dim);" ` +
                 `title="View on projects page">${escapeHTML(p.title)}</a>`,
         );
         appendLine(outputEl, `    ${p.descriptions[0]}`);
@@ -631,8 +631,7 @@ function triggerMatrixEasterEgg(): void {
         ctx.fillStyle = 'rgba(0, 0, 0, 0.05)';
         ctx.fillRect(0, 0, canvas.width, canvas.height);
         ctx.fillStyle =
-            getComputedStyle(document.documentElement).getPropertyValue('--accent').trim() ||
-            '#00FF41';
+            getComputedStyle(document.documentElement).getPropertyValue('--ui').trim() || '#00FF41';
         ctx.font = '15px JetBrains Mono, monospace';
 
         for (let i = 0; i < drops.length; i++) {

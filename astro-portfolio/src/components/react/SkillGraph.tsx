@@ -805,7 +805,7 @@ export default function SkillGraph({ height = 700 }: { height?: number }) {
     useEffect(() => {
         const read = () => {
             themeRef.current = {
-                accent: cssVar('--accent', '#00FF41'),
+                accent: cssVar('--ui', '#00FF41'),
                 halo: cssVar('--graph-halo', 'rgba(11, 13, 16, 0.92)'),
                 label: cssVar('--graph-label', '#E6EDF3'),
             };
