@@ -1,0 +1,199 @@
+# Stephen Lyons — Cybersecurity Engineer
+
+> Cybersecurity Engineer at Yamaha Motor Corporation: DevSecOps, cloud security, SIEM engineering, endpoint protection and incident response.
+
+Site: https://stephenlyons.dev/
+
+## Experience
+
+### Cybersecurity Engineer — Yamaha Motor Corporation — Cypress, CA
+
+Aug 2023 – Present
+
+- Manages on-prem and cloud security operations
+- Implements and manages DevSecOps practices using GitHub Actions and GitHub Enterprise
+- Develops infrastructure as code using Terraform and Ansible
+- Oversees enterprise cybersecurity tool management including Netskope, CrowdStrike, and Zscaler
+- Manages Azure infrastructure, groups, and mobile devices through Intune
+- Builds and maintains CI/CD pipelines with embedded security checks and compliance gates
+- Develops and maintains SIEM platforms for real-time visibility, detection, and incident response
+- Automates log collection, normalization, and enrichment across cloud, endpoint, and SaaS sources
+- Deploys and manages EDR solutions and implements DLP controls
+- Assists in leading security operations including triage, investigation, containment, and remediation
+
+Tools: GitHub Enterprise, Terraform, Ansible, Netskope, CrowdStrike, Zscaler, Azure, Intune, Python, AWS
+
+### Business Application Development Intern — Yamaha Motor Corporation — Cypress, CA
+
+May 2022 – Aug 2022
+
+- Designed and presented testing methods to ensure quality of newly developed code and data
+- Developed custom SAP programs using the ABAP programming language
+- Utilized ABAP, SAP, Python, and React.js to support development of advanced business applications
+- Provided support in transitioning web technologies and frameworks
+
+Tools: ABAP, SAP, Python, React.js
+
+### Web Developer — Associated Students Inc. — Long Beach, CA
+
+Feb 2020 – May 2022 & Oct 2022 – Jul 2023
+
+- Led a team of graduate student developers and conducted interviews to hire new web developers
+- Improved ASI websites with SEO, website merging, and daily content updates for campus events
+- Developed and deployed a quiz game for incoming freshmen during the COVID-19 Pandemic using React.js
+- Assisted with the development and deployment of web-related applications for the Student Union and Student Recreation Center
+
+Tools: HTML, CSS, PHP, Joomla, React.js, Google Analytics, WordPress
+
+### Lead Security Engineer — Down (joindown.com) — Remote
+
+May 2021 – Jan 2022
+
+- Coordinated development and testing of Android and iOS components for React Native social media app
+- Developed security rules and tested the React Native application using Jest and Detox libraries
+- Led the development of security and testing with Firebase storage
+
+Tools: TypeScript, React Native, Expo, Jest/Detox, GitHub, Firebase
+
+### Software Development Lead — Down Friend Groups — Remote
+
+Jun 2021 – Aug 2021
+
+- Led software development efforts for the Down Friend Groups team
+
+Tools: React Native, JavaScript
+
+### Intern / Laser Technician — M.R. Mold and Engineering — Brea, CA
+
+Jul 2018 – Jun 2019
+
+- Founded internship program and acted as liaison to Brea Olinda High School for future interns
+- Learned cutting-edge plastic and silicone molding methods and 3D modeling with Solidworks
+- Produced laser-engraved steel products and developed software to quality-control precision silicone parts
+
+Tools: Solidworks, 3D Modeling, QC Software
+
+## Projects
+
+### Rosie the Wardriver
+
+Hardware / Wardriving · DEF CON 33 — 2025 · https://stephenlyons.dev/projects/#rosie
+
+A mobile cybersecurity demonstration platform built by repurposing an abandoned commercial Android service robot. Rosie transforms a stationary kiosk into a rolling wardriving unit capable of WiFi reconnaissance and RF signal mapping, showcased at DEF CON 33 and other cybersecurity conferences.
+
+Built with the National Upcycled Computing Collective (NUCC), a Southern California hacker nonprofit that repurposes decommissioned computing equipment for educational cybersecurity programs. The project demonstrates practical embedded systems design through creative hardware repurposing.
+
+Highlights:
+
+- Differential drive mobility using repurposed hoverboard hub motors with tank steering
+- Dual-sensor wardriving stack — Android robot paired with an integrated Meta Quest 3S running Kali NetHunter
+- ESP32 motor-control firmware in C++ with wireless telemetry and Wii Nunchuck input over I2C
+- Modular power architecture using XT60 connectors and magnetic pogo pins for field servicing
+- Custom 3D-printed mounts for headset integration and cable management
+- Live conference display featuring WiFi scanning, packet visualization, and animated demos
+
+Tech: ESP32, C++, Android, Kali NetHunter, Termux, Kismet, WiGLE, I2C, 3D Printing
+Link: https://github.com/stephenlyons18/rosie
+Link: https://www.hackster.io/news/a-networked-porta-potty-and-more-absurdity-at-def-con-s-scavenger-hunt-475ee8c567ca
+Link: https://www.hackerphotos.com/picture.php?/61246/category/43
+
+### Thumbo.app
+
+Freelance Full-Stack Engineer · Aug 2022 – Dec 2023 · https://stephenlyons.dev/projects/#thumbo
+
+Developed the MVP for a stadium and fan entertainment site enabling real-time chatting, trivia, and polls from attendees. Built the front-end experience for both mobile devices and Jumbotron displays, and managed full deployment pipeline via AWS.
+
+The platform allows event organizers to engage live audiences through interactive features, providing a seamless experience from personal devices to large-screen stadium displays.
+
+Key Contributions:
+
+- Architected and developed the full-stack MVP from concept to deployment
+- Built responsive mobile UI and large-format Jumbotron display interface
+- Implemented real-time chatting, trivia games, and audience polling features
+- Managed containerized deployments with Docker on AWS infrastructure
+- Configured CI/CD pipeline for automated testing and deployments via Vercel and AWS
+
+Tech: Next.js, TypeScript, TailwindCSS, Firebase, Docker, AWS, Vercel, GitHub
+Link: https://thumbo.app
+
+### FooDood
+
+CSULB Senior Project · Sep 2022 – May 2023 · https://stephenlyons.dev/projects/#foodood
+
+A food-finding swiper mobile application that recommends personalized dishes from nearby restaurants. Users swipe through curated dish suggestions based on their preferences, location, and ratings from Google Business Profile and Yelp APIs.
+
+Built as a senior capstone project at CSULB, the app demonstrates end-to-end mobile development from user experience design to API integration and cloud deployment.
+
+Key Features:
+
+- Swipe-based UI for intuitive dish discovery and selection
+- Personalized recommendations using machine learning and user preference data
+- Integration with Google Business Profile API and Yelp API for restaurant data
+- Real-time data sync via Firebase with Google Cloud backend
+- Cross-platform mobile app built with React Native and Expo
+
+Tech: React Native, Expo, Next.js, Google Cloud, Firebase, Google Business Profile API, Yelp API
+Link: https://github.com/Brenden-Smith/FooDood
+
+### GitHub Actions Security Pipelines
+
+DevSecOps · Ongoing · https://stephenlyons.dev/projects/#security-automation
+
+A collection of GitHub Actions workflows implementing security-first CI/CD practices. Includes automated secret scanning with TruffleHog, code formatting enforcement with Prettier, and broken link checking for static sites.
+
+Workflows:
+
+- Secret Scanning — TruffleHog scans every push and PR for accidentally committed credentials
+- Code Formatting — Prettier checks enforce consistent style across HTML, CSS, and JS
+- Link Checker — Weekly and on-push scans detect broken internal and external links
+
+Tech: GitHub Actions, TruffleHog, Prettier, YAML, CI/CD
+
+### Portfolio Website
+
+Personal · 2026 · https://stephenlyons.dev/projects/#portfolio
+
+This very site — a terminal-themed cybersecurity portfolio built with Astro, TypeScript, Tailwind, and Motion. Features an interactive terminal overlay (Ctrl+K), Matrix rain backgrounds, CRT scanline effects, View Transitions, and a fully responsive design.
+
+Highlights:
+
+- Interactive terminal with tab-completion, command history, and themed output
+- Terminal boot sequence, typing animations, and glitch effects
+- Canvas-based matrix rain background and CSS scanline overlays
+- Theme switching (green/cyan/amber) via terminal command
+- Astro static output, Motion-powered React islands, and View Transitions
+- Deployed as static files — minimal client JS
+
+Tech: Astro, TypeScript, Tailwind CSS, Motion, React
+
+### Down — Social Media App
+
+Security Engineering · May 2021 – Jan 2022 · https://stephenlyons.dev/projects/#down
+
+Led security engineering for a React Native social media application. Coordinated development and testing across Android and iOS platforms, implemented Firebase security rules, and built comprehensive test suites with Jest and Detox.
+
+Tech: TypeScript, React Native, Expo, Firebase, Jest, Detox, GitHub
+Link: https://joindown.com
+
+### CSULB ACM Website
+
+Club Webmaster · 2022 – 2023 · https://stephenlyons.dev/projects/#acm
+
+Served as Webmaster for the CSULB Association for Computing Machinery (ACM) chapter, maintaining and improving the club's website to serve the computer science community at Long Beach.
+
+Tech: HTML, CSS, JavaScript, React.js
+Link: https://acm.csulb.org
+Link: https://github.com/csulbacm/ACM-Website-2022
+
+## Skills
+
+- Languages: TypeScript, Python, HTML, JavaScript, Rust, Go, CSS, C, PHP, Java, C++, C#
+- Frameworks: Git, React.js, Linux/UNIX, Node.js, Docker, Next.js, Astro.js, React Native, GitHub CLI, Jest, Expo
+- Security tools: CrowdStrike, Splunk, Netskope, Intune, Entra IAM, Zscaler, Microsoft Sentinel, Azure AD, GitHub Enterprise, GitHub Actions, Terraform, Ansible
+- Security skills: SIEM, Incident Response, DevSecOps, Endpoint Detection & Response, Data Loss Prevention, Cloud Security, Mobile Security, Wiz, Malware Analysis, Vulnerability Mgmt, AD Security, App Security, Digital Forensics
+- Cloud & infrastructure: AWS, Azure, Firebase, DataDog, Google Cloud, Vercel
+
+## Elsewhere
+
+- https://github.com/stephenlyons18
+- https://linkedin.com/in/stephen-lyons
