@@ -12,6 +12,10 @@ Stephen Lyons' cybersecurity portfolio: a working in-browser terminal painted on
 - Build-time ANSI/ASCII art generators: block-letter titles with 3D shading and paint drips, zero runtime JS
 - Pixel type, self-hosted and subset (~22 KB): **Press Start 2P** for display, **Departure Mono** for body. A tiny JetBrains Mono subset sets the art's cells
 - Motion (`motion/mini`) for play: paint drips that run and drop, cards that tilt toward the cursor, art you can grab and fling, and pixel-wipe page transitions. All of it stops under reduced motion
+- SEO and AI-search ready, all generated from the typed data:
+  - canonical URLs, Open Graph/Twitter cards, and an OG image drawn from the ANSI art;
+  - JSON-LD (Person, WebSite, ProfilePage, project ItemList);
+  - `sitemap.xml`, `robots.txt`, and `llms.txt` / `llms-full.txt`.
 - An **accessibility menu** in the header (plain headings, reduce motion, readable font, larger text, high contrast, hide texture), applied before first paint
 - Tests: **Vitest** (data integrity, generators) and **Playwright** (desktop, laptop, mobile)
 

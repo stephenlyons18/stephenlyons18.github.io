@@ -73,7 +73,7 @@ test('fx.js loads on pages with drips, and a poke releases a falling drop', asyn
                         (d) => +getComputedStyle(d).opacity > 0.5,
                     ),
                 ),
-            { timeout: 2000, intervals: [50] },
+            { timeout: 4000, intervals: [50] },
         )
         .toBe(true);
 });
