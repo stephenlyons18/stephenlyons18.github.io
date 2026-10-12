@@ -4,7 +4,8 @@ export interface ProjectLink {
 }
 
 export interface ProjectImage {
-    /** Public path served from /public, e.g. /images/projects/foo.jpg */
+    /** Key for src/assets/projects/<file> (e.g. /images/projects/foo.jpg → foo.jpg); projects.astro
+     *  turns it into responsive WebP. Kept a string so the esbuild terminal bundle can import this. */
     src: string;
     alt: string;
     caption?: string;

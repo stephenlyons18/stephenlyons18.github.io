@@ -4,6 +4,22 @@ import AnsiTitle from '../components/AnsiTitle.astro';
 import AnsiDivider from '../components/AnsiDivider.astro';
 import projects from '../data/projects';
 import ProjectGallery from '../components/react/ProjectGallery';
+import { responsiveImage } from '../lib/responsiveImages';
+
+// Swap each project photo for build-time WebP variants (srcset) before handing it to the island.
+const galleries = Object.fromEntries(
+    await Promise.all(
+        projects.map(async (p) => [
+            p.id,
+            await Promise.all(
+                (p.images ?? []).map(async (img) => ({
+                    ...img,
+                    ...(await responsiveImage(img.src)),
+                })),
+            ),
+        ]),
+    ),
+);
 ---
 
 <BaseLayout
@@ -70,7 +86,7 @@ import ProjectGallery from '../components/react/ProjectGallery';
                     </div>
 
                     {p.images && p.images.length > 0 && (
-                        <ProjectGallery images={p.images} projectId={p.id} client:visible />
+                        <ProjectGallery images={galleries[p.id]} projectId={p.id} client:visible />
                     )}
 
                     {p.links && p.links.length > 0 && (

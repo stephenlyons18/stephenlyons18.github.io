@@ -71,6 +71,13 @@ for (const file of walk(root)) {
     //    They appear as  &quot;/images/...&quot;  inside the attribute value.
     html = html.replace(/(&quot;)(\/(?!\/)(?:images|_astro)\/[^&"]*)/g, `$1${rel}$2`);
 
+    // 6. srcset lists (responsive images): every URL in the list, in attributes and in island props.
+    html = html.replace(
+        /(srcset|srcSet)="([^"]*)"/g,
+        (_m, attr, list) => `${attr}="${list.replace(/(^|,\s*)\/(?!\/)/g, `$1${rel}/`)}"`,
+    );
+    html = html.replace(/(,\s*)(\/(?!\/)_astro\/)/g, `$1${rel}$2`);
+
     if (html !== before) {
         writeFileSync(file, html);
         changed++;

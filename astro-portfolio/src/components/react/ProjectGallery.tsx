@@ -5,6 +5,10 @@ import { motion, AnimatePresence } from 'motion/react';
 export interface ProjectImage {
     src: string;
     alt: string;
+    /** Build-time WebP variants (see src/lib/responsiveImages.ts). */
+    srcset?: string;
+    width?: number;
+    height?: number;
     caption?: string;
 }
 
@@ -85,7 +89,15 @@ export default function ProjectGallery({ images, projectId }: Props) {
                             aria-modal="true"
                             aria-label={selected.alt}
                         >
-                            <img src={selected.src} alt={selected.alt} className="lightbox-img" />
+                            <img
+                                src={selected.src}
+                                srcSet={selected.srcset}
+                                sizes="min(90vw, 1000px)"
+                                width={selected.width}
+                                height={selected.height}
+                                alt={selected.alt}
+                                className="lightbox-img"
+                            />
                             {selected.caption && (
                                 <figcaption className="lightbox-caption">
                                     {selected.caption}
@@ -135,7 +147,16 @@ export default function ProjectGallery({ images, projectId }: Props) {
                                 margin: 0,
                             }}
                         >
-                            <img src={img.src} alt={img.alt} loading="lazy" decoding="async" />
+                            <img
+                                src={img.src}
+                                srcSet={img.srcset}
+                                sizes="(max-width: 768px) 92vw, 480px"
+                                width={img.width}
+                                height={img.height}
+                                alt={img.alt}
+                                loading="lazy"
+                                decoding="async"
+                            />
                             {img.caption && <figcaption>{img.caption}</figcaption>}
                         </motion.figure>
                     );
