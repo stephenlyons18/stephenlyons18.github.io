@@ -1,6 +1,7 @@
+import { describe, expect, test } from 'vitest';
 import { skills } from '../data/skills';
 
-const skillNames = new Set(skills.map(s => s.name));
+const skillNames = new Set(skills.map((s) => s.name));
 
 describe('skills.ts data integrity', () => {
     test('no skill has a self-connection', () => {
@@ -32,7 +33,7 @@ describe('skills.ts data integrity', () => {
         const unknown: Record<string, string[]> = {};
         for (const skill of skills) {
             if (!skill.connections) continue;
-            const bad = skill.connections.filter(c => !skillNames.has(c));
+            const bad = skill.connections.filter((c) => !skillNames.has(c));
             if (bad.length > 0) unknown[skill.name] = bad;
         }
         expect(unknown).toEqual({});
@@ -43,7 +44,7 @@ describe('skills.ts data integrity', () => {
         for (const skill of skills) {
             if (!skill.connections) continue;
             for (const conn of skill.connections) {
-                const other = skills.find(s => s.name === conn);
+                const other = skills.find((s) => s.name === conn);
                 if (!other) continue; // caught by previous test
                 if (!other.connections?.includes(skill.name)) {
                     missing.push({ from: skill.name, to: conn });
@@ -54,7 +55,7 @@ describe('skills.ts data integrity', () => {
     });
 
     test('each skill has weight between 1 and 10', () => {
-        const bad = skills.filter(s => s.weight < 1 || s.weight > 10);
-        expect(bad.map(s => s.name)).toEqual([]);
+        const bad = skills.filter((s) => s.weight < 1 || s.weight > 10);
+        expect(bad.map((s) => s.name)).toEqual([]);
     });
 });
