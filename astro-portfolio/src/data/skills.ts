@@ -21,7 +21,7 @@ export const skills: Skill[] = [
   // ── Languages ──────────────────────────────────────────────────
   {
     name: 'TypeScript', category: 'languages', weight: 10,
-    connections: ['React.js', 'Node.js', 'Jest', 'Next.js', 'Astro.js', 'HTML', 'CSS', 'Git', 'JavaScript', 'React Native', 'App Security', 'GitHub Actions', 'GitHub Enterprise', 'DevSecOps', 'AWS', 'Expo', 'Down — Lead Security Engineer'],
+    connections: ['React.js', 'Node.js', 'Jest', 'Next.js', 'Astro.js', 'HTML', 'CSS', 'Git', 'JavaScript', 'React Native', 'App Security', 'GitHub Actions', 'GitHub Enterprise', 'DevSecOps', 'AWS', 'Expo', 'Down — Lead Security Engineer', 'Firebase'],
     relatedProjects: ['Thumbo.app', 'Portfolio Website', 'Down — Social Media App'],
   },
   {
@@ -30,7 +30,7 @@ export const skills: Skill[] = [
   },
   {
     name: 'JavaScript', category: 'languages', weight: 8,
-    connections: ['React.js', 'Node.js', 'React Native', 'Next.js', 'Astro.js', 'HTML', 'CSS', 'Git', 'TypeScript', 'App Security', 'Jest', 'Expo', 'GitHub Actions', 'DevSecOps', 'Down Friend Groups — Dev Lead'],
+    connections: ['React.js', 'Node.js', 'React Native', 'Next.js', 'Astro.js', 'HTML', 'CSS', 'Git', 'TypeScript', 'App Security', 'Jest', 'Expo', 'GitHub Actions', 'DevSecOps', 'Down Friend Groups — Dev Lead', 'AWS', 'Firebase'],
     relatedProjects: ['CSULB ACM Website', 'Thumbo.app', 'Portfolio Website', 'Down — Social Media App', 'FooDood'],
   },
   {
@@ -59,12 +59,12 @@ export const skills: Skill[] = [
   },
   {
     name: 'Next.js', category: 'frameworks', weight: 7,
-    connections: ['React.js', 'TypeScript', 'Vercel', 'App Security', 'GitHub Actions', 'Git', 'JavaScript', 'HTML', 'CSS', 'Jest', 'Node.js', 'Astro.js', 'AWS'],
+    connections: ['React.js', 'TypeScript', 'Vercel', 'App Security', 'GitHub Actions', 'Git', 'JavaScript', 'HTML', 'CSS', 'Jest', 'Node.js', 'Astro.js', 'AWS', 'Firebase'],
     relatedProjects: ['Thumbo.app', 'FooDood'],
   },
   {
     name: 'Astro.js', category: 'frameworks', weight: 6,
-    connections: ['TypeScript', 'React.js', 'JavaScript', 'HTML', 'CSS', 'App Security', 'GitHub Actions', 'Git'],
+    connections: ['TypeScript', 'React.js', 'JavaScript', 'HTML', 'CSS', 'App Security', 'GitHub Actions', 'Git', 'Next.js'],
     relatedProjects: ['Portfolio Website'],
   },
   {
@@ -153,7 +153,7 @@ export const skills: Skill[] = [
   },
   {
     name: 'GitHub Actions', category: 'security-tools', weight: 7,
-    connections: ['GitHub Enterprise', 'DevSecOps', 'GitHub CLI', 'TypeScript', 'JavaScript', 'App Security', 'Python', 'Next.js', 'Astro.js', 'AWS', 'Yamaha — Cybersecurity Engineer'],
+    connections: ['GitHub Enterprise', 'DevSecOps', 'GitHub CLI', 'TypeScript', 'JavaScript', 'App Security', 'Python', 'Next.js', 'Astro.js', 'AWS', 'Yamaha — Cybersecurity Engineer', 'Vercel'],
     relatedProjects: ['GitHub Actions Security Pipelines'],
   },
   {
@@ -205,7 +205,7 @@ export const skills: Skill[] = [
   },
   {
     name: 'App Security', category: 'security-skills', weight: 7,
-     connections: ['DevSecOps', 'GitHub Enterprise', 'GitHub Actions', 'TypeScript', 'JavaScript', 'React.js', 'Next.js', 'Astro.js', 'AWS', 'Wiz', 'Cloud Security', 'DataDog', 'Jest', 'React Native', 'Python', 'Expo', 'GitHub CLI', 'Down — Lead Security Engineer'],
+     connections: ['DevSecOps', 'GitHub Enterprise', 'GitHub Actions', 'TypeScript', 'JavaScript', 'React.js', 'Next.js', 'Astro.js', 'AWS', 'Wiz', 'Cloud Security', 'DataDog', 'Jest', 'React Native', 'Python', 'Expo', 'GitHub CLI', 'Down — Lead Security Engineer', 'Vercel'],
      relatedProjects: ['Thumbo.app', 'FooDood', 'Down — Social Media App'],
   },
 
@@ -218,12 +218,12 @@ export const skills: Skill[] = [
   // ── Cloud ──────────────────────────────────────────────────────
   {
     name: 'AWS', category: 'cloud', weight: 9,
-    connections: ['Python', 'Docker', 'Azure', 'Terraform', 'DataDog', 'Cloud Security', 'Wiz', 'Google Cloud', 'Next.js', 'Linux/UNIX', 'App Security', 'DevSecOps', 'GitHub Actions', 'GitHub Enterprise', 'Vercel', 'Firebase', 'TypeScript', 'Git', 'JavaScript', 'Yamaha — Cybersecurity Engineer'],
+    connections: ['Python', 'Docker', 'Azure', 'Terraform', 'DataDog', 'Cloud Security', 'Wiz', 'Google Cloud', 'Next.js', 'Linux/UNIX', 'App Security', 'DevSecOps', 'GitHub Actions', 'GitHub Enterprise', 'Vercel', 'Firebase', 'TypeScript', 'Git', 'JavaScript', 'Yamaha — Cybersecurity Engineer', 'Ansible'],
     relatedProjects: ['Thumbo.app'],
   },
   {
     name: 'Azure', category: 'cloud', weight: 9,
-    connections: ['Intune', 'Microsoft Sentinel', 'AWS', 'Entra IAM', 'DataDog', 'Cloud Security', 'Wiz', 'Python', 'Terraform', 'DevSecOps', 'Yamaha — Cybersecurity Engineer'],
+    connections: ['Intune', 'Microsoft Sentinel', 'AWS', 'Entra IAM', 'DataDog', 'Cloud Security', 'Wiz', 'Python', 'Terraform', 'DevSecOps', 'Yamaha — Cybersecurity Engineer', 'Docker', 'Linux/UNIX', 'Azure AD', 'Ansible'],
   },
   {
     name: 'Google Cloud', category: 'cloud', weight: 5,
@@ -242,7 +242,7 @@ export const skills: Skill[] = [
   },
   {
     name: 'DataDog', category: 'cloud', weight: 6,
-    connections: ['AWS', 'Azure', 'Python'],
+    connections: ['AWS', 'Azure', 'Python', 'Cloud Security', 'App Security'],
   },
 
   // ── Experience (roles, linked to the skills/tools used in each) ─

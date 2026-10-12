@@ -1,3 +1,4 @@
+import { describe, expect, test } from 'vitest';
 import { skills } from '../data/skills';
 
 const skillNames = new Set(skills.map(s => s.name));

@@ -1,0 +1,72 @@
+name: CI
+
+# PR checks for every integration branch. The deploy workflow only builds main; this is what keeps
+# dev / revamp / feature branches honest before they get there.
+on:
+  pull_request:
+    branches: [main, dev, revamp]
+  push:
+    branches: [dev, revamp]
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    name: Test, build, e2e
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    defaults:
+      run:
+        working-directory: astro-portfolio
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
+        with:
+          package_json_file: astro-portfolio/package.json
+
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: '22'
+          cache: 'pnpm'
+          cache-dependency-path: astro-portfolio/pnpm-lock.yaml
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Audit — critical fails the build
+        run: pnpm audit --audit-level critical
+
+      # One high advisory (http-cache-semantics via astro) has no patched release yet — warn, don't fail.
+      - name: Audit — high warns
+        run: pnpm audit --audit-level high || echo "::warning::high-severity advisories present — see issue #20"
+
+      - name: Unit tests
+        run: pnpm test
+
+      - name: Format check
+        run: pnpm format:check
+
+      - name: Build
+        run: pnpm build
+
+      - name: Install Playwright Chromium
+        run: pnpm exec playwright install --with-deps chromium
+
+      - name: E2E (desktop, laptop, tablet, mobile)
+        run: pnpm e2e
+
+      - name: Upload Playwright report
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: playwright-report-${{ github.run_id }}
+          path: |
+            astro-portfolio/playwright-report/
+            astro-portfolio/test-results/
+          retention-days: 7
