@@ -203,6 +203,7 @@
 .a-os {
     color: var(--title-spray);
     opacity: 0.55;
+    -webkit-text-stroke: 0; /* the seam-closing stroke would bloat dots into blocks */
 }
 
 /* ---------- Reset & Base ---------- */
