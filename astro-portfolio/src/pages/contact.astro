@@ -1,5 +1,6 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
+import AnsiTitle from '../components/AnsiTitle.astro';
 ---
 
 <BaseLayout
@@ -9,7 +10,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
     <section class="page-header" aria-label="Page header">
         <div class="container reveal">
             <span class="section-label">Get In Touch</span>
-            <h1 class="section-title">Contact</h1>
+            <AnsiTitle text="Contact" as="h1" style="wild" seed={7} />
             <p class="page-desc">
                 Have a question, opportunity, or want to collaborate? Let's connect.
             </p>
@@ -119,7 +120,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
                                         encodeURIComponent(body);
                                     if (status) {
                                         status.textContent = 'Opening your email client…';
-                                        status.style.color = 'var(--accent)';
+                                        status.style.color = 'var(--ui)';
                                     }
                                     window.location.href = href;
                                 });
@@ -233,8 +234,8 @@ import BaseLayout from '../layouts/BaseLayout.astro';
                                 Ctrl+K
                             </kbd>{' '}
                             to open the interactive terminal and type{' '}
-                            <code style="color:var(--accent);">contact</code> to see my info, or try{' '}
-                            <code style="color:var(--accent);">whoami</code> for a quick bio.
+                            <code style="color:var(--ui);">contact</code> to see my info, or try{' '}
+                            <code style="color:var(--ui);">whoami</code> for a quick bio.
                         </p>
                     </div>
                 </div>

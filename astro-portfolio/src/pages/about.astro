@@ -1,5 +1,6 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
+import AnsiTitle from '../components/AnsiTitle.astro';
 import SkillGraph from '../components/react/SkillGraph';
 import { jobs } from '../data/experience';
 ---
@@ -11,7 +12,7 @@ import { jobs } from '../data/experience';
     <section class="page-header" aria-label="Page header">
         <div class="container reveal">
             <span class="section-label">About Me</span>
-            <h1 class="section-title">Stephen Lyons</h1>
+            <AnsiTitle text="About" label="About Stephen Lyons" as="h1" style="wild" seed={3} />
             <p class="page-desc">
                 Cybersecurity Engineer building secure, resilient systems at enterprise scale.
             </p>
