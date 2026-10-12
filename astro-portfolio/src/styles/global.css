@@ -1,64 +1,70 @@
-@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:ital,wght@0,100..800;1,100..800&family=Fira+Code:wght@300..700&display=swap');
 @import 'tailwindcss';
 
 /* ============================================================
-   Tailwind Theme Tokens — Stephen Lyons Portfolio
-   Mirrors the CSS custom properties so Tailwind utilities
-   (text-accent, bg-bg-card, etc.) match the design system.
+   Stephen Lyons — "ANSI wall" design tokens
+   A terminal painted on a graffiti wall. The palette, themes and
+   glyph rules are specified in docs/ART_DIRECTION.md — change them
+   there first. Every text colour here passes WCAG AA on --bg-*.
    ============================================================ */
-@theme {
-    --color-accent: #00ff41;
-    --color-accent-dim: #00cc34;
-    --color-bg-primary: #0a0a0a;
-    --color-bg-secondary: #0d1117;
-    --color-bg-card: #111820;
-    --color-bg-elevated: #161b22;
-    --color-border: #1e2a38;
-    --color-border-bright: #2a3a4e;
-    --color-text-primary: #c9d1d9;
-    --color-text-secondary: #8b949e;
-    --color-text-muted: #484f58;
-    --color-white: #e6edf3;
 
-    --font-display: 'JetBrains Mono', monospace;
-    --font-body: 'Fira Code', 'JetBrains Mono', monospace;
-
-    --radius: 6px;
-    --radius-lg: 12px;
+/* Self-hosted JetBrains Mono (OFL, /fonts/JetBrainsMono-OFL.txt), subset to Latin + box drawing +
+   block elements (U+2500–259F) so ANSI art never falls back to a font with different glyph widths. */
+@font-face {
+    font-family: 'JetBrains Mono';
+    src: url('/fonts/jetbrains-mono-subset.woff2') format('woff2');
+    font-weight: 100 800;
+    font-style: normal;
+    font-display: swap;
 }
 
-/* ============================================================
-   Stephen Lyons — Cybersecurity Portfolio
-   Terminal / Hacker Aesthetic Stylesheet
-   (Migrated to Astro; preserved verbatim for pixel-perfect fidelity)
-   ============================================================ */
-
-/* ---------- CSS Custom Properties ---------- */
+/* ---------- Tokens ---------- */
 :root {
-    /* Accent colors — switchable via terminal `theme` command */
-    --accent: #00ff41;
-    --accent-dim: #00cc34;
-    --accent-glow: rgba(0, 255, 65, 0.35);
-    --accent-bg: rgba(0, 255, 65, 0.06);
+    /* Wall (ink-black with a violet cast) */
+    --bg-primary: #0c0a12;
+    --bg-secondary: #110e19;
+    --bg-card: #16131f;
+    --bg-elevated: #1f1a2b;
+    --border: #2e2742;
+    --border-bright: #43395e;
 
-    /* Base palette */
-    --bg-primary: #0a0a0a;
-    --bg-secondary: #0d1117;
-    --bg-card: #111820;
-    --bg-elevated: #161b22;
-    --border: #1e2a38;
-    --border-bright: #2a3a4e;
-    --text-primary: #c9d1d9;
-    --text-secondary: #8b949e;
-    --text-muted: #484f58;
-    --white: #e6edf3;
+    /* Text */
+    --white: #f3efff;
+    --text-primary: #d9d3e8;
+    --text-secondary: #a8a0bf;
+    --text-muted: #857d9e;
+
+    /* Spray cans (fixed across themes) */
+    --spray-magenta: #ff3d9a;
+    --spray-cyan: #22c7ff;
+    --spray-lavender: #b99cff;
+    --spray-orange: #ff7a3d;
+    --spray-mint: #4ef0c8;
+    --spray-yellow: #ffd23f;
+    --ansi-blue: #5b74ff;
+    --ansi-steel: #93a6dc;
+
+    /* Theme slots — overridden per [data-theme]; default = wildstyle */
+    --accent: var(--spray-magenta);
+    --accent-2: var(--spray-cyan);
+    --title-top: var(--spray-cyan);
+    --title-bottom: var(--spray-magenta);
+    --title-outline: var(--white);
+    --title-x1: #7b3fe4;
+    --title-x2: #3b2385;
+    --title-spray: var(--spray-lavender);
+
+    /* Derived — always follow the active theme's accent */
+    --accent-dim: color-mix(in oklab, var(--accent) 72%, var(--bg-primary));
+    --accent-glow: color-mix(in srgb, var(--accent) 35%, transparent);
+    --accent-bg: color-mix(in srgb, var(--accent) 8%, transparent);
+
     /* Skill-graph canvas colours (read once per theme change by SkillGraph.tsx) */
-    --graph-halo: rgba(11, 13, 16, 0.92);
-    --graph-label: #e6edf3;
+    --graph-halo: rgba(12, 10, 18, 0.92);
+    --graph-label: #f3efff;
 
     /* Typography */
-    --font-display: 'JetBrains Mono', monospace;
-    --font-body: 'Fira Code', 'JetBrains Mono', monospace;
+    --font-display: 'JetBrains Mono', ui-monospace, 'SFMono-Regular', Menlo, Consolas, monospace;
+    --font-body: var(--font-display);
 
     /* Sizing */
     --header-h: 64px;
@@ -70,18 +76,118 @@
     --ease: cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-/* ---------- Theme Variants ---------- */
-[data-theme='cyan'] {
-    --accent: #00ffff;
-    --accent-dim: #00cccc;
-    --accent-glow: rgba(0, 255, 255, 0.35);
-    --accent-bg: rgba(0, 255, 255, 0.06);
+/* ---------- Themes (terminal: `theme <name>`) ---------- */
+[data-theme='bubble'] {
+    --accent: var(--spray-mint);
+    --accent-2: var(--spray-magenta);
+    --title-top: var(--spray-mint);
+    --title-bottom: var(--spray-cyan);
+    --title-outline: var(--spray-magenta);
+    --title-x1: var(--ansi-blue);
+    --title-x2: #24307a;
+    --title-spray: var(--spray-mint);
 }
-[data-theme='amber'] {
-    --accent: #ffb000;
-    --accent-dim: #cc8d00;
-    --accent-glow: rgba(255, 176, 0, 0.35);
-    --accent-bg: rgba(255, 176, 0, 0.06);
+[data-theme='ansi'] {
+    --accent: var(--ansi-steel);
+    --accent-2: var(--ansi-blue);
+    --title-top: #c9d3f2;
+    --title-bottom: var(--ansi-blue);
+    --title-outline: var(--ansi-steel);
+    --title-x1: #3346b8;
+    --title-x2: #1d2766;
+    --title-spray: var(--ansi-steel);
+}
+[data-theme='sunset'] {
+    --accent: var(--spray-orange);
+    --accent-2: var(--spray-yellow);
+    --title-top: var(--spray-yellow);
+    --title-bottom: var(--spray-magenta);
+    --title-outline: var(--white);
+    --title-x1: var(--spray-orange);
+    --title-x2: #8a2a5c;
+    --title-spray: var(--spray-orange);
+}
+/* The original phosphor look, kept for nostalgia. */
+[data-theme='green'] {
+    --accent: #00ff41;
+    --accent-2: #00bfff;
+    --title-top: #b6ffc8;
+    --title-bottom: #00ff41;
+    --title-outline: #e6edf3;
+    --title-x1: #00a82b;
+    --title-x2: #005c17;
+    --title-spray: #00ff41;
+}
+
+/* ---------- ANSI art (AnsiTitle.astro / src/lib/ansi) ---------- */
+.ansi-title {
+    container-type: inline-size;
+    margin-bottom: 1rem;
+}
+.ansi {
+    font-family: var(--font-display);
+    font-weight: 400;
+    line-height: 1;
+    white-space: pre;
+    letter-spacing: 0;
+    margin: 0;
+    /* Fit --cols cells into the container; never larger than --ansi-max. */
+    font-size: min(var(--ansi-max, 13px), calc(100cqi / var(--cols) / 0.6));
+    /* A hairline stroke in each cell's own colour closes the antialiasing seams between block
+       glyphs, leaving only a faint ANSI cell texture. */
+    -webkit-text-stroke: 0.06em currentColor;
+    paint-order: stroke fill;
+    user-select: none;
+    font-variant-ligatures: none;
+    /* Without this, Chromium/Linux rounds each glyph advance to whole pixels at small sizes
+       (0.6 × 10.87px → 7px), so a 184-cell piece overflows its box by ~90px. Subpixel positioning
+       keeps cells exactly 0.6em. */
+    text-rendering: geometricPrecision;
+}
+.ansi-title__stack {
+    display: none;
+}
+.a-f0 {
+    color: var(--title-top);
+}
+.a-f1 {
+    color: color-mix(in oklab, var(--title-top) 86%, var(--title-bottom));
+}
+.a-f2 {
+    color: color-mix(in oklab, var(--title-top) 71%, var(--title-bottom));
+}
+.a-f3 {
+    color: color-mix(in oklab, var(--title-top) 57%, var(--title-bottom));
+}
+.a-f4 {
+    color: color-mix(in oklab, var(--title-top) 43%, var(--title-bottom));
+}
+.a-f5 {
+    color: color-mix(in oklab, var(--title-top) 29%, var(--title-bottom));
+}
+.a-f6 {
+    color: color-mix(in oklab, var(--title-top) 14%, var(--title-bottom));
+}
+.a-f7,
+.a-dr {
+    color: var(--title-bottom);
+}
+.a-ol {
+    color: var(--title-outline);
+}
+.a-x1 {
+    color: var(--title-x1);
+}
+.a-x2 {
+    color: var(--title-x2);
+}
+.a-gl {
+    color: #fff;
+    background: var(--title-top);
+}
+.a-os {
+    color: var(--title-spray);
+    opacity: 0.55;
 }
 
 /* ---------- Reset & Base ---------- */
@@ -1387,7 +1493,7 @@ body.js-reveal-ready .reveal.revealed {
     align-items: center;
     justify-content: center;
     text-align: center;
-    padding: 2rem;
+    padding: calc(var(--header-h) + 1.5rem) 2rem 4rem;
 }
 .error-code {
     font-family: var(--font-display);

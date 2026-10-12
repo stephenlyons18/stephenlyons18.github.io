@@ -32,7 +32,23 @@ const {
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
         <meta name="description" content={description} />
         <meta name="author" content="Stephen Lyons" />
-        <meta name="theme-color" content="#0A0A0A" />
+        <meta name="theme-color" content="#0c0a12" />
+        <link
+            rel="preload"
+            href="/fonts/jetbrains-mono-subset.woff2"
+            as="font"
+            type="font/woff2"
+            crossorigin
+        />
+        <!-- Apply the saved theme before first paint (no flash). Old values from the green-era
+             themes (cyan/amber) fall back to the default. -->
+        <script is:inline>
+            try {
+                var t = localStorage.getItem('sl-theme');
+                if (t && /^(bubble|ansi|sunset|green)$/.test(t))
+                    document.documentElement.setAttribute('data-theme', t);
+            } catch (e) {}
+        </script>
         <title>{title}</title>
         <link
             rel="icon"
