@@ -1,6 +1,6 @@
 import { expect, test } from '@playwright/test';
 
-export const PAGES = ['/', '/about/', '/projects/', '/contact/', '/404.html'];
+import { PAGES } from './pages';
 
 test.beforeEach(async ({ context }) => {
     // Skip the once-per-session boot animation so tests start on the real page.
