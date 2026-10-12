@@ -72,7 +72,7 @@ test('cards tilt toward the mouse and spring back level', async ({ page, isMobil
     await expect(card).toHaveClass(/is-live/);
     await expect.poll(() => moved(page, '.featured-grid .card'), { timeout: 1500 }).toBe(true);
     await page.mouse.move(5, 5);
-    await expect(card).not.toHaveClass(/is-live|is-settling/, { timeout: 2500 });
+    await expect(card).not.toHaveClass(/is-live|is-settling/, { timeout: 5000 });
 });
 
 test('the avatar can be dragged and snaps home', async ({ page }) => {

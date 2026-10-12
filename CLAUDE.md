@@ -125,7 +125,7 @@ pnpm preview        # serve dist/
   `budget` (bytes per page by kind vs `e2e/budget.json`, plus LCP/CLS/blocking time on a throttled phone) and
   `perf` (scroll frame timing).
   - The last two run after the functional tests, in the `budget-*` and then `perf-*` projects, so they measure
-    the site rather than other tests' CPU.
+    the site rather than other tests' CPU. `perf-*` runs one device at a time.
   - Raising a budget needs a reason in the PR; lower it when a PR wins bytes back.
 - **Measure feel with numbers:** frame-interval p95 from rAF during scroll and graph interaction, JS bytes per
   page from `dist/`, and Lighthouse for LCP/a11y. Quote before/after in perf PRs.
@@ -151,6 +151,14 @@ pnpm preview        # serve dist/
   terminal and the graph all read from these, so never hand-copy content into a second place.
 - **Build-time art** lives in `src/lib/` (pure TS, unit-tested). It is rendered by Astro components into
   static, `aria-hidden` text with a real text equivalent, so art costs zero runtime JS.
+- **SEO and AI search** come from data, so they can't drift:
+  - `src/data/site.ts` (`SITE`, `ROUTES`) drives canonical URLs and Open Graph/Twitter tags in `BaseLayout`
+    (every page passes `kind`), plus JSON-LD (`src/lib/seo.ts`: WebSite + Person + a page type).
+  - Endpoints in `src/pages/` build `sitemap.xml`, `robots.txt` (AI crawlers welcome), `llms.txt` and
+    `llms-full.txt` (llmstxt.org).
+  - `og.png` is the ANSI title rendered to SVG rects (`src/lib/ansi/svg.ts`) and rasterised by sharp.
+  - A new page needs a `ROUTES` entry; `seo.spec` checks the meta, JSON-LD, sitemap and one `<h1>` with no
+    skipped heading levels.
 - `scripts/postbuild.mjs` rewrites absolute URLs in `dist/*.html` to relative ones so `dist/` also works over
   `file://`. New top-level routes must be added to its `DIR_ROUTES`.
 - **`.nojekyll` must reach the `build` branch**, or GitHub Pages strips `_astro/` (all CSS/JS). `deploy.yml`

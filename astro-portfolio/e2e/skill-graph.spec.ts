@@ -41,7 +41,10 @@ async function box(l: Locator) {
 async function findNode(page: Page, canvas: Locator, tap: boolean) {
     const c = await box(canvas);
     const card = page.locator('.sg-canvas-wrap .skill-card');
+    // Skip whatever the fixed header covers: a tap there lands on the header, not the canvas.
+    const headerBottom = (await box(page.locator('.site-header'))).height;
     for (let y = 60; y < c.height - 60; y += 20) {
+        if (c.y + y < headerBottom + 30) continue;
         for (let x = 60; x < c.width - 60; x += 20) {
             await page.mouse.move(c.x + x, c.y + y);
             if (!(await card.count())) continue;

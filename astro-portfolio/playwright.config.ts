@@ -46,11 +46,15 @@ export default defineConfig({
             testMatch: /budget\.spec\.ts/,
             dependencies: DEVICES.map(([n]) => n),
         })),
-        ...DEVICES.map(([name, use]) => ({
+        // Frame timing runs one device at a time (each perf project waits for the previous one):
+        // three software-rendered pages measuring at once was measuring each other.
+        ...DEVICES.map(([name, use], i) => ({
             name: `perf-${name}`,
             use,
             testMatch: /perf\.spec\.ts/,
-            dependencies: DEVICES.map(([n]) => `budget-${n}`),
+            dependencies: i
+                ? [`perf-${DEVICES[i - 1]![0]}`]
+                : DEVICES.map(([n]) => `budget-${n}`),
         })),
     ],
     webServer: {

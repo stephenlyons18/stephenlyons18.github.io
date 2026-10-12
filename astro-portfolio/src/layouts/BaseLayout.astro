@@ -3,10 +3,16 @@ import '../styles/global.css';
 import Header from '../components/Header.astro';
 import Footer from '../components/Footer.astro';
 import AnsiWall from '../components/AnsiWall.astro';
+import { ROUTES, SITE, absUrl, type PageKind } from '../data/site';
+import projects from '../data/projects';
+import { skills } from '../data/skills';
+import { ldJson, pageLd } from '../lib/seo';
 
 interface Props {
     title: string;
     description: string;
+    /** What the page is, for canonical URL, JSON-LD type and indexing (error pages are noindex). */
+    kind: PageKind;
     fixedFooter?: boolean;
     fullFooter?: boolean;
     showHeader?: boolean;
@@ -18,11 +24,27 @@ interface Props {
 const {
     title,
     description,
+    kind,
     fixedFooter = false,
     fullFooter = true,
     showHeader = true,
     showScrollProgress = true,
 } = Astro.props;
+
+const path = ROUTES.find((r) => r.kind === kind)?.path ?? Astro.url.pathname;
+const canonical = absUrl(path);
+const ogImage = absUrl('/og.png');
+const ld =
+    kind === 'error'
+        ? null
+        : pageLd(
+              kind,
+              { path, title, description },
+              {
+                  ...(kind === 'projects' ? { projects } : {}),
+                  ...(kind === 'about' || kind === 'home' ? { skills } : {}),
+              },
+          );
 ---
 
 <!doctype html>
@@ -31,8 +53,37 @@ const {
         <meta charset="UTF-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
         <meta name="description" content={description} />
-        <meta name="author" content="Stephen Lyons" />
-        <meta name="theme-color" content="#0c0a12" />
+        <meta name="author" content={SITE.name} />
+        <meta name="theme-color" content="#070b12" />
+        {kind === 'error' ? (
+            <meta name="robots" content="noindex, follow" />
+        ) : (
+            <>
+                <meta name="robots" content="index, follow, max-image-preview:large" />
+                <link rel="canonical" href={canonical} />
+            </>
+        )}
+        <!-- Social cards (og:image is drawn at build from the ANSI art: src/pages/og.png.ts) -->
+        <meta property="og:type" content={kind === 'about' ? 'profile' : 'website'} />
+        <meta property="og:site_name" content={SITE.title} />
+        <meta property="og:title" content={title} />
+        <meta property="og:description" content={description} />
+        <meta property="og:url" content={canonical} />
+        <meta property="og:locale" content={SITE.locale} />
+        <meta property="og:image" content={ogImage} />
+        <meta property="og:image:width" content="1200" />
+        <meta property="og:image:height" content="630" />
+        <meta
+            property="og:image:alt"
+            content={`${SITE.name} — ${SITE.jobTitle}, in ANSI graffiti letters`}
+        />
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:title" content={title} />
+        <meta name="twitter:description" content={description} />
+        <meta name="twitter:image" content={ogImage} />
+        <!-- For AI search and assistants: a Markdown map of the site (llmstxt.org). -->
+        <link rel="alternate" type="text/markdown" href="/llms.txt" title="llms.txt" />
+        {ld && <script type="application/ld+json" set:html={ldJson(ld)} />}
         {[
             'press-start-2p-subset.woff2',
             'departure-mono-subset.woff2',
