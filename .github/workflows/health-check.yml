@@ -7,6 +7,8 @@ on:
     branches: [main]
   workflow_dispatch:
 
+permissions: {}
+
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
   BASE_URL: https://stephenlyons.dev
