@@ -24,3 +24,10 @@ pnpm-debug.log*
 .idea/
 
 bin/
+
+# esbuild output (built by `pnpm build:scripts`, never edit or commit)
+public/scripts/
+
+# Playwright output — attach screenshots/videos to PRs, never commit them
+test-results/
+playwright-report/
