@@ -68,11 +68,12 @@ function loadTerminal(): Promise<void> {
     return terminalLoading ?? Promise.resolve();
 }
 
-// fx.js (drip physics, Motion) — only on pages with drips, only when motion is allowed, on idle.
+// fx.js (drip physics + interactive motion, Motion) — only on pages with something to animate,
+// only when motion is allowed, on idle.
 const FX_SRC = TERMINAL_SRC?.replace(/terminal\.js$/, 'fx.js');
 let fxLoaded = false;
 function initFx(): void {
-    if (!FX_SRC || !document.querySelector('[data-drips]')) return;
+    if (!FX_SRC || !document.querySelector('[data-drips], .card, [data-drag]')) return;
     const load = () => {
         if (fxLoaded || motionOff()) return;
         fxLoaded = true;

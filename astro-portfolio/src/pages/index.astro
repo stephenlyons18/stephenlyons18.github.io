@@ -15,14 +15,17 @@ import { featuredProjects } from '../data/projects';
     <section class="hero" aria-label="Introduction">
         <div class="container">
             <div class="hero-content reveal">
-                <AnsiTitle
-                    text="Stephen Lyons"
-                    label="Stephen Lyons — Cybersecurity Engineer"
-                    as="h1"
-                    style="wild"
-                    maxFont={12}
-                    class="hero-piece"
-                />
+                <!-- Grab-and-fling with a mouse (fx.ts); touch keeps scrolling the page. -->
+                <div class="drag-art" data-drag="fine">
+                    <AnsiTitle
+                        text="Stephen Lyons"
+                        label="Stephen Lyons — Cybersecurity Engineer"
+                        as="h1"
+                        style="wild"
+                        maxFont={12}
+                        class="hero-piece"
+                    />
+                </div>
                 <div class="hero-terminal" role="img" aria-label="Animated terminal introduction">
                     <div class="hero-terminal__bar">
                         <span class="hero-terminal__dot hero-terminal__dot--red"></span>
