@@ -44,7 +44,8 @@ jobs:
 
       # One high advisory (http-cache-semantics via astro) has no patched release yet — warn, don't fail.
       - name: Audit — high warns
-        run: pnpm audit --audit-level high || echo "::warning::high-severity advisories present — see issue #20"
+        run: |
+          pnpm audit --audit-level high || echo "::warning::high-severity advisories present (issue #20)"
 
       - name: Unit tests
         run: pnpm test
