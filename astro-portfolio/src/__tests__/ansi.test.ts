@@ -1,6 +1,15 @@
 import { describe, expect, test } from 'vitest';
 import { GLYPHS, GLYPH_HEIGHT } from '../lib/ansi/font';
 import { balanceLines, renderAnsi, toPlainText } from '../lib/ansi/generator';
+import {
+    BRICK,
+    CELL_H,
+    CELL_W,
+    COURSE,
+    renderWallTile,
+    svgDataUrl,
+    wallCells,
+} from '../lib/ansi/wall';
 
 const TITLES = [
     'Stephen Lyons',
@@ -97,5 +106,45 @@ describe('balanceLines', () => {
     });
     test('single word stays on one line', () => {
         expect(balanceLines('Projects')).toEqual(['Projects']);
+    });
+});
+
+describe('wall tile', () => {
+    test('is seamless: the brick period divides the tile', () => {
+        const t = renderWallTile();
+        expect(t.cols % BRICK).toBe(0);
+        expect(t.rows % (COURSE * 2)).toBe(0);
+    });
+
+    test('one standalone SVG mask per colour layer, deterministic', () => {
+        const a = renderWallTile();
+        expect(Object.keys(a.layers).sort()).toEqual(['w-b', 'w-c', 'w-m']);
+        for (const svg of Object.values(a.layers)) {
+            expect(svg).toMatch(/^<svg xmlns="http:\/\/www\.w3\.org\/2000\/svg"/);
+            expect(svg).toContain(`viewBox="0 0 ${a.cols * CELL_W} ${a.rows * CELL_H}"`);
+        }
+        expect(renderWallTile()).toEqual(a);
+        expect(renderWallTile(80, 30, 2)).not.toEqual(a);
+    });
+
+    test('mask rects match the wall cells (every lit cell drawn once, inside the tile)', () => {
+        const cells = wallCells();
+        const { layers } = renderWallTile();
+        for (const cls of ['w-b', 'w-m', 'w-c']) {
+            const want = cells.flat().filter((c) => c.c === cls).length;
+            let got = 0;
+            for (const m of layers[cls]!.matchAll(
+                /<rect x="(\d+)" y="(\d+)" width="(\d+)" height="10"/g,
+            )) {
+                got += Number(m[3]) / CELL_W;
+                expect(Number(m[1]) + Number(m[3])).toBeLessThanOrEqual(80 * CELL_W);
+            }
+            expect(got).toBe(want);
+        }
+    });
+
+    test('data URL escapes everything a CSS url() / data URI chokes on', () => {
+        const u = svgDataUrl('<svg a="#x">100%</svg>');
+        expect(u).toBe(`url("data:image/svg+xml,%3Csvg a='%23x'%3E100%25%3C/svg%3E")`);
     });
 });

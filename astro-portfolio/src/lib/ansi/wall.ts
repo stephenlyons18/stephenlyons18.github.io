@@ -31,15 +31,18 @@ function encode(grid: { ch: string; c: string }[][]): AnsiArt {
     return { lines, cols: grid[0]?.length ?? 0, rows: grid.length };
 }
 
+/** Brick period: cells per brick (incl. mortar column) and rows per course (incl. mortar row). */
+export const BRICK = 10;
+export const COURSE = 3;
+
 /**
  * Running-bond brick wall: bricks of `▓` (w-b), mortar of `░` (w-m), with weathering — chipped
  * cells (`▒`, w-c) and the odd missing chunk — so it reads as an old wall, not a pattern.
+ * Tiles seamlessly when cols is a multiple of BRICK and rows of 2 × COURSE.
  */
-export function renderWall(cols = 160, rows = 60, seed = 9): AnsiArt {
+export function wallCells(cols = 80, rows = 30, seed = 9): { ch: string; c: string }[][] {
     const rand = rng(seed);
-    const BRICK = 10; // cells per brick incl. mortar column
-    const COURSE = 3; // rows per course incl. mortar row
-    const grid = Array.from({ length: rows }, (_, y) =>
+    return Array.from({ length: rows }, (_, y) =>
         Array.from({ length: cols }, (_, x) => {
             const course = Math.floor(y / COURSE);
             const offset = course % 2 ? BRICK / 2 : 0;
@@ -51,7 +54,84 @@ export function renderWall(cols = 160, rows = 60, seed = 9): AnsiArt {
             return { ch: '▓', c: 'w-b' };
         }),
     );
-    return encode(grid);
+}
+
+/** Cell size in SVG units (0.6 aspect, like a monospace cell); 1 unit = one dither pixel. */
+export const CELL_W = 6;
+export const CELL_H = 10;
+
+/** Shade glyph → 2×2 dither (pixels lit, as [x, y]): ░ 25%, ▒ 50%, ▓ 75%. */
+const DITHER: Record<string, [number, number][]> = {
+    '░': [[0, 0]],
+    '▒': [
+        [0, 0],
+        [1, 1],
+    ],
+    '▓': [
+        [0, 0],
+        [1, 0],
+        [1, 1],
+    ],
+};
+
+export interface WallTile {
+    cols: number;
+    rows: number;
+    /** One standalone SVG per colour layer (class → svg), used as CSS mask images. */
+    layers: Record<string, string>;
+}
+
+/**
+ * The wall as a seamless tile of SVG masks — one per colour class — so CSS can repeat it down the
+ * whole page (it scrolls with the content) and colour it with theme tokens. Same cells as the text
+ * version, drawn as run-length rects filled with the glyph's dither pattern; no font needed.
+ */
+export function renderWallTile(cols = 80, rows = 30, seed = 9): WallTile {
+    const grid = wallCells(cols, rows, seed);
+    const w = cols * CELL_W;
+    const h = rows * CELL_H;
+    const patterns = Object.entries(DITHER)
+        .map(
+            ([ch, px], i) =>
+                `<pattern id="p${i}" width="2" height="2" patternUnits="userSpaceOnUse">${px
+                    .map(([x, y]) => `<rect x="${x}" y="${y}" width="1" height="1"/>`)
+                    .join('')}</pattern>`,
+        )
+        .join('');
+    const pid = Object.fromEntries(Object.keys(DITHER).map((ch, i) => [ch, `p${i}`]));
+    const layers: Record<string, string> = {};
+    for (const cls of ['w-b', 'w-m', 'w-c']) {
+        const rects: string[] = [];
+        grid.forEach((row, y) => {
+            let x = 0;
+            while (x < cols) {
+                const cell = row[x]!;
+                if (cell.c !== cls) {
+                    x++;
+                    continue;
+                }
+                let n = 1;
+                while (x + n < cols && row[x + n]!.c === cls && row[x + n]!.ch === cell.ch) n++;
+                rects.push(
+                    `<rect x="${x * CELL_W}" y="${y * CELL_H}" width="${n * CELL_W}" height="${CELL_H}" fill="url(#${pid[cell.ch]})"/>`,
+                );
+                x += n;
+            }
+        });
+        layers[cls] =
+            `<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}" viewBox="0 0 ${w} ${h}" shape-rendering="crispEdges"><defs>${patterns}</defs>${rects.join('')}</svg>`;
+    }
+    return { cols, rows, layers };
+}
+
+/** An SVG string as a CSS `url()` value (percent-encoded just enough for a data URI). */
+export function svgDataUrl(svg: string): string {
+    return `url("data:image/svg+xml,${svg
+        .replace(/"/g, "'")
+        .replace(/%/g, '%25')
+        .replace(/#/g, '%23')
+        .replace(/</g, '%3C')
+        .replace(/>/g, '%3E')}")`;
 }
 
 /** A sprayed bar (`▄`) with thin drips hanging off it, fading `▓ → ▒ → ░`. */

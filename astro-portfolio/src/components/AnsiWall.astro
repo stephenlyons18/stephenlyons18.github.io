@@ -1,14 +1,17 @@
 ---
 /**
- * The brick wall behind every page: one fixed, aria-hidden <pre> of ANSI shade glyphs at very low
- * opacity. Static (no animation, no JS); sized in CSS to cover any viewport.
+ * The brick wall behind every page: three theme-coloured layers masked by a seamless ANSI tile
+ * (bricks ▓, mortar ░, chips ▒ — see src/lib/ansi/wall.ts). It covers the whole document and
+ * scrolls with it, like paint on a real wall. Static: no JS, no glyphs in the DOM.
  */
-import { renderWall } from '../lib/ansi/wall';
-import { artToHtml } from '../lib/ansi/html';
-
-const art = renderWall(160, 60);
 ---
 
 <div class="ansi-wall" aria-hidden="true">
-    <pre set:html={artToHtml(art)} />
+    <div class="w-b"></div>
+    <div class="w-m"></div>
+    <div class="w-c"></div>
 </div>
+<link rel="stylesheet" href="/art/wall.css" media="print" onload="this.media='all'" />
+<noscript>
+    <link rel="stylesheet" href="/art/wall.css" />
+</noscript>
