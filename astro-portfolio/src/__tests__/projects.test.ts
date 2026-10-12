@@ -52,4 +52,11 @@ describe('projects.ts data integrity', () => {
         }
         expect(bad).toEqual([]);
     });
+
+    test('no empty tech entries (they render as blank chips)', () => {
+        const bad = projects.flatMap((p) =>
+            [...p.tech, ...(p.featuredTech ?? [])].filter((t) => !t.trim()).map(() => p.id),
+        );
+        expect(bad).toEqual([]);
+    });
 });

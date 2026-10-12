@@ -1,0 +1,14 @@
+---
+/**
+ * The brick wall behind every page: one fixed, aria-hidden <pre> of ANSI shade glyphs at very low
+ * opacity. Static (no animation, no JS); sized in CSS to cover any viewport.
+ */
+import { renderWall } from '../lib/ansi/wall';
+import { artToHtml } from '../lib/ansi/html';
+
+const art = renderWall(160, 60);
+---
+
+<div class="ansi-wall" aria-hidden="true">
+    <pre set:html={artToHtml(art)} />
+</div>
