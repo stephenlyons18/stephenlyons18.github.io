@@ -120,12 +120,33 @@ slots only; the wall and text stay.
 
 - Sit behind body copy, form fields or the terminal text. Art lives in headers, margins, separators and the
   hero, on its own rows.
-- Move under the pointer or shift layout after load. No CLS from art.
-- Animate by default. Allowed: a one-shot reveal and a hover glint, and only when `prefers-reduced-motion:
-  no-preference`. Anything looping needs the user's OK and must pause offscreen and in hidden tabs.
+- Move under the pointer on its own, or shift layout after load. No CLS from art. Movement the user starts is
+  fine: grabbing `[data-drag]` art, poking drips, hovering a card.
+- Animate when motion is off. Every animation stops under `data-reduce-motion` (the OS setting or the a11y
+  menu).
+  - Allowed (user OK, 2026-10-12): drip run-out and drops (R12), page transitions, card tilt/press, and
+    draggable art (R13).
+  - Ambient drops recur, but only while their strip is on screen and the tab is visible.
+  - Never a rAF loop: compositor-only transforms/opacity via CSS or WAAPI (Motion).
+- Hijack touch scrolling. Large art is draggable with a mouse only (`data-drag="fine"`); only small pieces
+  (the avatar) take touch drags.
 - Be the only carrier of meaning. Every art title is `aria-hidden` with a real `<h1>/<h2>` (sr-only) next to it.
 - Overflow. Art scales to fit its container (`--cols`-based font-size) down to 320px wide; below its legible
   minimum it falls back to a smaller piece or plain styled text.
+
+## Interactive motion (R13)
+
+- **Springs:** Motion's `spring()` is rendered to CSS `linear()` easings (`--spring-snappy`, `--spring-bouncy`
+  in `global.css`). CSS-only motion and `fx.ts` therefore share one feel.
+- **Page transitions:** cross-document View Transitions, typed `page`. The header stays put, the old page
+  drops back and fades, and the new page is sprayed on with a 10-step wipe. Off under reduced motion.
+- **Cards:**
+  - Up to 760px wide, they tilt toward the mouse (≤ 5°/7°) and spring back level.
+  - Wider cards only lift.
+  - All cards squash on press, and buttons squash too.
+- **Draggable art** (`[data-drag]`): the hero name, the 404 piece (mouse only) and the avatar (any pointer).
+  They stretch against a rubber band and snap home on a Motion spring. In plain-headings mode the title stays
+  put and selectable.
 
 ## Future (not built)
 

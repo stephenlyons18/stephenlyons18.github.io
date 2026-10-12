@@ -94,8 +94,71 @@
     --radius: 6px;
     --radius-lg: 12px;
 
-    /* Transitions */
+    /* Transitions. The springs are Motion's spring() rendered to CSS linear() (snappy: 0.35s
+       visual duration, bounce 0.3; bouncy: 0.5s, bounce 0.5), so CSS-only motion feels the same as
+       fx.ts. Regenerate with: String(spring(visualDuration, bounce)) from 'motion'. */
     --ease: cubic-bezier(0.4, 0, 0.2, 1);
+    --spring-snappy-t: 600ms;
+    --spring-snappy: linear(
+        0,
+        0.089,
+        0.2809,
+        0.4953,
+        0.6868,
+        0.8358,
+        0.9391,
+        1.0021,
+        1.0343,
+        1.0455,
+        1.0439,
+        1.0361,
+        1.0262,
+        1.017,
+        1.0095,
+        1.0041,
+        1.0006,
+        0.9988,
+        0.998,
+        1
+    );
+    --spring-bouncy-t: 1050ms;
+    --spring-bouncy: linear(
+        0,
+        0.0467,
+        0.1649,
+        0.3245,
+        0.4998,
+        0.6709,
+        0.824,
+        0.9503,
+        1.0461,
+        1.1114,
+        1.1488,
+        1.1626,
+        1.1582,
+        1.1411,
+        1.1161,
+        1.0878,
+        1.0595,
+        1.0338,
+        1.0122,
+        0.9954,
+        0.9837,
+        0.9767,
+        0.9737,
+        0.9738,
+        0.9763,
+        0.9801,
+        0.9847,
+        0.9893,
+        0.9936,
+        0.9973,
+        1.0002,
+        1.0023,
+        1.0036,
+        1.0042,
+        1
+    );
 }
 
 /* ---------- Themes (terminal: `theme <name>`) ---------- */
@@ -509,15 +572,14 @@ ol {
 }
 
 /* JS-enhanced path: hide until observed */
-body.js-reveal-ready .reveal {
+/* Only the not-yet-revealed state declares a transform: a revealed element must not, or it would
+   out-specify (and silently cancel) card hover lifts and fx.ts tilts. */
+body.js-reveal-ready .reveal:not(.revealed) {
     opacity: 0;
     transform: translateY(24px);
     will-change: transform, opacity;
 }
 body.js-reveal-ready .reveal.revealed {
-    will-change: auto;
-    opacity: 1;
-    transform: none;
     /* backwards (not both): once the entrance finishes, no transform is held, so hover lifts work. */
     animation: reveal-fade-up 0.55s var(--ease) backwards;
 }
@@ -2481,4 +2543,100 @@ html[data-reduce-motion]::view-transition-new(*) {
     .sg-btn
 ) {
     letter-spacing: 0.02em;
+}
+
+/* ---------- Page transitions (cross-document View Transitions, CSS only) ---------- */
+/* Same-origin navigations morph instead of flashing: the header stays put, the old page drops
+   back and fades, the new one is sprayed on with a chunky stepped wipe. Typed "page" so the
+   lightbox's same-document zoom keeps its own animation. Browsers without support just navigate. */
+@view-transition {
+    navigation: auto;
+    types: page;
+}
+@media (prefers-reduced-motion: reduce) {
+    @view-transition {
+        navigation: none;
+    }
+}
+.site-header {
+    view-transition-name: site-header;
+}
+html:active-view-transition-type(page)::view-transition-old(root) {
+    animation: vt-page-out 0.22s var(--ease) both;
+}
+html:active-view-transition-type(page)::view-transition-new(root) {
+    animation: vt-page-in 0.42s steps(10, end) both;
+}
+html:active-view-transition-type(page)::view-transition-group(site-header) {
+    animation: none;
+}
+@keyframes vt-page-out {
+    to {
+        opacity: 0;
+        transform: scale(0.985) translateY(8px);
+    }
+}
+@keyframes vt-page-in {
+    from {
+        clip-path: inset(0 100% 0 0);
+    }
+    to {
+        clip-path: inset(0 0 0 0);
+    }
+}
+
+/* ---------- Playful cards (fx.ts sets --rx/--ry from the pointer) ---------- */
+/* A spring-eased tilt toward the pointer and a squash on press. Small angles: text stays crisp. */
+.card.is-live,
+.card.is-settling {
+    /* Keep one compositor layer while it moves, so a retargeted tilt never re-rasterises. */
+    will-change: transform;
+}
+.card.is-live {
+    transform: perspective(900px) rotateX(var(--rx, 0deg)) rotateY(var(--ry, 0deg))
+        translate(-2px, -2px) scale(var(--press, 1));
+    transition:
+        transform var(--spring-snappy-t) var(--spring-snappy),
+        border-color 0.25s var(--ease),
+        box-shadow 0.25s var(--ease);
+}
+.card.is-settling {
+    transition:
+        transform var(--spring-bouncy-t) var(--spring-bouncy),
+        border-color 0.25s var(--ease),
+        box-shadow 0.25s var(--ease);
+}
+/* Buttons squash on press with the same spring. */
+.btn:active,
+.nav-terminal-btn:active,
+.nav-icon-btn:active {
+    transform: scale(0.95);
+}
+.btn,
+.nav-terminal-btn,
+.nav-icon-btn {
+    transition:
+        transform var(--spring-snappy-t) var(--spring-snappy),
+        background 0.2s var(--ease),
+        color 0.2s var(--ease),
+        border-color 0.2s var(--ease),
+        box-shadow 0.2s var(--ease);
+}
+
+/* ---------- Draggable art (fx.ts: [data-drag]) ---------- */
+[data-drag] {
+    display: block;
+    width: 100%;
+    cursor: grab;
+    touch-action: none; /* the drag owns the gesture on this element only */
+    user-select: none;
+}
+[data-drag].is-dragging {
+    cursor: grabbing;
+}
+html[data-reduce-motion] [data-drag],
+html[data-a11y-plain] [data-drag]:has(.ansi-title__text) {
+    cursor: auto;
+    touch-action: auto;
+    user-select: auto;
 }

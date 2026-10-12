@@ -12,15 +12,17 @@ import AnsiDivider from '../components/AnsiDivider.astro';
 >
     <main class="error-page" role="main">
         <div>
-            <AnsiTitle
-                text="404"
-                label="404 — Page not found"
-                as="h1"
-                style="bubble"
-                gap={2}
-                maxFont={18}
-                class="error-piece"
-            />
+            <div class="drag-art" data-drag="fine">
+                <AnsiTitle
+                    text="404"
+                    label="404 — Page not found"
+                    as="h1"
+                    style="bubble"
+                    gap={2}
+                    maxFont={18}
+                    class="error-piece"
+                />
+            </div>
             <p class="error-msg">
                 <span style="color:var(--ui);">stephen@lyons:~$</span> cat requested_page
                 <br />
