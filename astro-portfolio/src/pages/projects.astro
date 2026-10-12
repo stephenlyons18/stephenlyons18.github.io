@@ -1,5 +1,6 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
+import AnsiTitle from '../components/AnsiTitle.astro';
 import projects from '../data/projects';
 import ProjectGallery from '../components/react/ProjectGallery';
 ---
@@ -11,7 +12,7 @@ import ProjectGallery from '../components/react/ProjectGallery';
     <section class="page-header" aria-label="Page header">
         <div class="container reveal">
             <span class="section-label">Portfolio</span>
-            <h1 class="section-title">Projects</h1>
+            <AnsiTitle text="Projects" as="h1" style="wild" />
             <p class="page-desc">
                 A selection of notable projects spanning full-stack development, mobile apps, and
                 security engineering.

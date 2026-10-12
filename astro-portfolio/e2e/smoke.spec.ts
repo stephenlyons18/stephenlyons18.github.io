@@ -1,6 +1,6 @@
 import { expect, test } from '@playwright/test';
 
-export const PAGES = ['/', '/about/', '/projects/', '/contact/'];
+export const PAGES = ['/', '/about/', '/projects/', '/contact/', '/404.html'];
 
 test.beforeEach(async ({ context }) => {
     // Skip the once-per-session boot animation so tests start on the real page.
@@ -24,6 +24,19 @@ for (const path of PAGES) {
             () => document.documentElement.scrollWidth - document.documentElement.clientWidth,
         );
         expect(overflow, 'horizontal overflow (px)').toBeLessThanOrEqual(0);
+
+        // ANSI art must fit its own box (it scales by container width, never scrolls or clips).
+        const art = await page.$$eval('.ansi-title pre.ansi', (els) =>
+            els
+                .filter((e) => (e as HTMLElement).offsetParent)
+                .map(
+                    (e) =>
+                        e.scrollWidth -
+                        (e.parentElement!.closest('.ansi-title') as HTMLElement).clientWidth,
+                ),
+        );
+        for (const over of art)
+            expect(over, 'ANSI art wider than its container (px)').toBeLessThanOrEqual(1);
         expect(problems).toEqual([]);
     });
 }
