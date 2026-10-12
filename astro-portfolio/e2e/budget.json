@@ -3,35 +3,35 @@
         "/": {
             "js": 50,
             "css": 80,
-            "font": 65,
+            "font": 30,
             "img": 10,
             "html": 65
         },
         "/about/": {
             "js": 320,
             "css": 80,
-            "font": 65,
+            "font": 30,
             "img": 10,
             "html": 45
         },
         "/projects/": {
             "js": 50,
             "css": 80,
-            "font": 65,
+            "font": 30,
             "img": 100,
             "html": 45
         },
         "/contact/": {
             "js": 50,
             "css": 80,
-            "font": 65,
+            "font": 30,
             "img": 10,
             "html": 30
         },
         "/404.html": {
             "js": 50,
             "css": 80,
-            "font": 65,
+            "font": 30,
             "img": 10,
             "html": 15
         }

@@ -26,12 +26,35 @@ const isActive = (href: string) => {
                 Contact
             </a>
         </nav>
-        <button class="nav-terminal-btn" aria-label="Open terminal" data-open-terminal>
-            <span class="nav-terminal-btn__icon" aria-hidden="true">
-                &gt;_
-            </span>
-            <span class="nav-terminal-btn__label">Terminal</span>
-        </button>
+        <div class="header-actions">
+            <button
+                class="nav-icon-btn a11y-btn"
+                popovertarget="a11y-menu"
+                aria-label="Accessibility options"
+                title="Accessibility options"
+            >
+                <svg
+                    class="pixel-icon"
+                    viewBox="0 0 8 8"
+                    width="16"
+                    height="16"
+                    aria-hidden="true"
+                    shape-rendering="crispEdges"
+                >
+                    <path
+                        fill="currentColor"
+                        d="M3 0h2v2H3zM0 2h8v1H0zM3 3h2v2H3zM2 5h1v3H2zM5 5h1v3H5zM3 5h2v1H3z"
+                    ></path>
+                </svg>
+                <span class="nav-icon-btn__label">A11y</span>
+            </button>
+            <button class="nav-terminal-btn" aria-label="Open terminal" data-open-terminal>
+                <span class="nav-terminal-btn__icon" aria-hidden="true">
+                    &gt;_
+                </span>
+                <span class="nav-terminal-btn__label">Terminal</span>
+            </button>
+        </div>
         <button class="nav-toggle" aria-label="Toggle mobile navigation" aria-expanded="false">
             <span></span>
             <span></span>
@@ -39,3 +62,48 @@ const isActive = (href: string) => {
         </button>
     </div>
 </header>
+
+<!-- Accessibility menu: a native popover (top layer, light dismiss, Escape) opened from the header.
+     Each switch sets a data-a11y-* attribute on <html>; global.css does the rest. site.ts wires it
+     up and saves to localStorage; BaseLayout's head script re-applies it before first paint. -->
+<div id="a11y-menu" class="a11y-menu" popover role="dialog" aria-labelledby="a11y-menu-title">
+    <p class="a11y-menu__title" id="a11y-menu-title">
+        Accessibility
+    </p>
+    <ul class="a11y-menu__list">
+        {[
+            ['plain', 'Plain headings', 'Swap graffiti titles for plain text'],
+            ['motion', 'Reduce motion', 'Stop animations and transitions'],
+            ['font', 'Readable font', 'Plain sans-serif instead of pixel type'],
+            ['large', 'Larger text', 'Scale all text up by 25%'],
+            ['contrast', 'High contrast', 'Brighter text and borders'],
+            ['wall', 'Hide wall texture', 'Plain background behind content'],
+        ].map(([key, label, hint]) => (
+            <li>
+                <label class="a11y-switch">
+                    <input type="checkbox" role="switch" data-a11y={key} />
+                    <span class="a11y-switch__text">
+                        <span class="a11y-switch__label">{label}</span>
+                        <span class="a11y-switch__hint" data-hint={key}>
+                            {hint}
+                        </span>
+                    </span>
+                    <span class="a11y-switch__track" aria-hidden="true" />
+                </label>
+            </li>
+        ))}
+    </ul>
+    <div class="a11y-menu__foot">
+        <button type="button" class="a11y-menu__reset" data-a11y-reset>
+            Reset
+        </button>
+        <button
+            type="button"
+            class="a11y-menu__close"
+            popovertarget="a11y-menu"
+            popovertargetaction="hide"
+        >
+            Done
+        </button>
+    </div>
+</div>

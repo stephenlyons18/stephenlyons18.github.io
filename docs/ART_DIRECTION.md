@@ -71,8 +71,24 @@ slots only; the wall and text stay.
 - **Highlight**: a short white `▀` glint on the top-left of a bowl or stem, at most one per letter.
 - Frames and UI chrome use box drawing (`╔═╗ ║ ╚═╝ ┌─┐`) and CP437-style separators (`─▬═`); prompts keep `$`
   and `>`.
-- Font: self-hosted **JetBrains Mono** subset (includes U+2500–259F). Never rely on a fallback font for block
-  glyphs, because widths drift and the art shears.
+- Art font: self-hosted **JetBrains Mono**, subset to the art's cells only (space, `·`, U+2580–259F; ~1 KB,
+  `--font-art`). Never rely on a fallback font for block glyphs, because widths drift and the art shears.
+
+## Typography (user decision, 2026-10-12)
+
+| Token            | Face                  | Used for                                                                    |
+| ---------------- | --------------------- | --------------------------------------------------------------------------- |
+| `--font-display` | **Press Start 2P**    | Headings, nav, buttons, labels, stats, plain-mode headings                  |
+| `--font-body`    | **Departure Mono**    | Paragraphs, terminal, captions, chips, small UI text, skill-graph labels    |
+| `--font-art`     | JetBrains Mono (cells) | ANSI art only                                                              |
+
+- All three are self-hosted and subset, ~22 KB in total.
+- Pixel faces have one weight. `font-synthesis: none` stops a faux bold from smearing them; use colour or size
+  for emphasis instead.
+- Press Start 2P carries its own wide spacing, so keep `letter-spacing` at about 0.02em. It is too wide for
+  paragraphs and never sets body copy.
+- The a11y menu's **Readable font** swaps `--font-display`/`--font-body` for the platform sans. Art keeps its
+  cells.
 
 ## Site-wide pieces (all build-time, zero JS)
 
@@ -84,6 +100,8 @@ slots only; the wall and text stay.
 - **Drip divider** (`AnsiDivider.astro`, `renderDivider`): a sprayed `▄` bar with thin drips. Used under page
   headers and between home sections.
 - **Headers** (`AnsiTitle.astro`): lean wildstyle for page titles, bubble for the 404 and the "SL" avatar.
+  With the a11y menu's **Plain headings**, the art hides and its real heading shows instead: Press Start 2P,
+  the same burner gradient and a two-step block extrusion (`drop-shadow` in `--title-x1`/`--title-x2`).
 - **Components**: buttons and cards carry the art's hard down-right offset shadow (`--title-x2`); section
   labels start with a `▓▒░` ramp; the timeline is a sprayed sky→forest stripe with square pixel markers; the
   terminal banner uses the title gradient.

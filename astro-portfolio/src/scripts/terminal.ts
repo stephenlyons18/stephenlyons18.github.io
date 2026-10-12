@@ -139,6 +139,12 @@ function streamLines(
 ): void {
     const clsAt = typeof cls === 'function' ? cls : () => cls;
     if (streamTimer) clearTimeout(streamTimer);
+    // Reduced motion (OS or a11y menu): print everything at once instead of typing it out.
+    if (document.documentElement.hasAttribute('data-reduce-motion')) {
+        lines.forEach((text, n) => appendLine(outputEl, text, clsAt(n)));
+        onDone?.();
+        return;
+    }
     let i = 0;
     function nextLine(): void {
         if (i >= lines.length) {
@@ -645,7 +651,7 @@ function triggerMatrixEasterEgg(): void {
         ctx.fillRect(0, 0, canvas.width, canvas.height);
         ctx.fillStyle =
             getComputedStyle(document.documentElement).getPropertyValue('--ui').trim() || '#00FF41';
-        ctx.font = '15px JetBrains Mono, monospace';
+        ctx.font = "15px 'Departure Mono', monospace";
 
         for (let i = 0; i < drops.length; i++) {
             const char = chars[Math.floor(Math.random() * chars.length)]!;

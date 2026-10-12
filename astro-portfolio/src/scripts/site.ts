@@ -8,6 +8,9 @@ declare global {
     }
 }
 
+/** Reduced motion: the OS setting or the a11y menu (BaseLayout's head script sets the attribute). */
+const motionOff = () => document.documentElement.hasAttribute('data-reduce-motion');
+
 interface HeroLine {
     prompt?: string;
     text?: string;
@@ -184,7 +187,7 @@ function initHeroTyping(): void {
                 el!.scrollTop = el!.scrollHeight;
             });
             lineIdx++;
-            setTimeout(createLine, line.delay || 100);
+            setTimeout(createLine, motionOff() ? 0 : line.delay || 100);
         }
     }
 
@@ -196,14 +199,14 @@ function initHeroTyping(): void {
                 el!.scrollTop = el!.scrollHeight;
             });
             charIdx++;
-            setTimeout(() => typeChar(line), line.delay || 60);
+            setTimeout(() => typeChar(line), motionOff() ? 0 : line.delay || 60);
         } else {
             lineIdx++;
-            setTimeout(createLine, 300);
+            setTimeout(createLine, motionOff() ? 0 : 300);
         }
     }
 
-    setTimeout(createLine, 800);
+    setTimeout(createLine, motionOff() ? 0 : 800);
 }
 
 function initHeroTerminalInteractive(): void {
@@ -350,7 +353,7 @@ function initBootSequence(): void {
     position: fixed; inset: 0; z-index: 100000;
     background: #0A0A0A; display: flex;
     align-items: center; justify-content: center;
-    flex-direction: column; font-family: 'JetBrains Mono', monospace;
+    flex-direction: column; font-family: var(--font-body);
     color: var(--ui, #3cc4ff); font-size: 0.85rem;
     transition: opacity 0.5s ease;
   `;
@@ -393,7 +396,7 @@ function initReveal(): void {
     // Skip if the browser doesn't support IntersectionObserver (very old browsers)
     // or if the user prefers reduced motion (CSS already handles that case).
     if (!('IntersectionObserver' in window)) return;
-    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    if (motionOff()) return;
 
     // Signal to CSS that JS-driven reveal is active (hides elements until observed)
     document.body.classList.add('js-reveal-ready');
@@ -415,7 +418,71 @@ function initReveal(): void {
     });
 }
 
+// ── Accessibility menu (Header.astro) ────────────────────────────────────────
+// Each switch mirrors a data-a11y-<key> attribute on <html>, persisted as JSON in localStorage.
+// "motion" also drives data-reduce-motion, which stays on regardless when the OS asks for it.
+const A11Y_KEY = 'sl-a11y';
+
+function initA11yMenu(): void {
+    const menu = document.getElementById('a11y-menu');
+    if (!menu) return;
+    const root = document.documentElement;
+    const switches = [...menu.querySelectorAll<HTMLInputElement>('input[data-a11y]')];
+    const osCalm = matchMedia('(prefers-reduced-motion: reduce)');
+
+    const save = () => {
+        const prefs: Record<string, boolean> = {};
+        for (const s of switches) if (s.checked && !s.disabled) prefs[s.dataset['a11y']!] = true;
+        try {
+            localStorage.setItem(A11Y_KEY, JSON.stringify(prefs));
+        } catch {
+            /* private mode: the choice still applies to this page */
+        }
+    };
+    const apply = (key: string, on: boolean) => {
+        root.toggleAttribute(`data-a11y-${key}`, on);
+        if (key === 'motion') root.toggleAttribute('data-reduce-motion', on || osCalm.matches);
+    };
+    const sync = () => {
+        for (const s of switches) {
+            const key = s.dataset['a11y']!;
+            const forced = key === 'motion' && osCalm.matches;
+            s.checked = forced || root.hasAttribute(`data-a11y-${key}`);
+            s.disabled = forced;
+            const hint = menu.querySelector<HTMLElement>(`[data-hint="${key}"]`);
+            if (hint && key === 'motion')
+                hint.textContent = forced
+                    ? 'On: your device asks for less motion'
+                    : 'Stop animations and transitions';
+        }
+    };
+
+    for (const s of switches)
+        s.addEventListener('change', () => {
+            apply(s.dataset['a11y']!, s.checked);
+            save();
+        });
+    menu.querySelector('[data-a11y-reset]')?.addEventListener('click', () => {
+        for (const s of switches) apply(s.dataset['a11y']!, false);
+        try {
+            localStorage.removeItem(A11Y_KEY);
+        } catch {
+            /* ignore */
+        }
+        sync();
+    });
+    osCalm.addEventListener('change', () => {
+        root.toggleAttribute(
+            'data-reduce-motion',
+            osCalm.matches || root.hasAttribute('data-a11y-motion'),
+        );
+        sync();
+    });
+    sync();
+}
+
 function init(): void {
+    initA11yMenu();
     initBootSequence();
     initActiveNav();
     initMobileNav();

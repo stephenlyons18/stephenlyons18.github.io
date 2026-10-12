@@ -2,8 +2,8 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-**stephenlyons.dev**: Stephen Lyons' personal cybersecurity portfolio. A static **Astro 7** site with three
-**React 19** islands (a **d3-force** skill graph, a project lightbox, and nothing else that needs React) and two
+**stephenlyons.dev**: Stephen Lyons' personal cybersecurity portfolio. A static **Astro 7** site with one
+**React 19** island (the **d3-force** skill graph; nothing else needs React) and two
 vanilla-TS bundles (site interactivity + a working in-browser **terminal**). Deployed to GitHub Pages from the
 `build` branch. The look is **ANSI/ASCII art crossed with NY/SF/LA graffiti** (wildstyle, bubble letters,
 pixel drips, 3D block shading) layered over a terminal that still really works.
@@ -138,8 +138,8 @@ pnpm preview        # serve dist/
   `public/scripts/` (generated, git-ignored) and loaded with `<script is:inline defer>` on every page.
   `terminal.ts` exposes `window.openTerminal` and `window.runInElement` (the hero terminal reuses the same
   command engine). New commands go in `terminal.ts` only.
-- **React islands** only where interaction warrants it: `SkillGraph.tsx` (about, `client:visible`) and
-  `ProjectGallery.tsx` (projects, `client:visible`). Everything else is static HTML. Reach for vanilla TS or
+- **React islands** only where interaction warrants it: `SkillGraph.tsx` (about, `client:visible`) is the
+  only one. The project lightbox is a native `<dialog>` (`Lightbox.astro`). Everything else is static HTML. Reach for vanilla TS or
   CSS before adding an island, and never hydrate on every page.
 - **Content is typed data**, one source per concept: `src/data/projects.ts`, `src/data/skills.ts` (weight 1–10
   → node radius; `connections` must be **bidirectional**, which tests enforce), and job history. Pages, the
@@ -177,9 +177,20 @@ Workflow rules: pin third-party actions to a **SHA with a version comment**; set
   render-blocking third-party CSS. Responsive images from `astro:assets`.
 - **Floating cards anchor to what they describe.** Tooltips and hover cards track their anchor (every frame for
   canvas nodes, on scroll/resize for DOM), are clamped to the viewport, and flip instead of overflowing.
-- **Theme via tokens.** Colours come from the CSS custom properties in `global.css` (`--ui*` for site
-  elements, `--accent` for the sparing pink, `--title-*`, `--spray-*`, `--bg-*`, `--text-*`), switched by the terminal `theme` command (persisted in `localStorage`). Never hard-code
-  a palette colour in a component; canvas code reads tokens once per theme change, not per frame.
+- **Theme via tokens.** Colours come from the CSS custom properties in `global.css`:
+  - `--ui*` for site elements and `--accent` for the sparing pink;
+  - `--title-*`, `--spray-*`, `--bg-*`, `--text-*`;
+  - fonts from `--font-display`/`--font-body`/`--font-art`.
+
+  The terminal `theme` command switches them (persisted in `localStorage`). Never hard-code a palette colour
+  or font in a component. Canvas code reads tokens once per theme change, not per frame.
+- **The accessibility menu is a contract.** The header popover sets `data-a11y-<key>` on `<html>` (plain,
+  motion, font, large, contrast, wall), persisted in `localStorage` (`sl-a11y`) and re-applied before first
+  paint.
+  - `data-reduce-motion` is the single motion switch, set by the OS preference or the menu. JS checks that
+    attribute, never `matchMedia` alone. Every new animation must stop under it.
+  - Every new art heading must keep its real heading (`AnsiTitle` does this) so **Plain headings** works.
+  - `a11y-menu.spec` checks each mode with axe.
 - **Terminal UX:** `scrollTop = scrollHeight` goes inside `requestAnimationFrame`; use a `MutationObserver` for
   streamed output. Escape every user-supplied string before it touches `innerHTML`.
 

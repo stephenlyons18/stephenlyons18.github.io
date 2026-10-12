@@ -5,14 +5,26 @@
    there first. Every text colour here passes WCAG AA on --bg-*.
    ============================================================ */
 
-/* Self-hosted JetBrains Mono (OFL, /fonts/JetBrainsMono-OFL.txt), subset to Latin + box drawing +
-   block elements (U+2500–259F) so ANSI art never falls back to a font with different glyph widths. */
+/* Self-hosted pixel type (all OFL; licences in /fonts/). ~22 KB for all three.
+   - Press Start 2P: display — headings, nav, buttons, labels (Latin subset).
+   - Departure Mono: body, terminal, small UI text (Latin + arrows + box/blocks/geometric).
+   - JetBrains Mono: ANSI art cells only (space, ·, U+2580–259F block elements). Its exact 0.6em
+     advance is what the art generator's fit-to-width maths assumes. */
+@font-face {
+    font-family: 'Press Start 2P';
+    src: url('/fonts/press-start-2p-subset.woff2') format('woff2');
+    font-display: swap;
+}
+@font-face {
+    font-family: 'Departure Mono';
+    src: url('/fonts/departure-mono-subset.woff2') format('woff2');
+    font-display: swap;
+}
 @font-face {
     font-family: 'JetBrains Mono';
-    src: url('/fonts/jetbrains-mono-subset.woff2') format('woff2');
+    src: url('/fonts/jetbrains-mono-art.woff2') format('woff2');
     font-weight: 100 800;
-    font-style: normal;
-    font-display: swap;
+    font-display: block; /* art in a fallback font has the wrong cell width: wait (≈1 KB) */
 }
 
 /* ---------- Tokens ---------- */
@@ -70,9 +82,11 @@
     --graph-halo: rgba(7, 11, 18, 0.92);
     --graph-label: #eef6ff;
 
-    /* Typography */
-    --font-display: 'JetBrains Mono', ui-monospace, 'SFMono-Regular', Menlo, Consolas, monospace;
-    --font-body: var(--font-display);
+    /* Typography (the a11y menu's "readable font" swaps --font-display and --font-body) */
+    --font-mono-stack: ui-monospace, 'SFMono-Regular', Menlo, Consolas, monospace;
+    --font-display: 'Press Start 2P', 'Departure Mono', var(--font-mono-stack);
+    --font-body: 'Departure Mono', var(--font-mono-stack);
+    --font-art: 'JetBrains Mono', var(--font-mono-stack);
 
     /* Sizing */
     --header-h: 64px;
@@ -138,7 +152,7 @@
     margin-bottom: 1rem;
 }
 .ansi {
-    font-family: var(--font-display);
+    font-family: var(--font-art);
     font-weight: 400;
     line-height: 1;
     white-space: pre;
@@ -242,6 +256,8 @@ canvas {
 }
 
 html {
+    /* Pixel fonts have one weight; a synthesised bold smears their pixels. */
+    font-synthesis: none;
     /* Stop mobile font boosting: it inflates small ANSI cells and breaks the art's fit-to-width maths. */
     -webkit-text-size-adjust: 100%;
     text-size-adjust: 100%;
@@ -2121,4 +2137,290 @@ html:has(dialog.lightbox[open]) {
         color: #000;
         text-decoration: underline;
     }
+}
+
+/* ---------- Header actions + accessibility menu (Header.astro) ---------- */
+.header-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    position: relative;
+    z-index: 10000;
+}
+.nav-icon-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.45rem;
+    min-height: 36px;
+    padding: 0.3rem 0.6rem;
+    font-family: var(--font-display);
+    font-size: 0.55rem;
+    color: var(--ui-2);
+    background: transparent;
+    border: 1px solid var(--ui-2);
+    border-radius: var(--radius);
+    cursor: pointer;
+    transition:
+        background 0.2s var(--ease),
+        box-shadow 0.2s var(--ease);
+}
+.nav-icon-btn:hover,
+.nav-icon-btn:focus-visible {
+    background: color-mix(in srgb, var(--ui-2) 12%, transparent);
+    box-shadow: 0 0 12px color-mix(in srgb, var(--ui-2) 35%, transparent);
+}
+.pixel-icon {
+    display: block;
+    image-rendering: pixelated;
+}
+
+.a11y-menu {
+    /* Popover: in the top layer, pinned under the header's right edge. */
+    position: fixed;
+    inset: auto;
+    top: calc(var(--header-h) + env(safe-area-inset-top, 0px) + 0.5rem);
+    right: max(1rem, calc((100vw - var(--max-w)) / 2 + 1rem));
+    width: min(22rem, calc(100vw - 2rem));
+    max-height: calc(100dvh - var(--header-h) - 2rem);
+    overflow-y: auto;
+    margin: 0;
+    padding: 1rem;
+    color: var(--text-primary);
+    background: var(--bg-card);
+    border: 2px solid var(--ui-2);
+    border-radius: var(--radius);
+    box-shadow:
+        6px 6px 0 var(--title-x2),
+        0 18px 48px rgba(0, 0, 0, 0.55);
+}
+.a11y-menu:popover-open {
+    animation: a11y-in 0.16s var(--ease);
+}
+@keyframes a11y-in {
+    from {
+        opacity: 0;
+        transform: translateY(-6px);
+    }
+}
+.a11y-menu__title {
+    font-family: var(--font-display);
+    font-size: 0.75rem;
+    color: var(--ui-2);
+    margin-bottom: 0.75rem;
+}
+.a11y-menu__list {
+    list-style: none;
+    display: grid;
+    gap: 0.25rem;
+}
+.a11y-switch {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    min-height: 44px;
+    padding: 0.35rem 0.5rem;
+    border-radius: var(--radius);
+    cursor: pointer;
+}
+.a11y-switch:hover {
+    background: var(--bg-elevated);
+}
+.a11y-switch input {
+    /* Visually hidden but focusable: the track below is its visual. */
+    position: absolute;
+    opacity: 0;
+    width: 1px;
+    height: 1px;
+}
+.a11y-switch__text {
+    flex: 1;
+    display: grid;
+    gap: 0.1rem;
+}
+.a11y-switch__label {
+    font-size: 0.95rem;
+    color: var(--white);
+}
+.a11y-switch__hint {
+    font-size: 0.8rem;
+    line-height: 1.35;
+    color: var(--text-secondary);
+}
+/* A pixel switch: square track, square knob, hard shadow. */
+.a11y-switch__track {
+    flex: none;
+    position: relative;
+    width: 40px;
+    height: 22px;
+    background: var(--bg-primary);
+    border: 2px solid var(--border-bright);
+    transition: background 0.15s var(--ease);
+}
+.a11y-switch__track::after {
+    content: '';
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    width: 14px;
+    height: 14px;
+    background: var(--text-secondary);
+    transition: transform 0.15s var(--ease);
+}
+.a11y-switch input:checked + .a11y-switch__text + .a11y-switch__track {
+    background: color-mix(in srgb, var(--ui-3) 30%, var(--bg-primary));
+    border-color: var(--ui-3);
+}
+.a11y-switch input:checked + .a11y-switch__text + .a11y-switch__track::after {
+    transform: translateX(18px);
+    background: var(--ui-3);
+}
+.a11y-switch input:focus-visible + .a11y-switch__text + .a11y-switch__track {
+    outline: 2px solid var(--ui);
+    outline-offset: 2px;
+}
+.a11y-switch input:disabled ~ * {
+    opacity: 0.75;
+}
+.a11y-menu__foot {
+    display: flex;
+    justify-content: space-between;
+    gap: 0.5rem;
+    margin-top: 0.75rem;
+    padding-top: 0.75rem;
+    border-top: 1px solid var(--border);
+}
+.a11y-menu__foot button {
+    min-height: 44px;
+    padding: 0 1rem;
+    font-family: var(--font-display);
+    font-size: 0.6rem;
+    color: var(--text-primary);
+    background: var(--bg-elevated);
+    border: 1px solid var(--border-bright);
+    border-radius: var(--radius);
+    cursor: pointer;
+}
+.a11y-menu__foot .a11y-menu__close {
+    color: var(--bg-primary);
+    background: var(--ui-2);
+    border-color: var(--ui-2);
+}
+
+/* ---------- Accessibility modes (data-a11y-* on <html>) ---------- */
+
+/* Plain headings: hide the art, show the real heading — still pixel type, still the burner
+   gradient and a two-step block extrusion, so the page keeps its look. */
+html[data-a11y-plain] .ansi-title:not(.ansi-title--deco) > :is(pre, .ansi-title__stack) {
+    display: none !important;
+}
+html[data-a11y-plain] .ansi-title__text {
+    position: static;
+    width: auto;
+    height: auto;
+    margin: 0 0 0.5rem;
+    overflow: visible;
+    clip: auto;
+    white-space: normal;
+    font-family: var(--font-display);
+    font-size: clamp(1.25rem, 4.5vw, 2.5rem);
+    line-height: 1.35;
+    text-transform: uppercase;
+    color: var(--title-top);
+    background: linear-gradient(180deg, var(--title-top) 15%, var(--title-bottom) 85%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    filter: drop-shadow(0.12em 0.12em 0 var(--title-x1))
+        drop-shadow(0.06em 0.06em 0 var(--title-x2));
+    overflow-wrap: anywhere;
+}
+html[data-a11y-plain] h2.ansi-title__text,
+html[data-a11y-plain] h3.ansi-title__text {
+    font-size: clamp(1rem, 3.2vw, 1.75rem);
+}
+
+/* Readable font: the pixel faces become the platform's UI sans (art keeps its cells). */
+html[data-a11y-font] {
+    --font-display:
+        system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+    --font-body: var(--font-display);
+}
+
+/* Larger text: everything sized in rem scales with the root. */
+html[data-a11y-large] {
+    font-size: 20px;
+}
+
+/* High contrast: brighter secondary text and borders, no texture or glow behind content. */
+html[data-a11y-contrast] {
+    --text-primary: #eef6ff;
+    --text-secondary: #d3e0ec;
+    --text-muted: #bccbda;
+    --border: #4a6a8a;
+    --border-bright: #7aa3c8;
+}
+html[data-a11y-contrast] body::after {
+    display: none;
+}
+
+/* Hide wall texture (and the CRT scanlines). */
+html[data-a11y-wall] .ansi-wall,
+html[data-a11y-wall] body::after {
+    display: none;
+}
+
+/* Reduced motion (OS setting or the menu): stop every animation and transition site-wide. */
+html[data-reduce-motion] {
+    scroll-behavior: auto;
+}
+html[data-reduce-motion] *,
+html[data-reduce-motion] *::before,
+html[data-reduce-motion] *::after {
+    animation-duration: 0.01ms !important;
+    animation-delay: 0s !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    transition-delay: 0s !important;
+}
+html[data-reduce-motion]::view-transition-group(*),
+html[data-reduce-motion]::view-transition-old(*),
+html[data-reduce-motion]::view-transition-new(*) {
+    animation: none !important;
+}
+@media (max-width: 768px) {
+    .nav-icon-btn {
+        min-width: 44px;
+        min-height: 44px;
+        padding: 0;
+    }
+    .nav-icon-btn__label {
+        display: none;
+    }
+    .nav-terminal-btn {
+        min-width: 44px;
+        min-height: 44px;
+        justify-content: center;
+    }
+}
+
+/* Press Start 2P carries its own wide spacing; the old mono letter-spacing doubled it. */
+:is(
+    .section-label,
+    .section-title,
+    .btn,
+    .logo,
+    .nav-links a,
+    .nav-terminal-btn,
+    .nav-icon-btn,
+    .card__title,
+    .skill-category h3,
+    .timeline-item__role,
+    .form-group label,
+    .stat__number,
+    .about-name,
+    .terminal-bar__title,
+    .sg-btn
+) {
+    letter-spacing: 0.02em;
 }
