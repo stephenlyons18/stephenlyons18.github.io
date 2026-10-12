@@ -74,11 +74,11 @@ function initHeroTyping(): void {
         { output: '', delay: 200 },
         { prompt: 'stephen@lyons:~$ ', text: 'ls skills/', delay: 70 },
         {
-            output: 'infrastructure as Code/  crowdstrike/  netskope/  github-enterprise/  azure/',
+            output: 'terraform/   ansible/   crowdstrike/   netskope/   zscaler/',
             delay: 30,
         },
         {
-            output: 'python/     siem/        aws/       zscaler/             intune/',
+            output: 'python/      siem/      aws/           azure/      intune/',
             delay: 30,
         },
     ];
