@@ -27,7 +27,8 @@ export const jobs: Job[] = [
         shortOrg: 'Yamaha',
         tech: [
             'GitHub Enterprise',
-            'infrastructure as Code',
+            'Terraform',
+            'Ansible',
             'Netskope',
             'CrowdStrike',
             'Zscaler',
@@ -57,7 +58,7 @@ export const jobs: Job[] = [
         details: [
             'Manages on-prem and cloud security operations',
             'Implements and manages DevSecOps practices using GitHub Actions and GitHub Enterprise',
-            'Develops infrastructure as code using infrastructure as Code',
+            'Develops infrastructure as code using Terraform and Ansible',
             'Oversees enterprise cybersecurity tool management including Netskope, CrowdStrike, and Zscaler',
             'Manages Azure infrastructure, groups, and mobile devices through Intune',
             'Builds and maintains CI/CD pipelines with embedded security checks and compliance gates',
