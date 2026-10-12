@@ -87,7 +87,7 @@ const COMMANDS: Record<string, CommandDef> = {
     clear: { desc: 'Clear terminal screen', fn: cmdClear },
     exit: { desc: 'Close the terminal', fn: cmdExit },
     close: { desc: 'Close the terminal (alias)', fn: cmdExit },
-    theme: { desc: 'Switch accent color (green|cyan|amber)', fn: cmdTheme },
+    theme: { desc: 'Repaint the wall (wildstyle|bubble|ansi|sunset|green)', fn: cmdTheme },
     matrix: { desc: 'Trigger Matrix rain easter egg', fn: cmdMatrix },
     sudo: { desc: '???', fn: cmdSudo },
 };
@@ -281,7 +281,7 @@ function toggleTerminal(): void {
 function dispatchCommand(raw: string, outputEl: HTMLElement, onDone?: () => void): void {
     appendHTML(
         outputEl,
-        '<span style="color:var(--accent);font-weight:600;">stephen@lyons:~$</span>&nbsp;' +
+        '<span style="color:var(--ui);font-weight:600;">stephen@lyons:~$</span>&nbsp;' +
             escapeHTML(raw),
     );
     if (!raw) {
@@ -472,9 +472,9 @@ function cmdProjects(_args: string[], outputEl: HTMLElement, onDone?: () => void
         // Clickable title — links to /projects#{id}
         appendHTML(
             outputEl,
-            `  <span style="color:var(--accent);font-weight:600;">&gt;</span> ` +
+            `  <span style="color:var(--ui);font-weight:600;">&gt;</span> ` +
                 `<a href="/projects#${encodeURIComponent(p.id)}" ` +
-                `style="color:var(--accent);text-decoration:underline;text-decoration-color:var(--accent-dim);" ` +
+                `style="color:var(--ui);text-decoration:underline;text-decoration-color:var(--ui-dim);" ` +
                 `title="View on projects page">${escapeHTML(p.title)}</a>`,
         );
         appendLine(outputEl, `    ${p.descriptions[0]}`);
@@ -550,24 +550,33 @@ function cmdExit(_args: string[], _outputEl: HTMLElement): void {
     closeTerminal();
 }
 
+/** Themes defined in global.css ([data-theme]); the default (no attribute) is wildstyle. */
+const THEMES: Record<string, string> = {
+    wildstyle: 'magenta + cyan — the default burner',
+    bubble: 'mint + magenta bubble letters',
+    ansi: 'DEFCON-era ANSI blues',
+    sunset: 'yellow → magenta, LA sunset',
+    green: 'the original phosphor terminal',
+};
+
 function cmdTheme(args: string[], outputEl: HTMLElement, onDone?: () => void): void {
-    const themes = ['green', 'cyan', 'amber'];
     const t = (args[0] || '').toLowerCase();
-    if (!themes.includes(t)) {
-        appendLine(outputEl, `Usage: theme <${themes.join('|')}>`, 'dim');
-        appendLine(
-            outputEl,
-            `Current: ${document.documentElement.getAttribute('data-theme') || 'green'}`,
-            'dim',
-        );
-        onDone?.();
+    if (!(t in THEMES)) {
+        const current = document.documentElement.getAttribute('data-theme') || 'wildstyle';
+        const lines = [
+            '',
+            '  Usage: theme <name>',
+            '',
+            ...Object.entries(THEMES).map(
+                ([name, desc]) => `  ${name === current ? '▶' : ' '} ${name.padEnd(10)} ${desc}`,
+            ),
+            '',
+        ];
+        streamLines(lines, 'dim', outputEl, onDone);
         return;
     }
-    if (t === 'green') {
-        document.documentElement.removeAttribute('data-theme');
-    } else {
-        document.documentElement.setAttribute('data-theme', t);
-    }
+    if (t === 'wildstyle') document.documentElement.removeAttribute('data-theme');
+    else document.documentElement.setAttribute('data-theme', t);
     appendLine(outputEl, `Theme switched to ${t}.`, 'accent');
     try {
         localStorage.setItem('sl-theme', t);
@@ -622,8 +631,7 @@ function triggerMatrixEasterEgg(): void {
         ctx.fillStyle = 'rgba(0, 0, 0, 0.05)';
         ctx.fillRect(0, 0, canvas.width, canvas.height);
         ctx.fillStyle =
-            getComputedStyle(document.documentElement).getPropertyValue('--accent').trim() ||
-            '#00FF41';
+            getComputedStyle(document.documentElement).getPropertyValue('--ui').trim() || '#00FF41';
         ctx.font = '15px JetBrains Mono, monospace';
 
         for (let i = 0; i < drops.length; i++) {
@@ -657,14 +665,7 @@ function init(): void {
         window.visualViewport.addEventListener('scroll', syncOverlayToViewport);
     }
 
-    try {
-        const saved = localStorage.getItem('sl-theme');
-        if (saved && saved !== 'green') {
-            document.documentElement.setAttribute('data-theme', saved);
-        }
-    } catch {
-        /* noop */
-    }
+    // The saved theme is applied before first paint by the inline script in BaseLayout.astro.
 
     window.openTerminal = openTerminal;
     window.runInElement = dispatchCommand;

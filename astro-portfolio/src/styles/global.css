@@ -1,64 +1,80 @@
-@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:ital,wght@0,100..800;1,100..800&family=Fira+Code:wght@300..700&display=swap');
 @import 'tailwindcss';
 
 /* ============================================================
-   Tailwind Theme Tokens — Stephen Lyons Portfolio
-   Mirrors the CSS custom properties so Tailwind utilities
-   (text-accent, bg-bg-card, etc.) match the design system.
+   Stephen Lyons — "ANSI wall" design tokens
+   A terminal painted on a graffiti wall. The palette, themes and
+   glyph rules are specified in docs/ART_DIRECTION.md — change them
+   there first. Every text colour here passes WCAG AA on --bg-*.
    ============================================================ */
-@theme {
-    --color-accent: #00ff41;
-    --color-accent-dim: #00cc34;
-    --color-bg-primary: #0a0a0a;
-    --color-bg-secondary: #0d1117;
-    --color-bg-card: #111820;
-    --color-bg-elevated: #161b22;
-    --color-border: #1e2a38;
-    --color-border-bright: #2a3a4e;
-    --color-text-primary: #c9d1d9;
-    --color-text-secondary: #8b949e;
-    --color-text-muted: #484f58;
-    --color-white: #e6edf3;
 
-    --font-display: 'JetBrains Mono', monospace;
-    --font-body: 'Fira Code', 'JetBrains Mono', monospace;
-
-    --radius: 6px;
-    --radius-lg: 12px;
+/* Self-hosted JetBrains Mono (OFL, /fonts/JetBrainsMono-OFL.txt), subset to Latin + box drawing +
+   block elements (U+2500–259F) so ANSI art never falls back to a font with different glyph widths. */
+@font-face {
+    font-family: 'JetBrains Mono';
+    src: url('/fonts/jetbrains-mono-subset.woff2') format('woff2');
+    font-weight: 100 800;
+    font-style: normal;
+    font-display: swap;
 }
 
-/* ============================================================
-   Stephen Lyons — Cybersecurity Portfolio
-   Terminal / Hacker Aesthetic Stylesheet
-   (Migrated to Astro; preserved verbatim for pixel-perfect fidelity)
-   ============================================================ */
-
-/* ---------- CSS Custom Properties ---------- */
+/* ---------- Tokens ---------- */
+/* Roles: the site is mostly blues and greens (--ui, --ui-2, --ui-3 on a navy/teal wall). Pink
+   (--accent) is the *accent* — reserved for a few small highlights (cursor, selection, the active
+   nav mark, glints, the primary call to action's hover) — so it pops instead of flooding.
+   Title art has its own slots (--title-*) and keeps the cyan → magenta burner gradient. */
 :root {
-    /* Accent colors — switchable via terminal `theme` command */
-    --accent: #00ff41;
-    --accent-dim: #00cc34;
-    --accent-glow: rgba(0, 255, 65, 0.35);
-    --accent-bg: rgba(0, 255, 65, 0.06);
+    /* Wall (navy-black with a teal cast) */
+    --bg-primary: #070b12;
+    --bg-secondary: #0a111b;
+    --bg-card: #0e1724;
+    --bg-elevated: #142233;
+    --border: #1e3247;
+    --border-bright: #2c4b68;
 
-    /* Base palette */
-    --bg-primary: #0a0a0a;
-    --bg-secondary: #0d1117;
-    --bg-card: #111820;
-    --bg-elevated: #161b22;
-    --border: #1e2a38;
-    --border-bright: #2a3a4e;
-    --text-primary: #c9d1d9;
-    --text-secondary: #8b949e;
-    --text-muted: #484f58;
-    --white: #e6edf3;
+    /* Text */
+    --white: #eef6ff;
+    --text-primary: #cfdcea;
+    --text-secondary: #96aac0;
+    --text-muted: #7590ab;
+
+    /* Spray cans (fixed across themes) */
+    --spray-magenta: #ff3d9a;
+    --spray-cyan: #22c7ff;
+    --spray-sky: #3cc4ff;
+    --spray-aqua: #36e2c6;
+    --spray-forest: #4cc38a;
+    --spray-teal: #14b8a6;
+    --spray-lavender: #b99cff;
+    --spray-orange: #ff7a3d;
+    --spray-yellow: #ffd23f;
+    --ansi-blue: #4d9dff;
+    --ansi-steel: #93a6dc;
+
+    /* Theme slots — overridden per [data-theme]; default = wildstyle */
+    --ui: var(--spray-sky);
+    --ui-2: var(--spray-aqua);
+    --ui-3: var(--spray-forest);
+    --accent: var(--spray-magenta);
+    --title-top: var(--spray-cyan);
+    --title-bottom: var(--spray-magenta);
+    --title-outline: var(--white);
+    --title-x1: #7b3fe4;
+    --title-x2: #3b2385;
+    --title-spray: var(--spray-lavender);
+
+    /* Derived — always follow the active theme */
+    --ui-dim: color-mix(in oklab, var(--ui) 70%, var(--bg-primary));
+    --ui-glow: color-mix(in srgb, var(--ui) 32%, transparent);
+    --ui-bg: color-mix(in srgb, var(--ui) 8%, transparent);
+    --accent-glow: color-mix(in srgb, var(--accent) 35%, transparent);
+
     /* Skill-graph canvas colours (read once per theme change by SkillGraph.tsx) */
-    --graph-halo: rgba(11, 13, 16, 0.92);
-    --graph-label: #e6edf3;
+    --graph-halo: rgba(7, 11, 18, 0.92);
+    --graph-label: #eef6ff;
 
     /* Typography */
-    --font-display: 'JetBrains Mono', monospace;
-    --font-body: 'Fira Code', 'JetBrains Mono', monospace;
+    --font-display: 'JetBrains Mono', ui-monospace, 'SFMono-Regular', Menlo, Consolas, monospace;
+    --font-body: var(--font-display);
 
     /* Sizing */
     --header-h: 64px;
@@ -70,18 +86,124 @@
     --ease: cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-/* ---------- Theme Variants ---------- */
-[data-theme='cyan'] {
-    --accent: #00ffff;
-    --accent-dim: #00cccc;
-    --accent-glow: rgba(0, 255, 255, 0.35);
-    --accent-bg: rgba(0, 255, 255, 0.06);
+/* ---------- Themes (terminal: `theme <name>`) ---------- */
+[data-theme='bubble'] {
+    --ui: var(--spray-aqua);
+    --ui-2: var(--spray-sky);
+    --ui-3: var(--spray-forest);
+    --title-top: var(--spray-aqua);
+    --title-bottom: var(--spray-cyan);
+    --title-outline: var(--spray-magenta);
+    --title-x1: #2f5bd0;
+    --title-x2: #1b2f73;
+    --title-spray: var(--spray-aqua);
 }
-[data-theme='amber'] {
-    --accent: #ffb000;
-    --accent-dim: #cc8d00;
-    --accent-glow: rgba(255, 176, 0, 0.35);
-    --accent-bg: rgba(255, 176, 0, 0.06);
+[data-theme='ansi'] {
+    --ui: var(--ansi-steel);
+    --ui-2: var(--ansi-blue);
+    --ui-3: #8fb7ff;
+    --title-top: #c9d3f2;
+    --title-bottom: var(--ansi-blue);
+    --title-outline: var(--ansi-steel);
+    --title-x1: #3346b8;
+    --title-x2: #1d2766;
+    --title-spray: var(--ansi-steel);
+}
+[data-theme='sunset'] {
+    --ui: var(--spray-orange);
+    --ui-2: var(--spray-yellow);
+    --ui-3: var(--spray-aqua);
+    --title-top: var(--spray-yellow);
+    --title-bottom: var(--spray-magenta);
+    --title-outline: var(--white);
+    --title-x1: var(--spray-orange);
+    --title-x2: #8a2a5c;
+    --title-spray: var(--spray-orange);
+}
+/* The original phosphor look, kept for nostalgia. */
+[data-theme='green'] {
+    --ui: #00ff41;
+    --ui-2: #00bfff;
+    --ui-3: #00ff41;
+    --accent: #00ff41;
+    --title-top: #b6ffc8;
+    --title-bottom: #00ff41;
+    --title-outline: #e6edf3;
+    --title-x1: #00a82b;
+    --title-x2: #005c17;
+    --title-spray: #00ff41;
+}
+
+/* ---------- ANSI art (AnsiTitle.astro / src/lib/ansi) ---------- */
+.ansi-title {
+    container-type: inline-size;
+    margin-bottom: 1rem;
+}
+.ansi {
+    font-family: var(--font-display);
+    font-weight: 400;
+    line-height: 1;
+    white-space: pre;
+    letter-spacing: 0;
+    margin: 0;
+    /* Fit --cols cells into the container; never larger than --ansi-max. */
+    font-size: min(var(--ansi-max, 13px), calc(100cqi / var(--cols) / 0.6));
+    /* A hairline stroke in each cell's own colour closes the antialiasing seams between block
+       glyphs, leaving only a faint ANSI cell texture. */
+    -webkit-text-stroke: 0.06em currentColor;
+    paint-order: stroke fill;
+    user-select: none;
+    font-variant-ligatures: none;
+    /* Without this, Chromium/Linux rounds each glyph advance to whole pixels at small sizes
+       (0.6 × 10.87px → 7px), so a 184-cell piece overflows its box by ~90px. Subpixel positioning
+       keeps cells exactly 0.6em. */
+    text-rendering: geometricPrecision;
+}
+.ansi-title__stack {
+    display: none;
+}
+.a-f0 {
+    color: var(--title-top);
+}
+.a-f1 {
+    color: color-mix(in oklab, var(--title-top) 86%, var(--title-bottom));
+}
+.a-f2 {
+    color: color-mix(in oklab, var(--title-top) 71%, var(--title-bottom));
+}
+.a-f3 {
+    color: color-mix(in oklab, var(--title-top) 57%, var(--title-bottom));
+}
+.a-f4 {
+    color: color-mix(in oklab, var(--title-top) 43%, var(--title-bottom));
+}
+.a-f5 {
+    color: color-mix(in oklab, var(--title-top) 29%, var(--title-bottom));
+}
+.a-f6 {
+    color: color-mix(in oklab, var(--title-top) 14%, var(--title-bottom));
+}
+.a-f7,
+.a-dr {
+    color: var(--title-bottom);
+}
+.a-ol {
+    color: var(--title-outline);
+}
+.a-x1 {
+    color: var(--title-x1);
+}
+.a-x2 {
+    color: var(--title-x2);
+}
+.a-gl {
+    color: #fff;
+    background: var(--title-top);
+}
+.a-os {
+    color: var(--title-spray);
+    opacity: 0.55;
+    -webkit-text-stroke: 0; /* the seam-closing stroke would bloat dots into blocks */
 }
 
 /* ---------- Reset & Base ---------- */
@@ -141,8 +263,8 @@ body::before {
     pointer-events: none;
     z-index: -1;
     background-image:
-        linear-gradient(var(--accent-bg) 1px, transparent 1px),
-        linear-gradient(90deg, var(--accent-bg) 1px, transparent 1px);
+        linear-gradient(var(--ui-bg) 1px, transparent 1px),
+        linear-gradient(90deg, var(--ui-bg) 1px, transparent 1px);
     background-size: 60px 60px;
     animation: gridMove 20s linear infinite;
 }
@@ -157,7 +279,7 @@ body::before {
 }
 
 a {
-    color: var(--accent);
+    color: var(--ui);
     text-decoration: none;
     transition:
         color 0.2s var(--ease),
@@ -166,7 +288,7 @@ a {
 a:hover,
 a:focus-visible {
     color: var(--white);
-    text-shadow: 0 0 8px var(--accent-glow);
+    text-shadow: 0 0 8px var(--ui-glow);
 }
 
 ::selection {
@@ -207,7 +329,7 @@ ol {
     font-weight: 700;
     letter-spacing: 0.15em;
     text-transform: uppercase;
-    color: var(--accent);
+    color: var(--ui);
     margin-bottom: 0.5rem;
     display: flex;
     align-items: center;
@@ -296,8 +418,8 @@ body.js-reveal-ready .reveal.revealed {
     font-family: var(--font-display);
     font-size: 0.875rem;
     font-weight: 600;
-    border: 1px solid var(--accent);
-    color: var(--accent);
+    border: 1px solid var(--ui);
+    color: var(--ui);
     background: transparent;
     border-radius: var(--radius);
     cursor: pointer;
@@ -307,21 +429,21 @@ body.js-reveal-ready .reveal.revealed {
 }
 .btn:hover,
 .btn:focus-visible {
-    background: var(--accent);
+    background: var(--ui);
     color: var(--bg-primary);
     box-shadow:
-        0 0 20px var(--accent-glow),
+        0 0 20px var(--ui-glow),
         inset 0 0 20px rgba(0, 0, 0, 0.15);
     text-shadow: none;
 }
 .btn--filled {
-    background: var(--accent);
+    background: var(--ui);
     color: var(--bg-primary);
 }
 .btn--filled:hover,
 .btn--filled:focus-visible {
-    background: var(--white);
-    border-color: var(--white);
+    background: var(--accent);
+    border-color: var(--accent);
 }
 
 /* ---------- Header / Nav ---------- */
@@ -353,7 +475,7 @@ body.js-reveal-ready .reveal.revealed {
     font-family: var(--font-display);
     font-size: 1.15rem;
     font-weight: 700;
-    color: var(--accent);
+    color: var(--ui);
     letter-spacing: 0.05em;
     display: flex;
     align-items: center;
@@ -364,7 +486,7 @@ body.js-reveal-ready .reveal.revealed {
     opacity: 0.4;
 }
 .logo:hover {
-    text-shadow: 0 0 12px var(--accent-glow);
+    text-shadow: 0 0 12px var(--ui-glow);
 }
 
 .nav-links {
@@ -395,7 +517,7 @@ body.js-reveal-ready .reveal.revealed {
 }
 .nav-links a:hover,
 .nav-links a.active {
-    color: var(--accent);
+    color: var(--ui);
 }
 .nav-links a:hover::after,
 .nav-links a.active::after {
@@ -408,8 +530,8 @@ body.js-reveal-ready .reveal.revealed {
     gap: 0.4rem;
     font-family: var(--font-display);
     font-size: 0.7rem;
-    color: var(--accent);
-    border: 1px solid var(--accent);
+    color: var(--ui);
+    border: 1px solid var(--ui);
     padding: 0.3rem 0.65rem;
     border-radius: var(--radius);
     cursor: pointer;
@@ -422,9 +544,9 @@ body.js-reveal-ready .reveal.revealed {
 }
 .nav-terminal-btn:hover,
 .nav-terminal-btn:focus-visible {
-    background: var(--accent);
+    background: var(--ui);
     color: var(--bg-primary);
-    box-shadow: 0 0 12px var(--accent-glow);
+    box-shadow: 0 0 12px var(--ui-glow);
 }
 .nav-terminal-btn__icon {
     font-weight: 700;
@@ -491,7 +613,7 @@ body.js-reveal-ready .reveal.revealed {
     max-width: 750px;
     box-shadow:
         0 0 40px rgba(0, 0, 0, 0.5),
-        0 0 80px var(--accent-glow);
+        0 0 80px var(--ui-glow);
     /* Flex column keeps bar → scrollable body → sticky input in order */
     display: flex;
     flex-direction: column;
@@ -543,16 +665,16 @@ body.js-reveal-ready .reveal.revealed {
     background: var(--bg-secondary);
 }
 .hero-terminal__body::-webkit-scrollbar-thumb {
-    background: var(--accent-dim);
+    background: var(--ui-dim);
     border-radius: 3px;
 }
 .hero-terminal__body::-webkit-scrollbar-thumb:hover {
-    background: var(--accent);
+    background: var(--ui);
 }
 /* Firefox */
 .hero-terminal__body {
     scrollbar-width: thin;
-    scrollbar-color: var(--accent-dim) var(--bg-secondary);
+    scrollbar-color: var(--ui-dim) var(--bg-secondary);
 }
 
 /* Input row inside the hero terminal (shown after typing animation) */
@@ -575,12 +697,12 @@ body.js-reveal-ready .reveal.revealed {
     font-family: var(--font-body);
     font-size: 0.95rem;
     outline: none;
-    caret-color: var(--accent);
+    caret-color: var(--ui);
     min-width: 0;
 }
 
 .hero-prompt {
-    color: var(--accent);
+    color: var(--ui);
 }
 .hero-command {
     color: var(--white);
@@ -642,16 +764,16 @@ body.js-reveal-ready .reveal.revealed {
     left: 0;
     width: 100%;
     height: 2px;
-    background: linear-gradient(90deg, transparent, var(--accent), transparent);
+    background: linear-gradient(90deg, transparent, var(--ui), transparent);
     opacity: 0;
     transition: opacity 0.3s var(--ease);
 }
 .card:hover {
-    border-color: var(--accent-dim);
+    border-color: var(--ui-dim);
     transform: translateY(-4px);
     box-shadow:
         0 8px 30px rgba(0, 0, 0, 0.3),
-        0 0 20px var(--accent-glow);
+        0 0 20px var(--ui-glow);
 }
 .card:hover::before {
     opacity: 1;
@@ -662,8 +784,8 @@ body.js-reveal-ready .reveal.revealed {
     font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 0.1em;
-    color: var(--accent);
-    background: var(--accent-bg);
+    color: var(--ui);
+    background: var(--ui-bg);
     padding: 0.2rem 0.6rem;
     border-radius: 3px;
     display: inline-block;
@@ -729,8 +851,8 @@ body.js-reveal-ready .reveal.revealed {
         box-shadow 0.2s var(--ease);
 }
 .card__image-item:hover {
-    border-color: var(--accent-dim);
-    box-shadow: 0 0 12px var(--accent-glow);
+    border-color: var(--ui-dim);
+    box-shadow: 0 0 12px var(--ui-glow);
 }
 .card__image-item {
     aspect-ratio: 16 / 9;
@@ -804,9 +926,9 @@ body.js-reveal-ready .reveal.revealed {
     width: 100%;
     aspect-ratio: unset; /* override thumbnail aspect-ratio so content sets height */
     background: var(--bg-card);
-    border: 1px solid var(--accent-dim);
+    border: 1px solid var(--ui-dim);
     box-shadow:
-        0 0 60px var(--accent-glow),
+        0 0 60px var(--ui-glow),
         0 24px 60px rgba(0, 0, 0, 0.6);
     cursor: zoom-out;
     margin: 0;
@@ -845,8 +967,8 @@ body.js-reveal-ready .reveal.revealed {
         border-color 0.15s;
 }
 .lightbox-close:hover {
-    color: var(--accent);
-    border-color: var(--accent);
+    color: var(--ui);
+    border-color: var(--ui);
 }
 /* Honour reduced-motion preference in the lightbox */
 @media (prefers-reduced-motion: reduce) {
@@ -881,7 +1003,7 @@ body.js-reveal-ready .reveal.revealed {
     font-family: var(--font-display);
     font-size: 0.85rem;
     font-weight: 700;
-    color: var(--accent);
+    color: var(--ui);
     margin-bottom: 0.75rem;
     text-transform: uppercase;
     letter-spacing: 0.08em;
@@ -913,10 +1035,10 @@ body.js-reveal-ready .reveal.revealed {
 .skill-list li:hover,
 .skill-list li:focus-visible,
 .skill-list li.is-active {
-    border-color: var(--cat, var(--accent));
-    color: var(--cat, var(--accent));
-    background: color-mix(in srgb, var(--cat, var(--accent)) 12%, transparent);
-    box-shadow: 0 0 10px color-mix(in srgb, var(--cat, var(--accent)) 45%, transparent);
+    border-color: var(--cat, var(--ui));
+    color: var(--cat, var(--ui));
+    background: color-mix(in srgb, var(--cat, var(--ui)) 12%, transparent);
+    box-shadow: 0 0 10px color-mix(in srgb, var(--cat, var(--ui)) 45%, transparent);
     outline: none;
 }
 .skill-list li.is-related {
@@ -956,9 +1078,9 @@ body.js-reveal-ready .reveal.revealed {
     transition: all 0.15s ease;
 }
 .sg-btn[aria-pressed='true'] {
-    background: var(--accent-bg);
-    border-color: var(--accent);
-    color: var(--accent);
+    background: var(--ui-bg);
+    border-color: var(--ui);
+    color: var(--ui);
 }
 .sg-canvas-wrap {
     position: relative;
@@ -995,8 +1117,8 @@ body.js-reveal-ready .reveal.revealed {
     cursor: pointer;
 }
 .sg-zoom button:hover:not(:disabled) {
-    border-color: var(--accent);
-    color: var(--accent);
+    border-color: var(--ui);
+    color: var(--ui);
 }
 .sg-zoom button:disabled {
     opacity: 0.4;
@@ -1129,7 +1251,7 @@ body.js-reveal-ready .reveal.revealed {
     top: 0;
     width: 2px;
     height: 100%;
-    background: linear-gradient(to bottom, var(--accent), var(--border));
+    background: linear-gradient(to bottom, var(--ui), var(--border));
 }
 
 .timeline-item {
@@ -1149,14 +1271,14 @@ body.js-reveal-ready .reveal.revealed {
     height: 12px;
     border-radius: 50%;
     background: var(--bg-primary);
-    border: 2px solid var(--accent);
-    box-shadow: 0 0 8px var(--accent-glow);
+    border: 2px solid var(--ui);
+    box-shadow: 0 0 8px var(--ui-glow);
     transform: translateX(-50%);
 }
 
 .timeline-item__date {
     font-size: 0.75rem;
-    color: var(--accent);
+    color: var(--ui);
     font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 0.08em;
@@ -1188,7 +1310,7 @@ body.js-reveal-ready .reveal.revealed {
     padding: 0.15rem 0.45rem;
     border: 1px solid var(--border-bright);
     border-radius: 3px;
-    color: var(--accent-dim);
+    color: var(--ui-dim);
 }
 
 .timeline-item__details {
@@ -1205,7 +1327,7 @@ body.js-reveal-ready .reveal.revealed {
     content: '>';
     position: absolute;
     left: 0;
-    color: var(--accent);
+    color: var(--ui);
     font-weight: 700;
     opacity: 0.6;
 }
@@ -1222,7 +1344,7 @@ body.js-reveal-ready .reveal.revealed {
     font-family: var(--font-display);
     font-size: 0.8rem;
     font-weight: 600;
-    color: var(--accent);
+    color: var(--ui);
     margin-bottom: 0.4rem;
     text-transform: uppercase;
     letter-spacing: 0.08em;
@@ -1247,8 +1369,8 @@ body.js-reveal-ready .reveal.revealed {
 }
 .form-group input:focus,
 .form-group textarea:focus {
-    border-color: var(--accent);
-    box-shadow: 0 0 12px var(--accent-glow);
+    border-color: var(--ui);
+    box-shadow: 0 0 12px var(--ui-glow);
 }
 .form-group textarea {
     min-height: 140px;
@@ -1270,7 +1392,7 @@ body.js-reveal-ready .reveal.revealed {
     transition: color 0.2s var(--ease);
 }
 .contact-link:hover {
-    color: var(--accent);
+    color: var(--ui);
 }
 .contact-link__icon {
     width: 36px;
@@ -1281,7 +1403,7 @@ body.js-reveal-ready .reveal.revealed {
     background: var(--bg-elevated);
     border: 1px solid var(--border);
     border-radius: var(--radius);
-    color: var(--accent);
+    color: var(--ui);
     font-size: 0.85rem;
     flex-shrink: 0;
 }
@@ -1297,7 +1419,7 @@ body.js-reveal-ready .reveal.revealed {
     color: var(--text-muted);
 }
 .site-footer a {
-    color: var(--accent-dim);
+    color: var(--ui-dim);
 }
 .footer-nav {
     display: flex;
@@ -1332,7 +1454,7 @@ body.js-reveal-ready .reveal.revealed {
 }
 .footer-social__link:hover,
 .footer-social__link:focus-visible {
-    color: var(--accent);
+    color: var(--ui);
     text-shadow: none;
 }
 
@@ -1387,17 +1509,17 @@ body.js-reveal-ready .reveal.revealed {
     align-items: center;
     justify-content: center;
     text-align: center;
-    padding: 2rem;
+    padding: calc(var(--header-h) + 1.5rem) 2rem 4rem;
 }
 .error-code {
     font-family: var(--font-display);
     font-size: clamp(6rem, 15vw, 12rem);
     font-weight: 800;
-    color: var(--accent);
+    color: var(--ui);
     line-height: 1;
     text-shadow:
-        0 0 30px var(--accent-glow),
-        0 0 60px var(--accent-glow);
+        0 0 30px var(--ui-glow),
+        0 0 60px var(--ui-glow);
     animation: flicker 3s infinite;
 }
 @keyframes flicker {
@@ -1453,7 +1575,7 @@ body.js-reveal-ready .reveal.revealed {
     transform: translateY(-3px);
 }
 .card-link:hover .card {
-    border-color: var(--accent);
+    border-color: var(--ui);
 }
 
 /* Stat counters on homepage */
@@ -1472,8 +1594,8 @@ body.js-reveal-ready .reveal.revealed {
     font-family: var(--font-display);
     font-size: 2rem;
     font-weight: 700;
-    color: var(--accent);
-    text-shadow: 0 0 12px var(--accent-glow);
+    color: var(--ui);
+    text-shadow: 0 0 12px var(--ui-glow);
 }
 .stat__label {
     font-size: 0.75rem;
@@ -1497,8 +1619,8 @@ body.js-reveal-ready .reveal.revealed {
     width: 200px;
     height: 200px;
     border-radius: var(--radius-lg);
-    border: 2px solid var(--accent);
-    box-shadow: 0 0 20px var(--accent-glow);
+    border: 2px solid var(--ui);
+    box-shadow: 0 0 20px var(--ui-glow);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -1506,7 +1628,7 @@ body.js-reveal-ready .reveal.revealed {
     font-family: var(--font-display);
     font-size: 4rem;
     font-weight: 800;
-    color: var(--accent);
+    color: var(--ui);
     margin-bottom: 1.25rem;
 }
 .about-name {
@@ -1518,7 +1640,7 @@ body.js-reveal-ready .reveal.revealed {
 }
 .about-role {
     font-size: 0.85rem;
-    color: var(--accent);
+    color: var(--ui);
     margin-bottom: 1rem;
 }
 .about-meta {
@@ -1556,10 +1678,10 @@ body.js-reveal-ready .reveal.revealed {
     width: min(900px, 92vw);
     max-height: 80vh;
     background: var(--bg-secondary);
-    border: 1px solid var(--accent-dim);
+    border: 1px solid var(--ui-dim);
     border-radius: var(--radius-lg);
     box-shadow:
-        0 0 60px var(--accent-glow),
+        0 0 60px var(--ui-glow),
         0 25px 50px rgba(0, 0, 0, 0.5);
     display: flex;
     flex-direction: column;
@@ -1632,7 +1754,7 @@ body.js-reveal-ready .reveal.revealed {
     word-break: break-word;
 }
 .terminal-line--accent {
-    color: var(--accent);
+    color: var(--ui);
 }
 .terminal-line--dim {
     color: var(--text-muted);
@@ -1648,7 +1770,7 @@ body.js-reveal-ready .reveal.revealed {
     flex-shrink: 0;
 }
 .terminal-prompt {
-    color: var(--accent);
+    color: var(--ui);
     margin-right: 0.5rem;
     white-space: nowrap;
     font-weight: 600;
@@ -1661,7 +1783,7 @@ body.js-reveal-ready .reveal.revealed {
     font-family: var(--font-body);
     font-size: 0.85rem;
     outline: none;
-    caret-color: var(--accent);
+    caret-color: var(--ui);
 }
 
 /* Matrix rain easter egg overlay */

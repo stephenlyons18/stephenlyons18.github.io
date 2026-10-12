@@ -24,32 +24,40 @@ This doc outranks prose elsewhere on style. Change it deliberately, with the use
 
 ## Palette (CSS tokens in `astro-portfolio/src/styles/global.css`)
 
-Contrast is measured against `--bg` `#0c0a12` / `--bg-card` `#16131f`. Every text colour passes WCAG AA (≥ 4.5:1)
-on both.
+**Roles (user direction, 2026-10-12):** the site is mostly **blues and greens** on a navy/teal wall.
+**Pink is the accent**, used sparingly: the typed cursor, text selection, the active-nav mark, the scroll bar,
+the primary CTA's hover, and title art. Never use it for body text, borders or large fills. **Title art keeps
+the cyan → magenta burner gradient** with a white bubble outline and purple 3D. Don't change the headers
+without asking.
 
-| Token               | Hex       | Role                                          | on bg / card |
-| ------------------- | --------- | --------------------------------------------- | ------------ |
-| `--bg`              | `#0c0a12` | ink-black wall, violet cast                   | —            |
-| `--bg-card`         | `#16131f` | panels, cards, terminal body                  | —            |
-| `--bg-elevated`     | `#1f1a2b` | inputs, chips, bars                           | —            |
-| `--border`          | `#2e2742` | hairlines                                     | —            |
-| `--text-white`      | `#f3efff` | headings, chrome highlight                    | 17.4 / 16.2  |
-| `--text-primary`    | `#d9d3e8` | body                                          | 13.5 / 12.6  |
-| `--text-secondary`  | `#a8a0bf` | secondary copy                                | 7.9 / 7.4    |
-| `--text-muted`      | `#857d9e` | captions, hints (never for long copy)         | 5.1 / 4.7    |
-| `--spray-magenta`   | `#ff3d9a` | **primary accent** (wildstyle pink)           | 6.0 / 5.6    |
-| `--spray-cyan`      | `#22c7ff` | secondary accent (wildstyle blue)             | 10.0 / 9.3   |
-| `--spray-lavender`  | `#b99cff` | fills, frameworks                             | 8.7 / 8.1    |
-| `--spray-orange`    | `#ff7a3d` | fill shading, warnings                        | 7.6 / 7.1    |
-| `--spray-mint`      | `#4ef0c8` | bubble accent, success                        | 13.7 / 12.8  |
-| `--spray-yellow`    | `#ffd23f` | the heart / one glint per piece, never text blocks | 13.6 / 12.7 |
-| `--ansi-blue`       | `#5b74ff` | 3D extrusion / shading (DEFCON ramp)          | 5.1 / 4.7    |
-| `--ansi-steel`      | `#93a6dc` | extrusion mid-tone                            | 8.2 / 7.6    |
+Contrast is measured against `--bg-primary` `#070b12` / `--bg-card` `#0e1724`. Every text colour passes WCAG AA.
 
-Themes (terminal `theme <name>`, persisted): **`wildstyle`** (default: magenta accent, cyan second),
-**`bubble`** (mint accent, magenta second), **`ansi`** (blue/steel, DEFCON), **`green`** (the original phosphor,
-kept for nostalgia). A theme swaps `--accent`, `--accent-2` and the title gradient only; the wall, text and
-structure stay.
+| Token              | Hex       | Role                                                     | on bg / card |
+| ------------------ | --------- | -------------------------------------------------------- | ------------ |
+| `--bg-primary`     | `#070b12` | navy-black wall                                          | —            |
+| `--bg-card`        | `#0e1724` | panels, cards, terminal body                             | —            |
+| `--bg-elevated`    | `#142233` | inputs, chips, bars                                      | —            |
+| `--border`         | `#1e3247` | hairlines                                                | —            |
+| `--white`          | `#eef6ff` | headings                                                 | 18.1 / 16.5  |
+| `--text-primary`   | `#cfdcea` | body                                                     | 14.2 / 12.9  |
+| `--text-secondary` | `#96aac0` | secondary copy                                           | 8.3 / 7.6    |
+| `--text-muted`     | `#7590ab` | captions, hints                                          | 5.9 / 5.4    |
+| `--ui`             | `#3cc4ff` | **primary UI**: links, labels, buttons, borders on focus  | 9.9 / 9.0    |
+| `--ui-2`           | `#36e2c6` | aqua: secondary labels, success                          | 12.1 / 11.0  |
+| `--ui-3`           | `#4cc38a` | forest: tertiary accents (timeline, tags)                | 8.9 / 8.1    |
+| `--ansi-blue`      | `#4d9dff` | blue fills / graph category                              | 7.1 / 6.5    |
+| `--accent`         | `#ff3d9a` | **pink accent: sparingly** (list above)                  | 6.0 / 5.5    |
+| `--title-top/bottom` | `#22c7ff` → `#ff3d9a` | title art gradient                          | —            |
+| `--title-outline`  | `#eef6ff` | bubble outline                                           | —            |
+| `--title-x1/x2`    | `#7b3fe4` / `#3b2385` | 3D extrusion                                 | —            |
+
+Skill-graph categories: languages sky `#3CC4FF`, frameworks aqua `#36E2C6`, cloud blue `#4D9DFF`, security
+skills forest `#4CC38A`, security tools lavender `#B99CFF`.
+
+Themes (terminal `theme <name>`, persisted, applied before first paint): **`wildstyle`** (default, above),
+**`bubble`** (aqua UI, aqua→cyan titles with a pink outline), **`ansi`** (steel/blue, DEFCON), **`sunset`**
+(orange/yellow), **`green`** (the original phosphor). A theme swaps the `--ui*`, `--accent` and `--title-*`
+slots only; the wall and text stay.
 
 ## Glyph rules
 
