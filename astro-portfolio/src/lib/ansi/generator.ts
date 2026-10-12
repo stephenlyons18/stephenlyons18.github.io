@@ -25,8 +25,23 @@ export interface AnsiOptions {
     dripMax?: number;
     /** Overspray density in the halo around the piece (0–1). */
     overspray?: number;
-    /** Pixels between letters (default 1). 2 keeps extrusion from bridging letters in big pieces. */
+    /** Pixels between letters (default 1). 2 keeps extrusion from bridging letters in big pieces;
+     *  0 or -1 interlocks them (wildstyle). */
     gap?: number;
+
+    // ── Wildstyle moves (all optional; see the options sheet in docs/ART_DIRECTION.md) ──
+    /** Vertical stagger amplitude in pixels (overrides the style's default). */
+    bounce?: number;
+    /** Italic lean: shift 1 pixel right every `lean` rows going up (0 = upright; 3 ≈ 20°). */
+    lean?: number;
+    /** An arrow flaring off the last letter. */
+    arrows?: boolean;
+    /** Probability that a letter grows a 1–2 pixel spike off its top edge. */
+    spikes?: number;
+    /** A glitch cut: a band of rows shifted sideways across the whole piece. */
+    slice?: boolean;
+    /** Reverse the fill gradient on every other letter (two-tone burner look). */
+    alternate?: boolean;
 }
 
 export interface Run {
@@ -44,15 +59,39 @@ export interface AnsiArt {
 
 const STYLE_DEFAULTS: Record<
     AnsiStyle,
-    Required<Omit<AnsiOptions, 'style' | 'seed'>> & {
+    Required<Pick<AnsiOptions, 'drips' | 'dripMax' | 'overspray' | 'gap'>> & {
         outline: boolean;
-        bounce: boolean;
+        bounceAmp: number;
         depth: number;
     }
 > = {
-    bubble: { drips: 0.18, dripMax: 4, overspray: 0.05, outline: true, bounce: false, depth: 2 },
-    wild: { drips: 0.3, dripMax: 5, overspray: 0.08, outline: true, bounce: true, depth: 2 },
-    block: { drips: 0.12, dripMax: 3, overspray: 0, outline: false, bounce: false, depth: 1 },
+    bubble: {
+        drips: 0.18,
+        dripMax: 4,
+        overspray: 0.05,
+        gap: 1,
+        outline: true,
+        bounceAmp: 0,
+        depth: 2,
+    },
+    wild: {
+        drips: 0.3,
+        dripMax: 5,
+        overspray: 0.08,
+        gap: 1,
+        outline: true,
+        bounceAmp: 1,
+        depth: 2,
+    },
+    block: {
+        drips: 0.12,
+        dripMax: 3,
+        overspray: 0,
+        gap: 1,
+        outline: false,
+        bounceAmp: 0,
+        depth: 1,
+    },
 };
 
 // ─── Deterministic randomness ────────────────────────────────────────────────
@@ -90,36 +129,114 @@ export function renderAnsi(text: string, opts: AnsiOptions = {}): AnsiArt {
     const rand = rng(hash(`${style}:${text}`) ^ (opts.seed ?? 0));
 
     const chars = [...text.toUpperCase()];
-    const BOUNCE = d.bounce ? 1 : 0;
+    const BOUNCE = opts.bounce ?? d.bounceAmp;
     const PAD = 1 + (d.outline ? 1 : 0); // pixel margin for outline (+1 for overspray)
-    const gap = opts.gap ?? 1;
+    const gap = opts.gap ?? d.gap;
+    const lean = opts.lean ?? 0;
+    const sliceBand = opts.slice ? [3, 4] : null; // glyph rows shifted by the glitch cut
+    const SLICE_DX = 2;
 
-    // 1. Lay out glyphs into a pixel mask; letterOf[y][x] = letter index + 1, rowOf = glyph row.
+    // 1. Lay out glyphs as a list of pixels in glyph space, apply the wildstyle moves, then
+    //    rasterise. Each pixel keeps its glyph row (shading, glints) and its colour row
+    //    (gradient; reversed on alternate letters).
+    interface Px {
+        x: number;
+        y: number;
+        letter: number;
+        row: number;
+        colorRow: number;
+    }
+    const pixels: Px[] = [];
+    const boxes: { x: number; y: number }[] = [];
     const glyphs = chars.map(glyphFor);
-    const textW = glyphs.reduce((w, g) => w + g.w, 0) + gap * Math.max(0, glyphs.length - 1);
-    const W = textW + PAD * 2 + d.depth;
-    const H = GLYPH_HEIGHT + BOUNCE + PAD * 2 + d.depth;
-    const letterOf = Array.from({ length: H }, () => new Int16Array(W));
-    const rowOf = Array.from({ length: H }, () => new Int8Array(W).fill(-1));
-    // Each letter's glyph box: the outline never paints inside one, so counters (the holes in
-    // A, O, 4…) and slots stay dark and the letters stay readable at any size.
-    const inBox = Array.from({ length: H }, () => new Uint8Array(W));
+    const ARROW = [
+        '.......',
+        '....#..',
+        '....##.',
+        '#######',
+        '#######',
+        '....##.',
+        '....#..',
+        '.......',
+    ];
+    const shiftOf = (row: number) =>
+        (lean ? Math.floor((GLYPH_HEIGHT - 1 - row) / lean) : 0) +
+        (sliceBand && row >= sliceBand[0]! && row <= sliceBand[1]! ? SLICE_DX : 0);
 
-    let cx = PAD;
+    let cx = 0;
+    let lastLetter = 0;
     glyphs.forEach((g, i) => {
-        const dy = BOUNCE && chars[i] !== ' ' ? Math.round(rand() * BOUNCE) : 0;
-        if (chars[i] !== ' ')
+        const blank = chars[i] === ' ';
+        const dy = BOUNCE && !blank ? Math.round(rand() * BOUNCE) : 0;
+        const rev = !!opts.alternate && i % 2 === 1;
+        if (!blank) {
+            lastLetter = i + 1;
             for (let y = 0; y < GLYPH_HEIGHT; y++)
-                for (let x = 0; x < g.w; x++) inBox[PAD + y + dy]![cx + x] = 1;
+                for (let x = 0; x < g.w; x++) boxes.push({ x: cx + x + shiftOf(y), y: y + dy });
+        }
         for (let y = 0; y < GLYPH_HEIGHT; y++) {
             for (let x = 0; x < g.w; x++) {
                 if (!g.rows[y]![x]) continue;
-                letterOf[PAD + y + dy]![cx + x] = i + 1;
-                rowOf[PAD + y + dy]![cx + x] = y;
+                const colorRow = rev ? GLYPH_HEIGHT - 1 - y : y;
+                pixels.push({ x: cx + x + shiftOf(y), y: y + dy, letter: i + 1, row: y, colorRow });
+            }
+        }
+        // Spikes: a 1–2 pixel extension off a top-edge pixel (outlined like the letter).
+        if (!blank && opts.spikes && rand() < opts.spikes) {
+            const tops = [...Array(g.w).keys()].filter((x) => g.rows[0]![x]);
+            if (tops.length) {
+                const sx = tops[Math.floor(rand() * tops.length)]!;
+                const len = 1 + Math.floor(rand() * 2);
+                for (let k = 1; k <= len; k++)
+                    pixels.push({
+                        x: cx + sx + shiftOf(0) + (k > 1 ? 1 : 0),
+                        y: dy - k,
+                        letter: i + 1,
+                        row: -1,
+                        colorRow: 0,
+                    });
             }
         }
         cx += g.w + gap;
     });
+    if (opts.arrows && lastLetter) {
+        const ax = cx - gap - 1; // overlap the last letter by one pixel so the arrow joins it
+        ARROW.forEach((r, y) =>
+            [...r].forEach((c, x) => {
+                if (c === '#')
+                    pixels.push({
+                        x: ax + x + shiftOf(y),
+                        y,
+                        letter: lastLetter,
+                        row: -1,
+                        colorRow: Math.min(y + 2, GLYPH_HEIGHT - 1),
+                    });
+            }),
+        );
+    }
+
+    // Rasterise into a padded grid.
+    const all = [...pixels, ...boxes];
+    const minX = Math.min(...all.map((p) => p.x));
+    const minY = Math.min(...all.map((p) => p.y));
+    const maxX = Math.max(...all.map((p) => p.x));
+    const maxY = Math.max(...all.map((p) => p.y));
+    const W = maxX - minX + 1 + PAD * 2 + d.depth;
+    const H = maxY - minY + 1 + PAD * 2 + d.depth;
+    const ox = PAD - minX;
+    const oy = PAD - minY;
+    const letterOf = Array.from({ length: H }, () => new Int16Array(W));
+    const rowOf = Array.from({ length: H }, () => new Int8Array(W).fill(-2)); // -2 = empty, -1 = spike/arrow
+    const colorOf = Array.from({ length: H }, () => new Int8Array(W));
+    // Each letter's glyph box: the outline and extrusion never paint inside one, so counters (the
+    // holes in A, O, 4…) and slots stay dark and the letters stay readable at any size.
+    const inBox = Array.from({ length: H }, () => new Uint8Array(W));
+    for (const b of boxes) inBox[b.y + oy]![b.x + ox] = 1;
+    for (const p of pixels) {
+        letterOf[p.y + oy]![p.x + ox] = p.letter;
+        rowOf[p.y + oy]![p.x + ox] = p.row;
+        colorOf[p.y + oy]![p.x + ox] = p.colorRow;
+    }
 
     const isFill = (x: number, y: number) =>
         y >= 0 && y < H && x >= 0 && x < W && letterOf[y]![x]! > 0;
@@ -161,7 +278,8 @@ export function renderAnsi(text: string, opts: AnsiOptions = {}): AnsiArt {
         for (let x = 0; x < W; x++) {
             let cell: Cell | null = null;
             const r = rowOf[y]![x]!;
-            if (r >= 0) cell = { ch: r === GLYPH_HEIGHT - 1 ? '▓' : '█', c: `a-f${r}` };
+            if (r > -2)
+                cell = { ch: r === GLYPH_HEIGHT - 1 ? '▓' : '█', c: `a-f${colorOf[y]![x]}` };
             else if (outline[y]![x]) cell = { ch: '█', c: 'a-ol' };
             else if (extrude[y]![x])
                 cell = extrude[y]![x] === 1 ? { ch: '█', c: 'a-x1' } : { ch: '▓', c: 'a-x2' };
@@ -194,7 +312,7 @@ export function renderAnsi(text: string, opts: AnsiOptions = {}): AnsiArt {
                 if (col - lastDrip < 3 || rand() >= dripP) continue;
                 lastDrip = col;
                 const len = 1 + Math.floor(rand() * dripMax);
-                const cls = `a-f${GLYPH_HEIGHT - 1}`;
+                const cls = `a-f${colorOf[y]![x]}`;
                 for (let i = 1; i <= len + 1; i++) {
                     const yy = y + i;
                     if (yy >= CH) break;
@@ -230,13 +348,13 @@ export function renderAnsi(text: string, opts: AnsiOptions = {}): AnsiArt {
     const blankRow = (row: Cell[]) => row.every((c) => !c.c);
     while (cells.length && blankRow(cells[cells.length - 1]!)) cells.pop();
     while (cells.length && blankRow(cells[0]!)) cells.shift();
-    let minX = CW;
+    let trimX = CW;
     for (const row of cells) {
         const i = row.findIndex((c) => c.c);
-        if (i >= 0) minX = Math.min(minX, i);
+        if (i >= 0) trimX = Math.min(trimX, i);
     }
     const lines: Run[][] = cells.map((row) => {
-        const trimmed = row.slice(minX);
+        const trimmed = row.slice(trimX);
         while (trimmed.length && !trimmed[trimmed.length - 1]!.c) trimmed.pop();
         const runs: Run[] = [];
         for (const cell of trimmed) {

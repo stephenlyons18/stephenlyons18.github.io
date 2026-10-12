@@ -676,9 +676,9 @@ export const skills: Skill[] = [
 
 /** Display metadata per category */
 export const CATEGORY_META: Record<SkillCategory, { label: string; color: string }> = {
-    languages: { label: 'Languages', color: '#00FF41' },
-    frameworks: { label: 'Frameworks & Tools', color: '#00BFFF' },
-    'security-tools': { label: 'Security Tools', color: '#FF6B6B' },
-    'security-skills': { label: 'Security Skills', color: '#FF9F43' },
-    cloud: { label: 'Cloud', color: '#B48EFF' },
+    languages: { label: 'Languages', color: '#3CC4FF' },
+    frameworks: { label: 'Frameworks & Tools', color: '#36E2C6' },
+    'security-tools': { label: 'Security Tools', color: '#B99CFF' },
+    'security-skills': { label: 'Security Skills', color: '#4CC38A' },
+    cloud: { label: 'Cloud', color: '#4D9DFF' },
 };

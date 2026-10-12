@@ -162,8 +162,8 @@ Workflow rules: pin third-party actions to a **SHA with a version comment**; set
   render-blocking third-party CSS. Responsive images from `astro:assets`.
 - **Floating cards anchor to what they describe.** Tooltips and hover cards track their anchor (every frame for
   canvas nodes, on scroll/resize for DOM), are clamped to the viewport, and flip instead of overflowing.
-- **Theme via tokens.** Colours come from the CSS custom properties in `global.css` (`--accent`, `--spray-*`,
-  `--bg-*`, `--text-*`), switched by the terminal `theme` command (persisted in `localStorage`). Never hard-code
+- **Theme via tokens.** Colours come from the CSS custom properties in `global.css` (`--ui*` for site
+  elements, `--accent` for the sparing pink, `--title-*`, `--spray-*`, `--bg-*`, `--text-*`), switched by the terminal `theme` command (persisted in `localStorage`). Never hard-code
   a palette colour in a component; canvas code reads tokens once per theme change, not per frame.
 - **Terminal UX:** `scrollTop = scrollHeight` goes inside `requestAnimationFrame`; use a `MutationObserver` for
   streamed output. Escape every user-supplied string before it touches `innerHTML`.

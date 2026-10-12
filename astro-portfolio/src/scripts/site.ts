@@ -43,8 +43,7 @@ function initMatrixBackground(): void {
         ctx.fillRect(0, 0, canvas.width, canvas.height);
 
         const accent =
-            getComputedStyle(document.documentElement).getPropertyValue('--accent').trim() ||
-            '#00FF41';
+            getComputedStyle(document.documentElement).getPropertyValue('--ui').trim() || '#00FF41';
         ctx.fillStyle = accent;
         ctx.font = `${fontSize}px JetBrains Mono, monospace`;
 
@@ -323,7 +322,7 @@ function initHeaderScroll(): void {
         if (!ticking) {
             requestAnimationFrame(() => {
                 if (window.scrollY > 50) {
-                    header.style.borderBottomColor = 'var(--accent-dim)';
+                    header.style.borderBottomColor = 'var(--ui-dim)';
                 } else {
                     header.style.borderBottomColor = 'var(--border)';
                 }
@@ -344,7 +343,7 @@ function initBootSequence(): void {
     background: #0A0A0A; display: flex;
     align-items: center; justify-content: center;
     flex-direction: column; font-family: 'JetBrains Mono', monospace;
-    color: var(--accent, #00FF41); font-size: 0.85rem;
+    color: var(--ui, #3cc4ff); font-size: 0.85rem;
     transition: opacity 0.5s ease;
   `;
 
