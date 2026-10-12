@@ -14,6 +14,13 @@ import {
 import { skills, CATEGORY_META, type Skill, type SkillCategory } from '../../data/skills';
 import { JOBS_BY_SKILL } from '../../data/experience';
 import { placeCard } from '../../lib/placeCard';
+import {
+    countOverlaps,
+    fitScale,
+    forceBounds,
+    forceLabelBoxes,
+    relaxOverlaps,
+} from '../../lib/graphLayout';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -63,6 +70,9 @@ function weightToRadius(w: number, minR: number, maxR: number): number {
     const clamped = Math.max(1, Math.min(10, w));
     return minR + ((clamped - 1) / 9) * (maxR - minR);
 }
+
+/** Top-right area covered by the zoom buttons (3 × 36px + gaps, 12px inset) — nodes stay out. */
+const ZOOM_ZONE = (cw: number) => ({ x0: cw - 64, y0: 0, x1: cw, y1: 140 });
 
 // Visual (clockwise, starting at the top) order for the category clusters.
 // Jobs are not nodes: they show up as "Used at" context on each skill's card.
@@ -404,12 +414,8 @@ export default function SkillGraph({ height = 700 }: { height?: number }) {
     // getting trapped in the canvas. ~70% of viewport height feels right.
     const effectiveHeight =
         isMobile && typeof window !== 'undefined'
-            ? Math.min(height, Math.max(360, Math.round(window.innerHeight * 0.7)))
+            ? Math.min(900, Math.max(520, Math.round(window.innerHeight * 1.05)))
             : height;
-
-    const prefersReduced =
-        typeof window !== 'undefined' &&
-        window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
     // ─── Coordinate helpers ────────────────────────────────────────────────────
 
@@ -453,32 +459,28 @@ export default function SkillGraph({ height = 700 }: { height?: number }) {
     function fitAll(w: number, h: number) {
         const nodes = nodesRef.current;
         if (!nodes.length) return;
-        const PAD = 28;
-        let minX = Infinity,
-            minY = Infinity,
-            maxX = -Infinity,
-            maxY = -Infinity;
-        for (const n of nodes) {
-            if (n.x == null || n.y == null) continue;
-            // Labels are drawn at a fixed screen size under each node, so reserve
-            // their half-width horizontally and one label line vertically —
-            // otherwise long names get clipped at the canvas edge.
-            const halfW = Math.max(n.r, n.labelHalfW);
-            minX = Math.min(minX, n.x - halfW);
-            maxX = Math.max(maxX, n.x + halfW);
-            minY = Math.min(minY, n.y - n.r);
-            maxY = Math.max(maxY, n.y + n.r + labelPxRef.current + 6);
-        }
-        const gw = maxX - minX,
-            gh = maxY - minY;
-        if (!gw || !gh) return;
-        const scale = clamp(Math.min((w - PAD * 2) / gw, (h - PAD * 2) / gh), MIN_ZOOM, MAX_ZOOM);
+        // Labels are drawn at a fixed screen size, so the fit has to account for them at the
+        // candidate scale (not in sim units) — fitScale binary-searches that.
+        const { scale, box } = fitScale(nodes, labelPxRef.current, w, h, {
+            minScale: MIN_ZOOM,
+            maxScale: 1.25,
+        });
         cameraRef.current = {
-            x: w / 2 - ((minX + maxX) / 2) * scale,
-            y: h / 2 - ((minY + maxY) / 2) * scale,
+            x: w / 2 - (box.x0 + box.x1) / 2,
+            y: h / 2 - (box.y0 + box.y1) / 2,
             scale,
         };
         setZoomLevel(scale);
+    }
+
+    /** Publish label-overlap count on the canvas (read by e2e: initial layout must be 0). */
+    function reportOverlaps() {
+        const c = canvasRef.current;
+        if (!c) return;
+        c.dataset.overlaps = String(
+            countOverlaps(nodesRef.current, labelPxRef.current, cameraRef.current.scale),
+        );
+        c.dataset.scale = cameraRef.current.scale.toFixed(3);
     }
 
     // On mobile the graph shouldn't shrink itself down until every node fits
@@ -528,6 +530,15 @@ export default function SkillGraph({ height = 700 }: { height?: number }) {
         if (!card || !canvas || !n || n.x == null || n.y == null) return;
         const [sx, sy] = toScreen(n.x, n.y);
         const nr = n.r * cameraRef.current.scale;
+        // Node panned/zoomed out of view → hide the card rather than pin it to an edge.
+        const offscreen =
+            sx + nr < 0 ||
+            sy + nr < 0 ||
+            sx - nr > canvas.clientWidth ||
+            sy - nr > canvas.clientHeight;
+        card.style.visibility = offscreen ? 'hidden' : 'visible';
+        canvas.dataset.anchor = `${Math.round(sx)},${Math.round(sy)},${Math.round(nr)}`;
+        if (offscreen) return;
         const p = placeCard(
             { x: sx - nr, y: sy - nr, w: nr * 2, h: nr * 2 },
             { w: card.offsetWidth, h: card.offsetHeight },
@@ -703,7 +714,13 @@ export default function SkillGraph({ height = 700 }: { height?: number }) {
         // Detection & Response" from overlapping their neighbours.
         const charW = labelPx * 0.62;
 
-        // Start nodes near their cluster center to reduce initial overlap chaos
+        // Start nodes near their cluster center to reduce initial overlap chaos. The jitter is
+        // seeded (not Math.random) so every load produces the same, checked layout.
+        let seed = 0x9e3779b9;
+        const jitter = () => {
+            seed = (Math.imul(seed ^ (seed >>> 15), 0x2c1b3c6d) + 0x6d2b79f5) >>> 0;
+            return seed / 4294967296 - 0.5;
+        };
         const nodes: GraphNode[] = skills.map((s) => {
             const [ox, oy] = CLUSTER_OFFSET[s.category];
             return {
@@ -711,8 +728,8 @@ export default function SkillGraph({ height = 700 }: { height?: number }) {
                 skill: s,
                 r: weightToRadius(s.weight, minR, maxR),
                 labelHalfW: Math.max(10, (s.name.length * charW) / 2 + 6),
-                x: cx + ox * cw * 0.5 + (Math.random() - 0.5) * 40,
-                y: cy + oy * ch * 0.5 + (Math.random() - 0.5) * 40,
+                x: cx + ox * cw * 0.5 + jitter() * 40,
+                y: cy + oy * ch * 0.5 + jitter() * 40,
             };
         });
 
@@ -752,14 +769,15 @@ export default function SkillGraph({ height = 700 }: { height?: number }) {
                 forceManyBody<GraphNode>().strength((d) => -(d.r * 30 + chargeBase)),
             )
             .force('center', forceCenter(cx, cy).strength(0.02))
-            // Collision radius is whichever is larger: the node circle plus a
-            // small clearance, or half the node's own label width — so long
-            // labels get the room they need instead of overlapping neighbours.
+            // Circles keep a little air between nodes; the label-box force separates each node's
+            // real footprint (circle + fixed-size label), and the bounds force keeps the whole
+            // layout inside the canvas — so it settles near scale 1, where labels are sized right.
+            .force('collide', forceCollide<GraphNode>((d) => d.r + clearance * 0.5).strength(0.7))
+            .force('labels', forceLabelBoxes<GraphNode>(labelPx, 6))
             .force(
-                'collide',
-                forceCollide<GraphNode>((d) => Math.max(d.r + clearance, d.labelHalfW)).strength(
-                    0.9,
-                ),
+                'bounds',
+                // Keep clear of the zoom controls (top-right, 3 × 36px buttons + gaps).
+                forceBounds<GraphNode>(cw, ch, labelPx, 12, 0.5, ZOOM_ZONE(cw)),
             )
             // Cluster forces pull each category toward its designated zone. Strength
             // is slightly higher on mobile so the categories actually separate in the
@@ -785,17 +803,16 @@ export default function SkillGraph({ height = 700 }: { height?: number }) {
 
         // Settle synchronously — more ticks for better initial layout
         sim.tick(1200);
+        // Untangle any last label collisions with only the label/bounds forces running.
+        relaxOverlaps(nodes, labelPx, cw, ch, { avoid: ZOOM_ZONE(cw) });
         if (mobile) settleCameraMobile(cw, ch);
         else fitAll(cw, ch);
         draw();
+        reportOverlaps();
 
-        // A gentle "breathing" settle after layout; d3 stops the timer by itself
-        // once alpha decays below alphaMin, so nothing runs forever.
-        if (!prefersReduced) {
-            sim.alpha(0.04).on('tick', draw).restart();
-        } else {
-            sim.on('tick', draw);
-        }
+        // The layout is final: the simulation only runs again while a node is being dragged
+        // (no idle "breathing", which re-ran every force and nudged labels back together).
+        sim.on('tick', draw).on('end', reportOverlaps);
     }
 
     // ─── Effects ─────────────────────────────────────────────────────────────
@@ -852,10 +869,27 @@ export default function SkillGraph({ height = 700 }: { height?: number }) {
         let lastTouch = 0;
         const fromTouch = () => performance.now() - lastTouch < 800;
 
+        // A press on a node only becomes a drag once the pointer moves a few pixels. A plain
+        // click/tap just shows the card — it must not pin the node or reheat the simulation
+        // (which would undo the overlap-free initial layout).
+        let press: { node: GraphNode; x: number; y: number } | null = null;
+        const DRAG_SLOP = 5;
+        function maybeStartDrag(cx: number, cy: number) {
+            if (!press || draggedRef.current) return;
+            if (Math.hypot(cx - press.x, cy - press.y) < DRAG_SLOP) return;
+            const n = press.node;
+            draggedRef.current = n;
+            n.fx = n.x;
+            n.fy = n.y;
+            simRef.current?.alphaTarget(0.3).restart();
+            canvas!.style.cursor = 'grabbing';
+        }
+
         // Mouse
         function onMouseMove(e: MouseEvent) {
             if (fromTouch()) return;
             const [cx, cy] = cssCoord(e, canvas!);
+            maybeStartDrag(cx, cy);
             if (draggedRef.current) {
                 const [sx, sy] = toSim(cx, cy);
                 draggedRef.current.x = sx;
@@ -885,11 +919,7 @@ export default function SkillGraph({ height = 700 }: { height?: number }) {
             const [cx, cy] = cssCoord(e, canvas!);
             const hit = nodeAt(cx, cy);
             if (hit) {
-                draggedRef.current = hit;
-                hit.fx = hit.x;
-                hit.fy = hit.y;
-                simRef.current?.alphaTarget(0.3).restart();
-                canvas!.style.cursor = 'grabbing';
+                press = { node: hit, x: cx, y: cy };
             } else {
                 isPanRef.current = true;
                 panStartRef.current = {
@@ -902,6 +932,7 @@ export default function SkillGraph({ height = 700 }: { height?: number }) {
             }
         }
         function onMouseUp() {
+            press = null;
             if (draggedRef.current) {
                 // Node stays pinned — fx/fy intentionally kept
                 simRef.current?.alphaTarget(0);
@@ -956,13 +987,11 @@ export default function SkillGraph({ height = 700 }: { height?: number }) {
             const [cx, cy] = cssCoord(ts[0], canvas!);
             const hit = nodeAt(cx, cy);
             if (hit) {
-                // Touching a node → drag intent, swallow the gesture from the page.
+                // Touching a node → show its card, and swallow the gesture from the page in case
+                // it turns into a drag (which starts only after DRAG_SLOP px of movement).
                 e.preventDefault();
-                draggedRef.current = hit;
+                press = { node: hit, x: cx, y: cy };
                 setHover(hit);
-                hit.fx = hit.x;
-                hit.fy = hit.y;
-                simRef.current?.alphaTarget(0.3).restart();
                 draw();
             } else {
                 // Empty canvas → let the browser scroll the page. We do NOT enable
@@ -988,6 +1017,10 @@ export default function SkillGraph({ height = 700 }: { height?: number }) {
                 draw();
                 return;
             }
+            if (ts.length === 1 && press) {
+                const [px, py] = cssCoord(ts[0], canvas!);
+                maybeStartDrag(px, py);
+            }
             if (ts.length === 1 && draggedRef.current) {
                 e.preventDefault();
                 const [cx, cy] = cssCoord(ts[0], canvas!);
@@ -1003,6 +1036,7 @@ export default function SkillGraph({ height = 700 }: { height?: number }) {
         }
         function onTouchEnd(e: TouchEvent) {
             lastTouch = performance.now();
+            press = null;
             if (e.touches.length < 2) pinchRef.current = null;
             if (draggedRef.current) {
                 simRef.current?.alphaTarget(0);

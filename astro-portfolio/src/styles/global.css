@@ -216,6 +216,9 @@
 }
 
 html {
+    /* Stop mobile font boosting: it inflates small ANSI cells and breaks the art's fit-to-width maths. */
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
     scroll-behavior: smooth;
     font-size: 16px;
     -webkit-font-smoothing: antialiased;
@@ -252,30 +255,56 @@ body::after {
     );
 }
 
-/* Animated background grid */
-body::before {
-    content: '';
+/* ANSI brick wall (AnsiWall.astro): one fixed, static <pre> behind everything. Font size is chosen
+   so 160 × 60 cells always cover the viewport; opacity keeps it a texture, never a pattern you read. */
+.ansi-wall {
     position: fixed;
+    inset: 0;
+    z-index: -1;
+    /* clip (not hidden) + paint containment: the oversized <pre> must never add to the page's
+       scrollable width (with overflow:hidden it did, on short mobile pages). */
+    overflow: clip;
+    pointer-events: none;
+    opacity: 0.07;
+    contain: strict;
+}
+.ansi-wall pre {
+    position: absolute;
     top: 0;
     left: 0;
-    width: 100%;
-    height: 100%;
-    pointer-events: none;
-    z-index: -1;
-    background-image:
-        linear-gradient(var(--ui-bg) 1px, transparent 1px),
-        linear-gradient(90deg, var(--ui-bg) 1px, transparent 1px);
-    background-size: 60px 60px;
-    animation: gridMove 20s linear infinite;
+    margin: 0;
+    font-family: var(--font-display);
+    line-height: 1;
+    white-space: pre;
+    font-size: max(12px, calc(100vw / 160 / 0.6), calc(100vh / 60));
+    text-rendering: geometricPrecision;
+    font-variant-ligatures: none;
+}
+.w-b {
+    color: var(--ui);
+}
+.w-m {
+    color: var(--ui-3);
+    opacity: 0.6;
+}
+.w-c {
+    color: var(--ui-2);
 }
 
-@keyframes gridMove {
-    0% {
-        transform: translate(0, 0);
-    }
-    100% {
-        transform: translate(60px, 60px);
-    }
+/* Drip divider (AnsiDivider.astro) */
+.ansi-divider {
+    container-type: inline-size;
+    margin: 2.5rem 0;
+    opacity: 0.85;
+}
+.ansi-divider .ansi {
+    --ansi-max: 9px;
+}
+.d-bar {
+    color: var(--ui-dim);
+}
+.d-drip {
+    color: var(--ui-dim);
 }
 
 a {
@@ -336,8 +365,9 @@ ol {
     gap: 0.5rem;
 }
 .section-label::before {
-    content: '//';
-    opacity: 0.5;
+    content: '▓▒░';
+    letter-spacing: 0;
+    color: var(--ui-2);
 }
 
 .section-title {
@@ -347,6 +377,10 @@ ol {
     color: var(--white);
     margin-bottom: 1.5rem;
     line-height: 1.2;
+    /* The art's down-right extrusion, in miniature. */
+    text-shadow:
+        2px 2px 0 var(--title-x2),
+        3px 3px 0 color-mix(in srgb, var(--title-x2) 60%, transparent);
 }
 
 .section {
@@ -376,7 +410,10 @@ body.js-reveal-ready .reveal {
 }
 body.js-reveal-ready .reveal.revealed {
     will-change: auto;
-    animation: reveal-fade-up 0.55s var(--ease) both;
+    opacity: 1;
+    transform: none;
+    /* backwards (not both): once the entrance finishes, no transform is held, so hover lifts work. */
+    animation: reveal-fade-up 0.55s var(--ease) backwards;
 }
 
 /* No-JS / unsupported fallback: always visible */
@@ -410,6 +447,7 @@ body.js-reveal-ready .reveal.revealed {
 }
 
 /* ---------- Buttons ---------- */
+/* Stickers: a hard 3D offset shadow (the art's extrusion) that the button "presses" into on hover. */
 .btn {
     display: inline-flex;
     align-items: center;
@@ -417,13 +455,18 @@ body.js-reveal-ready .reveal.revealed {
     padding: 0.75rem 1.5rem;
     font-family: var(--font-display);
     font-size: 0.875rem;
-    font-weight: 600;
-    border: 1px solid var(--ui);
+    font-weight: 700;
+    border: 2px solid var(--ui);
     color: var(--ui);
-    background: transparent;
+    background: var(--bg-card);
     border-radius: var(--radius);
     cursor: pointer;
-    transition: all 0.25s var(--ease);
+    box-shadow: 4px 4px 0 var(--title-x2);
+    transition:
+        transform 0.15s var(--ease),
+        box-shadow 0.15s var(--ease),
+        background 0.15s var(--ease),
+        color 0.15s var(--ease);
     text-transform: uppercase;
     letter-spacing: 0.05em;
 }
@@ -431,10 +474,14 @@ body.js-reveal-ready .reveal.revealed {
 .btn:focus-visible {
     background: var(--ui);
     color: var(--bg-primary);
-    box-shadow:
-        0 0 20px var(--ui-glow),
-        inset 0 0 20px rgba(0, 0, 0, 0.15);
+    transform: translate(2px, 2px);
+    box-shadow: 2px 2px 0 var(--title-x2);
     text-shadow: none;
+    outline: none;
+}
+.btn:active {
+    transform: translate(4px, 4px);
+    box-shadow: 0 0 0 var(--title-x2);
 }
 .btn--filled {
     background: var(--ui);
@@ -444,6 +491,11 @@ body.js-reveal-ready .reveal.revealed {
 .btn--filled:focus-visible {
     background: var(--accent);
     border-color: var(--accent);
+}
+@media (prefers-reduced-motion: reduce) {
+    .btn {
+        transition: none;
+    }
 }
 
 /* ---------- Header / Nav ---------- */
@@ -483,7 +535,8 @@ body.js-reveal-ready .reveal.revealed {
     z-index: 10000;
 }
 .logo-bracket {
-    opacity: 0.4;
+    color: var(--accent); /* one of pink's few jobs */
+    opacity: 0.85;
 }
 .logo:hover {
     text-shadow: 0 0 12px var(--ui-glow);
@@ -612,8 +665,8 @@ body.js-reveal-ready .reveal.revealed {
     overflow: hidden;
     max-width: 750px;
     box-shadow:
-        0 0 40px rgba(0, 0, 0, 0.5),
-        0 0 80px var(--ui-glow);
+        6px 6px 0 var(--title-x2),
+        0 0 40px rgba(0, 0, 0, 0.5);
     /* Flex column keeps bar → scrollable body → sticky input in order */
     display: flex;
     flex-direction: column;
@@ -736,26 +789,20 @@ body.js-reveal-ready .reveal.revealed {
 }
 
 /* Matrix canvas background */
-#matrix-canvas {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    z-index: -2;
-    opacity: 0.06;
-    pointer-events: none;
-}
-
 /* ---------- Cards ---------- */
 .card {
     background: var(--bg-card);
     border: 1px solid var(--border);
     border-radius: var(--radius-lg);
     padding: 1.75rem;
-    transition: all 0.3s var(--ease);
     position: relative;
     overflow: hidden;
+    /* Same hard extrusion as the art and buttons — deep navy so it reads as depth, not decoration. */
+    box-shadow: 5px 5px 0 #04070c;
+    transition:
+        border-color 0.25s var(--ease),
+        box-shadow 0.25s var(--ease),
+        transform 0.25s var(--ease);
 }
 .card::before {
     content: '';
@@ -763,17 +810,23 @@ body.js-reveal-ready .reveal.revealed {
     top: 0;
     left: 0;
     width: 100%;
-    height: 2px;
-    background: linear-gradient(90deg, transparent, var(--ui), transparent);
+    height: 3px;
+    /* A sprayed stripe: cyan → aqua, with the faintest pink tip. */
+    background: linear-gradient(90deg, var(--ui), var(--ui-2) 70%, var(--accent));
     opacity: 0;
     transition: opacity 0.3s var(--ease);
 }
 .card:hover {
     border-color: var(--ui-dim);
-    transform: translateY(-4px);
-    box-shadow:
-        0 8px 30px rgba(0, 0, 0, 0.3),
-        0 0 20px var(--ui-glow);
+    transform: translate(-2px, -2px);
+    box-shadow: 7px 7px 0 var(--title-x2);
+}
+@media (prefers-reduced-motion: reduce) {
+    .card,
+    .card:hover {
+        transform: none;
+        transition: none;
+    }
 }
 .card:hover::before {
     opacity: 1;
@@ -784,15 +837,18 @@ body.js-reveal-ready .reveal.revealed {
     font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 0.1em;
-    color: var(--ui);
-    background: var(--ui-bg);
+    color: var(--ui-2);
+    background: color-mix(in srgb, var(--ui-2) 10%, transparent);
     padding: 0.2rem 0.6rem;
     border-radius: 3px;
     display: inline-block;
     margin-bottom: 0.75rem;
 }
 
-.card__title {
+.card__title,
+.card__title.glitch {
+    /* .glitch (declared later) makes it inline-block, which put short titles on the tag's line */
+    display: block;
     font-family: var(--font-display);
     font-size: 1.15rem;
     font-weight: 700;
@@ -818,6 +874,10 @@ body.js-reveal-ready .reveal.revealed {
     border: 1px solid var(--border-bright);
     border-radius: 3px;
     color: var(--text-secondary);
+}
+.card__tech span::before {
+    content: '░ ';
+    color: var(--ui-3);
 }
 
 /* ---------- Scroll progress bar ---------- */
@@ -1085,9 +1145,11 @@ body.js-reveal-ready .reveal.revealed {
 .sg-canvas-wrap {
     position: relative;
     width: 100%;
-    background: rgba(27, 27, 27, 0.29);
+    /* Mostly opaque so the brick wall doesn't compete with edges and labels. */
+    background: color-mix(in srgb, var(--bg-card) 90%, transparent);
     border-radius: 12px;
-    border: 1px solid rgba(255, 255, 255, 0.05);
+    border: 1px solid var(--border);
+    box-shadow: 5px 5px 0 #04070c;
     /* The card is clamped inside the canvas; clip only paint, not layout. */
     overflow: clip;
 }
@@ -1249,9 +1311,11 @@ body.js-reveal-ready .reveal.revealed {
     position: absolute;
     left: 0;
     top: 0;
-    width: 2px;
+    width: 3px;
     height: 100%;
-    background: linear-gradient(to bottom, var(--ui), var(--border));
+    /* A sprayed stripe running down the wall: sky → forest, fading out. */
+    background: linear-gradient(to bottom, var(--ui), var(--ui-3) 60%, transparent);
+    border-radius: 2px;
 }
 
 .timeline-item {
@@ -1269,16 +1333,16 @@ body.js-reveal-ready .reveal.revealed {
     top: 6px;
     width: 12px;
     height: 12px;
-    border-radius: 50%;
-    background: var(--bg-primary);
-    border: 2px solid var(--ui);
-    box-shadow: 0 0 8px var(--ui-glow);
+    /* An ANSI pixel with its 3D drop. */
+    border-radius: 1px;
+    background: var(--ui-2);
+    box-shadow: 3px 3px 0 var(--title-x2);
     transform: translateX(-50%);
 }
 
 .timeline-item__date {
     font-size: 0.75rem;
-    color: var(--ui);
+    color: var(--ui-3);
     font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 0.08em;
@@ -1310,7 +1374,7 @@ body.js-reveal-ready .reveal.revealed {
     padding: 0.15rem 0.45rem;
     border: 1px solid var(--border-bright);
     border-radius: 3px;
-    color: var(--ui-dim);
+    color: var(--ui-2);
 }
 
 .timeline-item__details {
@@ -1324,12 +1388,11 @@ body.js-reveal-ready .reveal.revealed {
     margin-bottom: 0.3rem;
 }
 .timeline-item__details li::before {
-    content: '>';
+    content: '▸';
     position: absolute;
     left: 0;
     color: var(--ui);
-    font-weight: 700;
-    opacity: 0.6;
+    opacity: 0.7;
 }
 
 /* ---------- Contact Form ---------- */
@@ -1489,9 +1552,8 @@ body.js-reveal-ready .reveal.revealed {
 
 /* ---------- Page Header (Sub-pages) ---------- */
 .page-header {
-    padding: 8rem 0 3rem;
-    border-bottom: 1px solid var(--border);
-    margin-bottom: 3rem;
+    padding: 8rem 0 0;
+    margin-bottom: 1rem;
 }
 .page-header .section-title {
     margin-bottom: 0.5rem;
@@ -1511,43 +1573,9 @@ body.js-reveal-ready .reveal.revealed {
     text-align: center;
     padding: calc(var(--header-h) + 1.5rem) 2rem 4rem;
 }
-.error-code {
-    font-family: var(--font-display);
-    font-size: clamp(6rem, 15vw, 12rem);
-    font-weight: 800;
-    color: var(--ui);
-    line-height: 1;
-    text-shadow:
-        0 0 30px var(--ui-glow),
-        0 0 60px var(--ui-glow);
-    animation: flicker 3s infinite;
-}
-@keyframes flicker {
-    0%,
-    100% {
-        opacity: 1;
-    }
-    3% {
-        opacity: 0.4;
-    }
-    6% {
-        opacity: 1;
-    }
-    7% {
-        opacity: 0.4;
-    }
-    8% {
-        opacity: 1;
-    }
-    50% {
-        opacity: 1;
-    }
-    52% {
-        opacity: 0.7;
-    }
-    53% {
-        opacity: 1;
-    }
+/* Size containers (ANSI art) need a definite width; a centred flex item would shrink-wrap. */
+.error-page > div {
+    width: min(100%, 640px);
 }
 .error-msg {
     font-size: 1.1rem;
@@ -1583,9 +1611,7 @@ body.js-reveal-ready .reveal.revealed {
     display: flex;
     flex-wrap: wrap;
     gap: 2rem;
-    margin-top: 3rem;
-    padding-top: 2rem;
-    border-top: 1px solid var(--border);
+    margin-top: 1rem;
 }
 .stat {
     text-align: center;
@@ -1595,7 +1621,7 @@ body.js-reveal-ready .reveal.revealed {
     font-size: 2rem;
     font-weight: 700;
     color: var(--ui);
-    text-shadow: 0 0 12px var(--ui-glow);
+    text-shadow: 2px 2px 0 var(--title-x2);
 }
 .stat__label {
     font-size: 0.75rem;
@@ -1618,18 +1644,19 @@ body.js-reveal-ready .reveal.revealed {
 .about-avatar {
     width: 200px;
     height: 200px;
+    padding: 1.5rem;
     border-radius: var(--radius-lg);
     border: 2px solid var(--ui);
-    box-shadow: 0 0 20px var(--ui-glow);
+    box-shadow: 6px 6px 0 var(--title-x2);
     display: flex;
     align-items: center;
     justify-content: center;
     background: var(--bg-elevated);
-    font-family: var(--font-display);
-    font-size: 4rem;
-    font-weight: 800;
-    color: var(--ui);
     margin-bottom: 1.25rem;
+}
+.about-avatar .ansi-title {
+    width: 100%;
+    margin: 0;
 }
 .about-name {
     font-family: var(--font-display);
@@ -1981,11 +2008,6 @@ body.js-reveal-ready .reveal.revealed {
     .footer-nav {
         flex-wrap: wrap;
         gap: 0.75rem 1rem;
-    }
-
-    /* 404 ASCII art smaller */
-    .error-page pre {
-        font-size: 0.4rem !important;
     }
     .error-msg {
         font-size: 0.95rem;

@@ -1,6 +1,7 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
 import AnsiTitle from '../components/AnsiTitle.astro';
+import AnsiDivider from '../components/AnsiDivider.astro';
 import { featuredProjects } from '../data/projects';
 ---
 
@@ -130,6 +131,7 @@ import { featuredProjects } from '../data/projects';
                 </div>
             </div>
 
+            <AnsiDivider seed={6} />
             <div
                 class="stats-row reveal"
                 style="display: flex; justify-content: center; align-items: center; gap: 2rem; flex-wrap: wrap; text-align: center;"

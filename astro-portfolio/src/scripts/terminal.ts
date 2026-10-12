@@ -106,7 +106,7 @@ function scrollEl(el: HTMLElement): void {
 
 function appendLine(outputEl: HTMLElement, text: string, cls?: string): void {
     const div = document.createElement('div');
-    div.className = 'terminal-line' + (cls ? ' terminal-line--' + cls : '');
+    div.className = lineClass(cls ?? '');
     div.textContent = text;
     outputEl.appendChild(div);
     scrollEl(outputEl);
@@ -125,12 +125,19 @@ const CHAR_DELAY = 12;
 const LINE_DELAY = 28;
 const CHAR_LIMIT = 60;
 
+/** Class for a line: a terminal-line modifier ('accent', 'dim'), or an ANSI art class ('a-f3'). */
+function lineClass(cls: string): string {
+    if (!cls) return 'terminal-line';
+    return cls.startsWith('a-') ? `terminal-line ${cls}` : `terminal-line terminal-line--${cls}`;
+}
+
 function streamLines(
     lines: string[],
-    cls: string,
+    cls: string | ((index: number) => string),
     outputEl: HTMLElement,
     onDone?: () => void,
 ): void {
+    const clsAt = typeof cls === 'function' ? cls : () => cls;
     if (streamTimer) clearTimeout(streamTimer);
     let i = 0;
     function nextLine(): void {
@@ -142,7 +149,7 @@ function streamLines(
         i++;
         if (text.length <= CHAR_LIMIT) {
             const div = document.createElement('div');
-            div.className = 'terminal-line' + (cls ? ' terminal-line--' + cls : '');
+            div.className = lineClass(clsAt(i - 1));
             outputEl.appendChild(div);
             let c = 0;
             function nextChar(): void {
@@ -156,7 +163,7 @@ function streamLines(
             }
             nextChar();
         } else {
-            appendLine(outputEl, text, cls);
+            appendLine(outputEl, text, clsAt(i - 1));
             streamTimer = setTimeout(nextLine, LINE_DELAY);
         }
     }
@@ -231,9 +238,15 @@ function buildTerminal(): void {
     inputEl.addEventListener('keydown', handleKeydown);
 
     // Stream banner then welcome on open
-    streamLines(getAsciiBanner(), 'accent', popupBody, () => {
-        streamLines(WELCOME_MSG, 'dim', popupBody);
-    });
+    // Banner in the title-art gradient: each 6-row word runs top → bottom colour.
+    streamLines(
+        getAsciiBanner(),
+        (i) => `a-f${Math.round(((i % 7) * 7) / 5) % 8}`,
+        popupBody,
+        () => {
+            streamLines(WELCOME_MSG, 'dim', popupBody);
+        },
+    );
 }
 
 // ── Visual-viewport helper (keeps terminal above software keyboard) ───────
