@@ -59,7 +59,7 @@ export interface AnsiArt {
 
 const STYLE_DEFAULTS: Record<
     AnsiStyle,
-    Required<Pick<AnsiOptions, 'drips' | 'dripMax' | 'overspray' | 'gap'>> & {
+    Required<Pick<AnsiOptions, 'drips' | 'dripMax' | 'overspray' | 'gap' | 'lean'>> & {
         outline: boolean;
         bounceAmp: number;
         depth: number;
@@ -70,6 +70,7 @@ const STYLE_DEFAULTS: Record<
         dripMax: 4,
         overspray: 0.05,
         gap: 1,
+        lean: 0,
         outline: true,
         bounceAmp: 0,
         depth: 2,
@@ -79,6 +80,7 @@ const STYLE_DEFAULTS: Record<
         dripMax: 5,
         overspray: 0.08,
         gap: 1,
+        lean: 4,
         outline: true,
         bounceAmp: 1,
         depth: 2,
@@ -88,6 +90,7 @@ const STYLE_DEFAULTS: Record<
         dripMax: 3,
         overspray: 0,
         gap: 1,
+        lean: 0,
         outline: false,
         bounceAmp: 0,
         depth: 1,
@@ -132,7 +135,8 @@ export function renderAnsi(text: string, opts: AnsiOptions = {}): AnsiArt {
     const BOUNCE = opts.bounce ?? d.bounceAmp;
     const PAD = 1 + (d.outline ? 1 : 0); // pixel margin for outline (+1 for overspray)
     const gap = opts.gap ?? d.gap;
-    const lean = opts.lean ?? 0;
+    // 'wild' leans by default (user pick: option B on the 2026-10-12 options sheet, eased from 3 to 4 so names stay legible at hero size).
+    const lean = opts.lean ?? d.lean;
     const sliceBand = opts.slice ? [3, 4] : null; // glyph rows shifted by the glitch cut
     const SLICE_DX = 2;
 
@@ -253,6 +257,26 @@ export function renderAnsi(text: string, opts: AnsiOptions = {}): AnsiArt {
             }
         }
     }
+    // 2b. Clean-up: close 1-pixel notches in the outline (the stair-steps a lean leaves behind) —
+    //     any blank cell outside a glyph box that is boxed in by shape left+right, top+bottom, or on
+    //     three of four sides becomes outline. One pass is enough at 8 rows.
+    if (d.outline) {
+        const solid = (x: number, y: number) =>
+            y >= 0 && y < H && x >= 0 && x < W && (letterOf[y]![x]! > 0 || outline[y]![x] === 1);
+        const add: [number, number][] = [];
+        for (let y = 0; y < H; y++) {
+            for (let x = 0; x < W; x++) {
+                if (solid(x, y) || inBox[y]![x]) continue;
+                const l = solid(x - 1, y),
+                    r = solid(x + 1, y),
+                    u = solid(x, y - 1),
+                    dn = solid(x, y + 1);
+                if ((l && r) || (u && dn) || +l + +r + +u + +dn >= 3) add.push([x, y]);
+            }
+        }
+        for (const [x, y] of add) outline[y]![x] = 1;
+    }
+
     const inShape = (x: number, y: number) =>
         y >= 0 && y < H && x >= 0 && x < W && (letterOf[y]![x]! > 0 || outline[y]![x] === 1);
 
@@ -326,20 +350,23 @@ export function renderAnsi(text: string, opts: AnsiOptions = {}): AnsiArt {
         }
     }
 
-    // 5c. Overspray: sparse ░ / · in the blank halo right around the piece.
+    // 5c. Overspray: fine dots in a halo 2 cells out — never touching the outline, so it reads as
+    //     spray mist rather than outline debris.
     if (sprayP > 0) {
-        const near = (x: number, y: number) => {
-            for (let dy = -1; dy <= 1; dy++)
-                for (let dx = -2; dx <= 2; dx++) {
-                    const c = cells[y + dy]?.[x + dx];
-                    if (c && c.c && c.c !== 'a-os') return true;
-                }
+        const painted = (x: number, y: number) => {
+            const c = cells[y]?.[x];
+            return !!c && !!c.c && c.c !== 'a-os';
+        };
+        const near = (x: number, y: number, rx: number, ry: number) => {
+            for (let dy = -ry; dy <= ry; dy++)
+                for (let dx = -rx; dx <= rx; dx++) if (painted(x + dx, y + dy)) return true;
             return false;
         };
         for (let y = 0; y < CH; y++) {
             for (let x = 0; x < CW; x++) {
-                if (cells[y]![x]!.c || !near(x, y) || rand() >= sprayP) continue;
-                cells[y]![x] = { ch: rand() < 0.6 ? '░' : '·', c: 'a-os' };
+                if (cells[y]![x]!.c || near(x, y, 1, 0) || !near(x, y, 3, 1) || rand() >= sprayP)
+                    continue;
+                cells[y]![x] = { ch: '·', c: 'a-os' };
             }
         }
     }
