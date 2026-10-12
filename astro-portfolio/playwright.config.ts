@@ -9,6 +9,23 @@ export const VIEWPORTS = {
     mobile: { width: 390, height: 844 },
 } as const;
 
+type DeviceUse = NonNullable<Parameters<typeof defineConfig>[0]['use']>;
+const DEVICES: [string, DeviceUse][] = [
+    ['desktop', { ...devices['Desktop Chrome'], viewport: VIEWPORTS.desktop }],
+    ['laptop', { ...devices['Desktop Chrome'], viewport: VIEWPORTS.laptop }],
+    ['tablet', { ...devices['Desktop Chrome'], viewport: VIEWPORTS.tablet, hasTouch: true }],
+    [
+        'mobile',
+        {
+            ...devices['Desktop Chrome'],
+            viewport: VIEWPORTS.mobile,
+            hasTouch: true,
+            isMobile: true,
+            deviceScaleFactor: 3,
+        },
+    ],
+];
+
 export default defineConfig({
     testDir: 'e2e',
     fullyParallel: true,
@@ -21,22 +38,15 @@ export default defineConfig({
         screenshot: 'only-on-failure',
     },
     projects: [
-        { name: 'desktop', use: { ...devices['Desktop Chrome'], viewport: VIEWPORTS.desktop } },
-        { name: 'laptop', use: { ...devices['Desktop Chrome'], viewport: VIEWPORTS.laptop } },
-        {
-            name: 'tablet',
-            use: { ...devices['Desktop Chrome'], viewport: VIEWPORTS.tablet, hasTouch: true },
-        },
-        {
-            name: 'mobile',
-            use: {
-                ...devices['Desktop Chrome'],
-                viewport: VIEWPORTS.mobile,
-                hasTouch: true,
-                isMobile: true,
-                deviceScaleFactor: 3,
-            },
-        },
+        ...DEVICES.map(([name, use]) => ({ name, use, testIgnore: /perf\.spec\.ts/ })),
+        // Frame-timing checks run last and alone per device, so they measure the site, not the
+        // other tests competing for CPU.
+        ...DEVICES.map(([name, use]) => ({
+            name: `perf-${name}`,
+            use,
+            testMatch: /perf\.spec\.ts/,
+            dependencies: DEVICES.map(([n]) => n),
+        })),
     ],
     webServer: {
         command: 'pnpm preview --port 4321',

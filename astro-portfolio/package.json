@@ -16,7 +16,8 @@
     "preview": "astro preview",
     "format": "prettier --write \"src/**/*.{astro,ts,tsx,js,mjs,css}\" \"scripts/**/*.mjs\" \"e2e/**/*.ts\"",
     "format:check": "prettier --check \"src/**/*.{astro,ts,tsx,js,mjs,css}\" \"scripts/**/*.mjs\" \"e2e/**/*.ts\"",
-    "astro": "astro"
+    "astro": "astro",
+    "shots": "SHOTS=1 playwright test shots --project desktop --project laptop --project tablet --project mobile"
   },
   "dependencies": {
     "@astrojs/react": "^6.0.6",
@@ -27,6 +28,7 @@
     "react-dom": "^19.3.0"
   },
   "devDependencies": {
+    "@axe-core/playwright": "^4.13.0",
     "@playwright/test": "^1.64.0",
     "@types/d3-force": "^3.0.10",
     "@types/react": "^19.3.0",

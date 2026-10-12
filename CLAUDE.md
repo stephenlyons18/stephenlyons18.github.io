@@ -99,6 +99,7 @@ pnpm test           # Vitest unit tests, <1s. Data integrity + build-time art ge
 pnpm build          # ~4s. esbuild scripts → astro build → postbuild.mjs (path relativisation)
 pnpm e2e            # Playwright vs the built site, 4 device projects (desktop/laptop/tablet/mobile). Build first.
 pnpm format         # Prettier (config: .prettierrc.json). CI runs format:check.
+pnpm shots          # full-page screenshots of every page + interaction videos, 4 devices → test-results/
 pnpm dev            # http://localhost:4321
 pnpm preview        # serve dist/
 ```
@@ -109,9 +110,16 @@ pnpm preview        # serve dist/
   390×844 (touch). It covers: no console errors or failed requests, no horizontal overflow, nav and mobile menu,
   terminal, and skill-graph hover/tap cards anchored to their element. A UI change isn't done until it passes at
   all four.
-- **See it, don't assume it.** For any visual change, take screenshots at all four viewports (and a short video
-  for interactions or animation) and look at them before saying it works. Attach them to the PR. Media never
-  goes in git (`test-results/` is ignored); keep committed images small (<300 KB, WebP/JPEG).
+- **See it, don't assume it.** For any visual change, run `pnpm shots` (or take targeted screenshots) at all
+  four viewports, plus a short video for interactions or animation, and look at them before saying it works.
+  Media never goes on a code branch (`test-results/` is ignored). To embed it in a PR, downscale it (JPEG ≤ 1000px
+  wide, H.264 MP4) and commit it to the orphan **`pr-media`** branch under `R<n>/`, then reference
+  `https://github.com/stephenlyons18/stephenlyons18.github.io/blob/pr-media/R<n>/<file>?raw=true`. That branch
+  is never merged.
+- **Suites:** `smoke` (load, console, overflow, art fits its box), `skill-graph` (card anchoring, 0 label
+  overlaps), `terminal`, `ux` (axe WCAG 2.2 AA, nav, mobile menu, keyboard, reduced motion, no idle rAF), and
+  `perf` (scroll frame timing, run after everything else in the `perf-*` projects so it isn't measuring other
+  tests' CPU).
 - **Measure feel with numbers:** frame-interval p95 from rAF during scroll and graph interaction, JS bytes per
   page from `dist/`, and Lighthouse for LCP/a11y. Quote before/after in perf PRs.
 
