@@ -7,10 +7,11 @@ Stephen Lyons' cybersecurity portfolio: a working in-browser terminal painted on
 ## Stack
 
 - **Astro 7** static site (`astro-portfolio/`), deployed to GitHub Pages from the `build` branch
-- **React 19** islands only where interaction needs them: a **d3-force** skill graph and a project lightbox
+- A **React 19** island only where interaction needs it: the **d3-force** skill graph. The project lightbox is a native `<dialog>`
 - Vanilla TypeScript (bundled with esbuild) for site interactivity and the terminal
 - Build-time ANSI/ASCII art generators: block-letter titles with 3D shading and paint drips, zero runtime JS
-- Self-hosted JetBrains Mono subset (includes the box-drawing and block glyphs the art needs)
+- Pixel type, self-hosted and subset (~22 KB): **Press Start 2P** for display, **Departure Mono** for body. A tiny JetBrains Mono subset sets the art's cells
+- An **accessibility menu** in the header (plain headings, reduce motion, readable font, larger text, high contrast, hide texture), applied before first paint
 - Tests: **Vitest** (data integrity, generators) and **Playwright** (desktop, laptop, mobile)
 
 ## Pages

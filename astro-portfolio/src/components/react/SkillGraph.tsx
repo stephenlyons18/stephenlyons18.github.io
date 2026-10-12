@@ -398,6 +398,7 @@ export default function SkillGraph({ height = 700 }: { height?: number }) {
         accent: '#00FF41',
         halo: 'rgba(11, 13, 16, 0.92)',
         label: '#E6EDF3',
+        font: "'Departure Mono', monospace",
     });
 
     const [zoomLevel, setZoomLevel] = useState(1);
@@ -649,7 +650,7 @@ export default function SkillGraph({ height = 700 }: { height?: number }) {
             ctx.scale(dpr, dpr);
             ctx.textAlign = 'center';
             ctx.textBaseline = 'top';
-            ctx.font = `600 ${labelPx}px 'JetBrains Mono', monospace`;
+            ctx.font = `${labelPx}px ${themeRef.current.font}`;
             // miter joins on text strokes spike at sharp corners — round is cleaner.
             ctx.lineJoin = 'round';
             ctx.miterLimit = 2;
@@ -712,7 +713,7 @@ export default function SkillGraph({ height = 700 }: { height?: number }) {
         // collision force reserves enough room for long label text rather than
         // just the node circle — this is what stops long names like "Endpoint
         // Detection & Response" from overlapping their neighbours.
-        const charW = labelPx * 0.62;
+        const charW = labelPx * 0.64; // Departure Mono advance is 0.636em
 
         // Start nodes near their cluster center to reduce initial overlap chaos. The jitter is
         // seeded (not Math.random) so every load produces the same, checked layout.
@@ -817,20 +818,25 @@ export default function SkillGraph({ height = 700 }: { height?: number }) {
 
     // ─── Effects ─────────────────────────────────────────────────────────────
 
-    // Theme colours: read once, re-read when the terminal `theme` command flips
-    // data-theme on <html>.
+    // Theme colours + label font: read once, re-read when the terminal `theme` command flips
+    // data-theme or the a11y menu flips the readable font on <html>; redraw once web fonts land.
     useEffect(() => {
         const read = () => {
             themeRef.current = {
                 accent: cssVar('--ui', '#00FF41'),
                 halo: cssVar('--graph-halo', 'rgba(11, 13, 16, 0.92)'),
                 label: cssVar('--graph-label', '#E6EDF3'),
+                font: cssVar('--font-body', "'Departure Mono', monospace"),
             };
             draw();
         };
         read();
+        document.fonts?.ready.then(draw);
         const mo = new MutationObserver(read);
-        mo.observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
+        mo.observe(document.documentElement, {
+            attributes: true,
+            attributeFilter: ['data-theme', 'data-a11y-font'],
+        });
         return () => mo.disconnect();
     }, []); // eslint-disable-line react-hooks/exhaustive-deps
 

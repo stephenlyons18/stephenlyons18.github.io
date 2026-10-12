@@ -53,8 +53,15 @@ const breakpoint = Math.ceil(one.cols * 0.6 * minFont);
 const id = `ansi-${Math.abs([...text].reduce((h, c) => (h * 31 + c.charCodeAt(0)) | 0, seed))}`;
 ---
 
-<div class:list={['ansi-title', className]} id={id} style={`--ansi-max:${maxFont}px`}>
-    {!decorative && <Tag class="sr-only">{label ?? text}</Tag>}
+<div
+    class:list={['ansi-title', decorative && 'ansi-title--deco', className]}
+    id={id}
+    style={`--ansi-max:${maxFont}px`}
+>
+    {
+        /* Screen-reader heading; the a11y menu's "plain headings" makes it the visible title. */
+        !decorative && <Tag class="sr-only ansi-title__text">{label ?? text}</Tag>
+    }
     <pre
         class="ansi ansi-title__one"
         aria-hidden="true"
