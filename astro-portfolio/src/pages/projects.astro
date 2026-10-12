@@ -1,6 +1,7 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
 import AnsiTitle from '../components/AnsiTitle.astro';
+import AnsiDivider from '../components/AnsiDivider.astro';
 import projects from '../data/projects';
 import ProjectGallery from '../components/react/ProjectGallery';
 ---
@@ -17,6 +18,7 @@ import ProjectGallery from '../components/react/ProjectGallery';
                 A selection of notable projects spanning full-stack development, mobile apps, and
                 security engineering.
             </p>
+            <AnsiDivider seed={3} />
         </div>
     </section>
 

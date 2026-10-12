@@ -1,6 +1,7 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
 import AnsiTitle from '../components/AnsiTitle.astro';
+import AnsiDivider from '../components/AnsiDivider.astro';
 import SkillGraph from '../components/react/SkillGraph';
 import { jobs } from '../data/experience';
 ---
@@ -16,6 +17,7 @@ import { jobs } from '../data/experience';
             <p class="page-desc">
                 Cybersecurity Engineer building secure, resilient systems at enterprise scale.
             </p>
+            <AnsiDivider seed={2} />
         </div>
     </section>
 
@@ -24,7 +26,7 @@ import { jobs } from '../data/experience';
             <div class="about-grid">
                 <aside class="about-sidebar reveal">
                     <div class="about-avatar" aria-hidden="true">
-                        SL
+                        <AnsiTitle text="SL" style="bubble" decorative maxFont={9} seed={5} />
                     </div>
                     <h2 class="about-name">Stephen Lyons</h2>
                     <p class="about-role">Cybersecurity Engineer</p>
@@ -103,7 +105,7 @@ import { jobs } from '../data/experience';
                         <h2 class="section-title" style="font-size:1.5rem;">
                             Skill Graph
                         </h2>
-                        <SkillGraph client:visible />
+                        <SkillGraph client:visible={{ rootMargin: '300px' }} />
                     </div>
 
                     <div class="reveal" style="margin-bottom: 3rem;">

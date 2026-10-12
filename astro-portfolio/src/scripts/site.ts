@@ -15,56 +15,6 @@ interface HeroLine {
     delay?: number;
 }
 
-let matrixRafId = 0;
-
-function initMatrixBackground(): void {
-    const canvas = document.getElementById('matrix-canvas') as HTMLCanvasElement | null;
-    if (!canvas) return;
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return;
-
-    function resize(): void {
-        if (!canvas) return;
-        canvas.width = window.innerWidth;
-        canvas.height = window.innerHeight;
-    }
-    resize();
-    window.addEventListener('resize', resize);
-
-    const fontSize = 14;
-    const cols = Math.floor(canvas.width / fontSize);
-    const drops: number[] = Array.from({ length: cols }, () => Math.random() * -100);
-    const chars =
-        'アイウエオカキクケコサシスセソタチツテトナニヌネノハヒフヘホマミムメモヤユヨラリルレロワヲン0123456789ABCDEF';
-
-    function draw(): void {
-        if (!ctx || !canvas) return;
-        ctx.fillStyle = 'rgba(10, 10, 10, 0.04)';
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-        const accent =
-            getComputedStyle(document.documentElement).getPropertyValue('--ui').trim() || '#00FF41';
-        ctx.fillStyle = accent;
-        ctx.font = `${fontSize}px JetBrains Mono, monospace`;
-
-        for (let i = 0; i < drops.length; i++) {
-            if (drops[i]! * fontSize > 0) {
-                const char = chars[Math.floor(Math.random() * chars.length)]!;
-                ctx.globalAlpha = 0.15 + Math.random() * 0.1;
-                ctx.fillText(char, i * fontSize, drops[i]! * fontSize);
-            }
-            drops[i] = drops[i]! + 1;
-            if (drops[i]! * fontSize > canvas.height && Math.random() > 0.99) {
-                drops[i] = 0;
-            }
-        }
-        ctx.globalAlpha = 1;
-        matrixRafId = requestAnimationFrame(draw);
-    }
-    cancelAnimationFrame(matrixRafId);
-    draw();
-}
-
 function initActiveNav(): void {
     // Astro routes don't have .html — match by pathname
     const path = window.location.pathname.replace(/\/$/, '') || '/';
@@ -409,7 +359,6 @@ function initReveal(): void {
 
 function init(): void {
     initBootSequence();
-    initMatrixBackground();
     initActiveNav();
     initMobileNav();
     initReveal();
