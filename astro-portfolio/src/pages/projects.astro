@@ -3,10 +3,11 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 import AnsiTitle from '../components/AnsiTitle.astro';
 import AnsiDivider from '../components/AnsiDivider.astro';
 import projects from '../data/projects';
-import ProjectGallery from '../components/react/ProjectGallery';
+import ProjectGallery from '../components/ProjectGallery.astro';
+import Lightbox from '../components/Lightbox.astro';
 import { responsiveImage } from '../lib/responsiveImages';
 
-// Swap each project photo for build-time WebP variants (srcset) before handing it to the island.
+// Swap each project photo for build-time WebP variants (srcset).
 const galleries = Object.fromEntries(
     await Promise.all(
         projects.map(async (p) => [
@@ -85,9 +86,7 @@ const galleries = Object.fromEntries(
                         ))}
                     </div>
 
-                    {p.images && p.images.length > 0 && (
-                        <ProjectGallery images={galleries[p.id]} projectId={p.id} client:visible />
-                    )}
+                    {p.images && p.images.length > 0 && <ProjectGallery images={galleries[p.id]} />}
 
                     {p.links && p.links.length > 0 && (
                         <div style="margin-top:1.25rem;display:flex;gap:1rem;flex-wrap:wrap;">
@@ -108,4 +107,5 @@ const galleries = Object.fromEntries(
             ))}
         </div>
     </section>
+    <Lightbox />
 </BaseLayout>

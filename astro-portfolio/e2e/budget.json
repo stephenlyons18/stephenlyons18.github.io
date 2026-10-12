@@ -1,11 +1,50 @@
 {
     "pages": {
-        "/": { "js": 50, "css": 80, "font": 65, "img": 10, "html": 65 },
-        "/about/": { "js": 320, "css": 80, "font": 65, "img": 10, "html": 45 },
-        "/projects/": { "js": 400, "css": 80, "font": 65, "img": 100, "html": 45 },
-        "/contact/": { "js": 50, "css": 80, "font": 65, "img": 10, "html": 30 },
-        "/404.html": { "js": 50, "css": 80, "font": 65, "img": 10, "html": 15 }
+        "/": {
+            "js": 50,
+            "css": 80,
+            "font": 65,
+            "img": 10,
+            "html": 65
+        },
+        "/about/": {
+            "js": 320,
+            "css": 80,
+            "font": 65,
+            "img": 10,
+            "html": 45
+        },
+        "/projects/": {
+            "js": 50,
+            "css": 80,
+            "font": 65,
+            "img": 100,
+            "html": 45
+        },
+        "/contact/": {
+            "js": 50,
+            "css": 80,
+            "font": 65,
+            "img": 10,
+            "html": 30
+        },
+        "/404.html": {
+            "js": 50,
+            "css": 80,
+            "font": 65,
+            "img": 10,
+            "html": 15
+        }
     },
-    "noFramework": ["/", "/contact/", "/404.html"],
-    "load": { "lcpMs": 2500, "cls": 0.05, "tbtMs": 200 }
+    "noFramework": [
+        "/",
+        "/projects/",
+        "/contact/",
+        "/404.html"
+    ],
+    "load": {
+        "lcpMs": 2500,
+        "cls": 0.05,
+        "tbtMs": 200
+    }
 }

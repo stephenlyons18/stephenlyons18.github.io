@@ -953,6 +953,7 @@ body.js-reveal-ready .reveal.revealed {
     margin-top: 1.25rem;
 }
 .card__image-item {
+    position: relative;
     margin: 0;
     border-radius: var(--radius);
     overflow: hidden;
@@ -984,66 +985,69 @@ body.js-reveal-ready .reveal.revealed {
     letter-spacing: 0.04em;
     border-top: 1px solid var(--border);
 }
-/* Cursor hint for interactive (React-hydrated) thumbnails */
-.card__image-item {
+/* Thumbnails are buttons (ProjectGallery.astro) that open the lightbox. */
+.card__image-btn {
+    display: block;
+    width: 100%;
+    height: 100%;
+    padding: 0;
+    border: 0;
+    background: none;
     cursor: zoom-in;
 }
-
-/* ---------- Lightbox (ProjectGallery React island) ---------- */
-.lightbox-backdrop {
-    position: fixed;
-    inset: 0;
-    z-index: 9000;
-    background: rgba(10, 10, 10, 0.88);
-    backdrop-filter: blur(6px);
-    -webkit-backdrop-filter: blur(6px);
+.card__image-btn:focus-visible {
+    outline: 2px solid var(--ui);
+    outline-offset: -2px;
 }
-/* Non-interactive centering shell on desktop; Motion positions the figure via layoutId */
-.lightbox-centering {
-    position: fixed;
-    inset: 0;
-    z-index: 9001;
+
+/* ---------- Lightbox (Lightbox.astro: native <dialog>) ---------- */
+html:has(dialog.lightbox[open]) {
+    overflow: hidden;
+}
+.lightbox {
+    /* The dialog is the full-viewport click-to-close surface; the figure centres inside it. */
+    width: 100%;
+    max-width: none;
+    height: 100%;
+    max-height: none;
+    margin: 0;
+    padding: max(1rem, env(safe-area-inset-top, 0px)) 1rem
+        max(1.5rem, env(safe-area-inset-bottom, 0px));
+    border: 0;
+    background: transparent;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    display: none;
+    cursor: zoom-out;
+}
+.lightbox[open] {
     display: flex;
     align-items: center;
     justify-content: center;
-    pointer-events: none; /* desktop: let backdrop receive clicks */
+    animation: lightbox-in 0.18s var(--ease);
 }
-
-/* Mobile: make the centering shell scrollable and pointer-interactive */
-@media (max-width: 768px) {
-    .lightbox-centering {
-        pointer-events: auto;
-        overflow-y: auto;
-        -webkit-overflow-scrolling: touch;
-        align-items: flex-start;
-        /* Push image below the site header (~64px) + safe-area inset + breathing room */
-        padding-top: max(4.5rem, calc(env(safe-area-inset-top, 0px) + 4rem));
-        padding-left: 1rem;
-        padding-right: 1rem;
-        padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 1.5rem);
-    }
-    .lightbox-figure {
-        margin: auto;
-        max-width: 100%;
-    }
-    .lightbox-img {
-        max-height: 75vh;
+.lightbox::backdrop {
+    background: rgba(7, 11, 18, 0.88);
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+}
+@keyframes lightbox-in {
+    from {
+        opacity: 0;
     }
 }
 .lightbox-figure {
-    pointer-events: auto;
     position: relative;
     overflow: hidden;
     max-width: min(90vw, 1000px);
     width: 100%;
-    aspect-ratio: unset; /* override thumbnail aspect-ratio so content sets height */
+    margin: auto;
     background: var(--bg-card);
     border: 1px solid var(--ui-dim);
+    border-radius: 8px;
     box-shadow:
         0 0 60px var(--ui-glow),
         0 24px 60px rgba(0, 0, 0, 0.6);
-    cursor: zoom-out;
-    margin: 0;
 }
 .lightbox-img {
     display: block;
@@ -1063,32 +1067,56 @@ body.js-reveal-ready .reveal.revealed {
 }
 .lightbox-close {
     position: absolute;
-    top: 0.6rem;
-    right: 0.6rem;
-    background: rgba(10, 10, 10, 0.7);
+    top: 0.5rem;
+    right: 0.5rem;
+    min-width: 44px;
+    min-height: 44px;
+    background: rgba(7, 11, 18, 0.75);
     border: 1px solid var(--border-bright);
     color: var(--text-secondary);
     font-family: var(--font-display);
-    font-size: 0.75rem;
+    font-size: 0.9rem;
     line-height: 1;
-    padding: 0.3rem 0.5rem;
     border-radius: 4px;
     cursor: pointer;
     transition:
         color 0.15s,
         border-color 0.15s;
 }
-.lightbox-close:hover {
+.lightbox-close:hover,
+.lightbox-close:focus-visible {
     color: var(--ui);
     border-color: var(--ui);
 }
-/* Honour reduced-motion preference in the lightbox */
-@media (prefers-reduced-motion: reduce) {
-    .lightbox-backdrop {
-        transition: none;
+/* The thumbnail → lightbox zoom (a same-document View Transition): a quick spring-ish curve.
+   The transition overlay lets clicks through, so a fast tap is never swallowed mid-zoom. */
+::view-transition {
+    pointer-events: none;
+}
+::view-transition-group(lightbox-zoom) {
+    animation-duration: 0.38s;
+    animation-timing-function: linear(0, 0.22 8%, 0.6 18%, 0.92 30%, 1.04 42%, 1.02 56%, 1);
+}
+::view-transition-old(lightbox-zoom),
+::view-transition-new(lightbox-zoom) {
+    height: 100%;
+    object-fit: cover;
+}
+@media (max-width: 768px) {
+    .lightbox[open] {
+        align-items: flex-start;
+        padding-top: max(4.5rem, calc(env(safe-area-inset-top, 0px) + 4rem));
     }
     .lightbox-figure {
-        transition: none;
+        max-width: 100%;
+    }
+    .lightbox-img {
+        max-height: 75vh;
+    }
+}
+@media (prefers-reduced-motion: reduce) {
+    .lightbox[open] {
+        animation: none;
     }
 }
 
