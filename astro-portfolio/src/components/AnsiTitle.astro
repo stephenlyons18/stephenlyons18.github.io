@@ -1,0 +1,83 @@
+---
+/**
+ * ANSI graffiti title. Rendered at build time by src/lib/ansi — zero runtime JS.
+ *
+ * The art is aria-hidden; a real heading carries the text for screen readers, search and
+ * copy/paste. The art scales to fit its container (container query units); for multi-word text a
+ * stacked (two-line) variant takes over when the one-line piece would drop below a legible size.
+ */
+import { balanceLines, renderAnsi, type AnsiArt, type AnsiStyle } from '../lib/ansi/generator';
+import { artToHtml } from '../lib/ansi/html';
+
+interface Props {
+    text: string;
+    /** Accessible heading text, if it should say more than the art (defaults to `text`). */
+    label?: string;
+    /** Pure decoration (e.g. the avatar monogram): render no heading at all. */
+    decorative?: boolean;
+    /** Heading level for the accessible heading. */
+    as?: 'h1' | 'h2' | 'h3';
+    style?: AnsiStyle;
+    seed?: number;
+    /** Pixels between letters (see AnsiOptions.gap). */
+    gap?: number;
+    /** Largest cell size (px). Cell width = 0.6 × this. */
+    maxFont?: number;
+    /** Below this cell size the stacked variant is used (multi-word text only). */
+    minFont?: number;
+    class?: string;
+}
+
+const {
+    text,
+    label,
+    decorative = false,
+    as: Tag = 'h2',
+    style = 'bubble',
+    seed = 0,
+    gap,
+    maxFont = 13,
+    minFont = 6,
+    class: className,
+} = Astro.props;
+
+const one = renderAnsi(text, { style, seed, gap });
+const parts = balanceLines(text);
+const stack: AnsiArt[] | null =
+    parts.length > 1
+        ? parts.map((p, i) => renderAnsi(p, { style, seed: seed + i + 1, gap }))
+        : null;
+const stackCols = stack ? Math.max(...stack.map((a) => a.cols)) : 0;
+// Container width (px) below which the one-line piece would render cells smaller than minFont.
+const breakpoint = Math.ceil(one.cols * 0.6 * minFont);
+const id = `ansi-${Math.abs([...text].reduce((h, c) => (h * 31 + c.charCodeAt(0)) | 0, seed))}`;
+---
+
+<div
+    class:list={['ansi-title', decorative && 'ansi-title--deco', className]}
+    id={id}
+    style={`--ansi-max:${maxFont}px`}
+>
+    {
+        /* Screen-reader heading; the a11y menu's "plain headings" makes it the visible title. */
+        !decorative && <Tag class="sr-only ansi-title__text">{label ?? text}</Tag>
+    }
+    <pre
+        class="ansi ansi-title__one"
+        aria-hidden="true"
+        style={`--cols:${one.cols}`}
+        set:html={artToHtml(one)}
+    />
+    {stack && (
+        <div class="ansi-title__stack" aria-hidden="true">
+            {stack.map((art) => (
+                <pre class="ansi" style={`--cols:${stackCols}`} set:html={artToHtml(art)} />
+            ))}
+        </div>
+    )}
+    {stack && (
+        <style
+            set:html={`@container (max-width: ${breakpoint}px) { #${id} .ansi-title__one { display: none } #${id} .ansi-title__stack { display: block } }`}
+        />
+    )}
+</div>

@@ -1,0 +1,15 @@
+---
+/** A sprayed bar with paint drips — section separator. Decorative (aria-hidden). */
+import AnsiDrips from './AnsiDrips.astro';
+
+interface Props {
+    seed?: number;
+    class?: string;
+}
+const { seed = 1, class: className } = Astro.props;
+---
+
+<!-- 200 cells at ≤ 9px cells ≈ 1080px: spans a desktop container; scales down to any width. -->
+<div class:list={['ansi-divider', className]}>
+    <AnsiDrips cols={200} seed={seed} bar />
+</div>

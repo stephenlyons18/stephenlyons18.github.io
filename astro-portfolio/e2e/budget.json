@@ -1,0 +1,50 @@
+{
+    "pages": {
+        "/": {
+            "js": 66,
+            "css": 80,
+            "font": 30,
+            "img": 10,
+            "html": 80
+        },
+        "/about/": {
+            "js": 336,
+            "css": 80,
+            "font": 30,
+            "img": 10,
+            "html": 50
+        },
+        "/projects/": {
+            "js": 66,
+            "css": 80,
+            "font": 30,
+            "img": 100,
+            "html": 72
+        },
+        "/contact/": {
+            "js": 66,
+            "css": 80,
+            "font": 30,
+            "img": 10,
+            "html": 35
+        },
+        "/404.html": {
+            "js": 66,
+            "css": 80,
+            "font": 30,
+            "img": 10,
+            "html": 20
+        }
+    },
+    "noFramework": [
+        "/",
+        "/projects/",
+        "/contact/",
+        "/404.html"
+    ],
+    "load": {
+        "lcpMs": 2500,
+        "cls": 0.05,
+        "tbtMs": 200
+    }
+}

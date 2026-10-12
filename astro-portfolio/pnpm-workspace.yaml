@@ -1,3 +1,13 @@
-allowBuilds:
-  esbuild: true
-  sharp: true
+# Packages allowed to run install scripts (native binaries).
+onlyBuiltDependencies:
+  - '@parcel/watcher'
+  - esbuild
+  - sharp
+  - unrs-resolver
+
+# Security pins for transitive deps whose parents haven't released a fix yet (see issue #20).
+# Drop an entry once `pnpm why <pkg>` shows the parent already requires the patched range.
+overrides:
+  devalue: '>=5.9.4'
+  smol-toml: '>=1.9.0'
+  source-map-js: '>=1.2.2'

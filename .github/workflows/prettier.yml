@@ -22,51 +22,32 @@ jobs:
 
     steps:
       - name: Checkout source
-        uses: actions/checkout@v4
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           # Full history so the commit push works correctly
           fetch-depth: 0
           ref: main
 
+      - name: Setup pnpm
+        uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
+        with:
+          package_json_file: astro-portfolio/package.json
+
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: '22'
-          cache: 'npm'
-          cache-dependency-path: astro-portfolio/package-lock.json
+          cache: 'pnpm'
+          cache-dependency-path: astro-portfolio/pnpm-lock.yaml
 
       - name: Install dependencies
-        run: npm ci
+        run: pnpm install --frozen-lockfile
         working-directory: astro-portfolio
 
-      - name: Install Prettier + Astro plugin
-        run: npm install --no-save prettier prettier-plugin-astro
-        working-directory: astro-portfolio
-
-      - name: Write Prettier config
-        run: |
-          cat > astro-portfolio/.prettierrc.json << 'EOF'
-          {
-            "tabWidth": 4,
-            "useTabs": false,
-            "singleQuote": true,
-            "trailingComma": "all",
-            "printWidth": 100,
-            "plugins": ["prettier-plugin-astro"],
-            "overrides": [
-              {
-                "files": "*.astro",
-                "options": { "parser": "astro" }
-              }
-            ]
-          }
-          EOF
-
+      # Config lives in astro-portfolio/.prettierrc.json; `pnpm format` is the same command used locally.
       - name: Run Prettier
-        run: |
-          npx prettier --write \
-            "astro-portfolio/src/**/*.{astro,ts,tsx,js,mjs,css}" \
-            "astro-portfolio/scripts/**/*.mjs"
+        run: pnpm format
+        working-directory: astro-portfolio
 
       - name: Commit formatted files (if any changed)
         run: |
