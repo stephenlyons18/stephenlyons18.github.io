@@ -1,98 +1,7 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
 import SkillGraph from '../components/react/SkillGraph';
-
-interface Job {
-    date: string;
-    role: string;
-    org: string;
-    tech: string[];
-    details: string[];
-}
-
-const jobs: Job[] = [
-    {
-        date: 'Aug 2023 – Present',
-        role: 'Cybersecurity Engineer',
-        org: 'Yamaha Motor Corporation — Cypress, CA',
-        tech: [
-            'GitHub Enterprise',
-            'infrastructure as Code',
-            'Netskope',
-            'CrowdStrike',
-            'Zscaler',
-            'Azure',
-            'Intune',
-            'Python',
-            'AWS',
-        ],
-        details: [
-            'Manages on-prem and cloud security operations',
-            'Implements and manages DevSecOps practices using GitHub Actions and GitHub Enterprise',
-            'Develops infrastructure as code using infrastructure as Code',
-            'Oversees enterprise cybersecurity tool management including Netskope, CrowdStrike, and Zscaler',
-            'Manages Azure infrastructure, groups, and mobile devices through Intune',
-            'Builds and maintains CI/CD pipelines with embedded security checks and compliance gates',
-            'Develops and maintains SIEM platforms for real-time visibility, detection, and incident response',
-            'Automates log collection, normalization, and enrichment across cloud, endpoint, and SaaS sources',
-            'Deploys and manages EDR solutions and implements DLP controls',
-            'Assists in leading security operations including triage, investigation, containment, and remediation',
-        ],
-    },
-    {
-        date: 'May 2022 – Aug 2022',
-        role: 'Business Application Development Intern',
-        org: 'Yamaha Motor Corporation — Cypress, CA',
-        tech: ['ABAP', 'SAP', 'Python', 'React.js'],
-        details: [
-            'Designed and presented testing methods to ensure quality of newly developed code and data',
-            'Developed custom SAP programs using the ABAP programming language',
-            'Utilized ABAP, SAP, Python, and React.js to support development of advanced business applications',
-            'Provided support in transitioning web technologies and frameworks',
-        ],
-    },
-    {
-        date: 'Feb 2020 – May 2022 & Oct 2022 – Jul 2023',
-        role: 'Web Developer',
-        org: 'Associated Students Inc. — Long Beach, CA',
-        tech: ['HTML', 'CSS', 'PHP', 'Joomla', 'React.js', 'Google Analytics', 'WordPress'],
-        details: [
-            'Led a team of graduate student developers and conducted interviews to hire new web developers',
-            'Improved ASI websites with SEO, website merging, and daily content updates for campus events',
-            'Developed and deployed a quiz game for incoming freshmen during the COVID-19 Pandemic using React.js',
-            'Assisted with the development and deployment of web-related applications for the Student Union and Student Recreation Center',
-        ],
-    },
-    {
-        date: 'May 2021 – Jan 2022',
-        role: 'Lead Security Engineer',
-        org: 'Down (joindown.com) — Remote',
-        tech: ['TypeScript', 'React Native', 'Expo', 'Jest/Detox', 'GitHub', 'Firebase'],
-        details: [
-            'Coordinated development and testing of Android and iOS components for React Native social media app',
-            'Developed security rules and tested the React Native application using Jest and Detox libraries',
-            'Led the development of security and testing with Firebase storage',
-        ],
-    },
-    {
-        date: 'Jun 2021 – Aug 2021',
-        role: 'Software Development Lead',
-        org: 'Down Friend Groups — Remote',
-        tech: ['React Native', 'JavaScript'],
-        details: ['Led software development efforts for the Down Friend Groups team'],
-    },
-    {
-        date: 'Jul 2018 – Jun 2019',
-        role: 'Intern / Laser Technician',
-        org: 'M.R. Mold and Engineering — Brea, CA',
-        tech: ['Solidworks', '3D Modeling', 'QC Software'],
-        details: [
-            'Founded internship program and acted as liaison to Brea Olinda High School for future interns',
-            'Learned cutting-edge plastic and silicone molding methods and 3D modeling with Solidworks',
-            'Produced laser-engraved steel products and developed software to quality-control precision silicone parts',
-        ],
-    },
-];
+import { jobs } from '../data/experience';
 ---
 
 <BaseLayout
@@ -169,7 +78,7 @@ const jobs: Job[] = [
                         </h2>
                         <div class="timeline">
                             {jobs.map((j) => (
-                                <div class="timeline-item">
+                                <div class="timeline-item" id={`job-${j.id}`}>
                                     <span class="timeline-item__date">{j.date}</span>
                                     <h3 class="timeline-item__role">{j.role}</h3>
                                     <p class="timeline-item__org">{j.org}</p>

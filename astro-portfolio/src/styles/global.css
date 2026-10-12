@@ -52,6 +52,9 @@
     --text-secondary: #8b949e;
     --text-muted: #484f58;
     --white: #e6edf3;
+    /* Skill-graph canvas colours (read once per theme change by SkillGraph.tsx) */
+    --graph-halo: rgba(11, 13, 16, 0.92);
+    --graph-label: #e6edf3;
 
     /* Typography */
     --font-display: 'JetBrains Mono', monospace;
@@ -867,10 +870,10 @@ body.js-reveal-ready .reveal.revealed {
     gap: 1.5rem;
 }
 
-/* ---------- Skills Matrix ---------- */
+/* ---------- Skills (SkillGraph island: graph + list views) ---------- */
 .skills-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
     gap: 1.5rem;
 }
 
@@ -900,12 +903,218 @@ body.js-reveal-ready .reveal.revealed {
     border: 1px solid var(--border);
     border-radius: 3px;
     color: var(--text-primary);
-    transition: all 0.2s var(--ease);
+    cursor: pointer;
+    transition:
+        opacity 0.2s var(--ease),
+        border-color 0.2s var(--ease),
+        color 0.2s var(--ease);
 }
-.skill-list li:hover {
+/* --cat is the skill's category colour, set inline per chip. */
+.skill-list li:hover,
+.skill-list li:focus-visible,
+.skill-list li.is-active {
+    border-color: var(--cat, var(--accent));
+    color: var(--cat, var(--accent));
+    background: color-mix(in srgb, var(--cat, var(--accent)) 12%, transparent);
+    box-shadow: 0 0 10px color-mix(in srgb, var(--cat, var(--accent)) 45%, transparent);
+    outline: none;
+}
+.skill-list li.is-related {
+    border-color: color-mix(in srgb, var(--cat) 60%, transparent);
+    color: var(--cat);
+}
+.skill-list li.is-dimmed {
+    opacity: 0.28;
+}
+@media (max-width: 768px) {
+    .skill-list li {
+        padding: 0.55rem 0.8rem; /* ≥44px-ish tap rows with the wrap gap */
+    }
+}
+
+.skill-graph {
+    width: 100%;
+}
+.sg-toggle {
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.5rem;
+    margin-bottom: 0.75rem;
+}
+.sg-btn {
+    padding: 5px 14px;
+    min-height: 36px;
+    font-size: 0.72rem;
+    font-family: var(--font-display);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    background: var(--bg-elevated);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+.sg-btn[aria-pressed='true'] {
+    background: var(--accent-bg);
     border-color: var(--accent);
     color: var(--accent);
-    box-shadow: 0 0 8px var(--accent-glow);
+}
+.sg-canvas-wrap {
+    position: relative;
+    width: 100%;
+    background: rgba(27, 27, 27, 0.29);
+    border-radius: 12px;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    /* The card is clamped inside the canvas; clip only paint, not layout. */
+    overflow: clip;
+}
+.sg-zoom {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    z-index: 5;
+}
+.sg-zoom button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    padding: 0;
+    font-family: var(--font-display);
+    font-size: 1rem;
+    line-height: 1;
+    background: var(--bg-elevated);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    color: var(--text-secondary);
+    cursor: pointer;
+}
+.sg-zoom button:hover:not(:disabled) {
+    border-color: var(--accent);
+    color: var(--accent);
+}
+.sg-zoom button:disabled {
+    opacity: 0.4;
+    cursor: default;
+}
+.sg-legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-top: 0.875rem;
+    justify-content: center;
+}
+.sg-chip {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 5px 14px;
+    min-height: 44px;
+    font-size: 0.75rem;
+    font-family: var(--font-display);
+    background: var(--bg-elevated);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+.sg-chip[aria-pressed='true'] {
+    background: color-mix(in srgb, var(--cat) 15%, transparent);
+    border-color: var(--cat);
+    color: var(--cat);
+}
+.sg-chip__dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--cat);
+    flex-shrink: 0;
+}
+.sg-chip--clear {
+    background: transparent;
+    color: var(--text-muted);
+}
+.sg-hint {
+    text-align: center;
+    font-size: 0.68rem;
+    color: var(--text-muted);
+    font-family: var(--font-display);
+    margin-top: 0.5rem;
+}
+
+/* Hover/tap card for a skill — shared by graph and list. */
+.skill-card {
+    z-index: 10;
+    width: max-content;
+    max-width: min(280px, calc(100vw - 2rem));
+    padding: 8px 12px;
+    background: var(--bg-elevated);
+    border: 1px solid var(--cat);
+    border-radius: var(--radius);
+    box-shadow: 0 0 12px color-mix(in srgb, var(--cat) 25%, transparent);
+    font-family: var(--font-display);
+    font-size: 0.75rem;
+    line-height: 1.5;
+    color: var(--cat);
+    pointer-events: none;
+    will-change: transform;
+}
+.skill-card__head {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 0.75rem;
+}
+.skill-card__weight {
+    font-size: 0.6rem;
+    letter-spacing: -0.05em;
+    white-space: nowrap;
+}
+.skill-card__weight > span {
+    color: var(--text-muted);
+}
+.skill-card__cat {
+    color: var(--text-muted);
+    font-size: 0.68rem;
+}
+.skill-card__section {
+    border-top: 1px solid var(--border);
+    margin-top: 4px;
+    padding-top: 4px;
+}
+.skill-card__label {
+    font-size: 0.62rem;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--text-muted);
+}
+.skill-card ul {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+.skill-card li {
+    color: var(--text-secondary);
+    font-size: 0.7rem;
+}
+.skill-card__role {
+    color: var(--white);
+}
+.skill-card__date {
+    color: var(--text-muted);
+}
+.skill-card__foot {
+    border-top: 1px solid var(--border);
+    margin-top: 4px;
+    padding-top: 4px;
+    color: var(--text-muted);
+    font-size: 0.68rem;
 }
 
 /* ---------- Timeline ---------- */
