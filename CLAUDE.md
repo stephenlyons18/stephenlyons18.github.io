@@ -54,7 +54,7 @@ The repo is **public**, so development is not tracked in public issues. Instead:
 | Backlog     | Needs a decision (title says so), blocked, or not scoped yet.                      |
 | Ready       | Scoped and unblocked; take it.                                                     |
 | In progress | A branch exists; the item's `> **State …` line says what's done and what's left.   |
-| In review   | PR open (CI running / waiting on the user's sign-off for look-and-feel work).      |
+| In review   | PR open (waiting on local checks, CI for PRs into `main`, or the user's sign-off). |
 | Done        | Merged into the epic/integration branch.                                           |
 
 `tools/board.sh` wraps every gh call (needs `gh auth refresh -s project`): `list [column]`, `show <item>`,
@@ -73,9 +73,14 @@ line true when you stop mid-item.
 
 **Finishing:** meet *Done means* (bottom), push, then `gh pr create --base revamp` with the board id in the
 title, the spec, and a **Verified by running / Inferred** report with screenshots or videos attached (never
-committed). Then `tools/board.sh link R<n> <pr#>`. When CI is green and the bar is met, merge your own PR:
+committed). Then `tools/board.sh link R<n> <pr#>`. Once the bar is met locally, merge your own PR:
 `gh pr merge <#> --merge --delete-branch`, then `tools/board.sh move '#<pr>' Done`. **Exception:** visual /
 art-direction PRs wait for the user's sign-off on the screenshots unless the user said to go ahead.
+
+**CI runs only on PRs into `main`** (the release gate), and deploy builds once per merge to `main`. PRs into
+`dev`/`revamp` trigger no Actions, which saves the user's minutes. Your local run of the full bar *is* the check
+for them, so paste its results into the PR's report. Never add `dev`/`revamp`/push triggers back to a workflow
+that builds or tests.
 
 ## Toolchain
 
@@ -97,21 +102,20 @@ All of these are cheap, so run them. Don't hand back unverified work.
 pnpm install --frozen-lockfile  # ~5s
 pnpm test           # Vitest unit tests, <1s. Data integrity + build-time art generators.
 pnpm build          # ~4s. esbuild scripts → astro build → postbuild.mjs (path relativisation)
-pnpm e2e            # Playwright vs the built site, 4 device projects (desktop/laptop/tablet/mobile). Build first.
+pnpm e2e            # Playwright vs the built site, 3 device projects (desktop/laptop/mobile). Build first.
 pnpm format         # Prettier (config: .prettierrc.json). CI runs format:check.
-pnpm shots          # full-page screenshots of every page + interaction videos, 4 devices → test-results/
+pnpm shots          # full-page screenshots of every page + interaction videos, 3 devices → test-results/
 pnpm dev            # http://localhost:4321
 pnpm preview        # serve dist/
 ```
 
 - **Unit tests** (`src/**/*.test.ts`) cover every data file in `src/data/` and every pure generator in
   `src/lib/`. Add tests for any new data file or generator.
-- **E2E** (`e2e/*.spec.ts`) runs at desktop 1920×1080, laptop 1366×768, tablet 820×1180 (touch) and mobile
-  390×844 (touch). It covers: no console errors or failed requests, no horizontal overflow, nav and mobile menu,
+- **E2E** (`e2e/*.spec.ts`) runs at desktop 1920×1080, laptop 1366×768 and mobile 390×844 (touch). It covers: no console errors or failed requests, no horizontal overflow, nav and mobile menu,
   terminal, and skill-graph hover/tap cards anchored to their element. A UI change isn't done until it passes at
-  all four.
+  all three.
 - **See it, don't assume it.** For any visual change, run `pnpm shots` (or take targeted screenshots) at all
-  four viewports, plus a short video for interactions or animation, and look at them before saying it works.
+  three viewports, plus a short video for interactions or animation, and look at them before saying it works.
   Media never goes on a code branch (`test-results/` is ignored). To embed it in a PR, downscale it (JPEG ≤ 1000px
   wide, H.264 MP4) and commit it to the orphan **`pr-media`** branch under `R<n>/`, then reference
   `https://github.com/stephenlyons18/stephenlyons18.github.io/blob/pr-media/R<n>/<file>?raw=true`. That branch
@@ -149,7 +153,7 @@ pnpm preview        # serve dist/
 
 | Workflow           | Trigger                        | Does                                                                         |
 | ------------------ | ------------------------------ | ---------------------------------------------------------------------------- |
-| `ci.yml`           | PRs to main/dev/revamp, pushes | audit (critical fails), unit tests, format check, build, e2e ×4 devices       |
+| `ci.yml`           | PRs to main (site/workflow changes) | audit (critical fails), unit tests, format check, build, e2e ×3 devices; pnpm + Chromium cached |
 | `deploy.yml`       | push to main, manual           | build → `build` branch via git worktree; rolls back on failure               |
 | `prettier.yml`     | after a successful deploy      | formats `main` and commits `[skip ci]`                                       |
 | `health-check.yml` | after a successful deploy      | curls every page on stephenlyons.dev                                         |
@@ -229,12 +233,12 @@ OK, with the planned use written down first.
 
 If two readings of a task would produce materially different work (art direction, palette, content wording, a
 data change, which tool name a job used, scope), **stop and ask one concrete question with the options**. Don't
-pick silently and don't build both. Art passes are expensive to throw away: show a sample (screenshots at 4
+pick silently and don't build both. Art passes are expensive to throw away: show a sample (screenshots at 3
 viewports) before applying a new look site-wide. If the user is away, do the parts that don't depend on the answer,
 leave the item in Backlog with `needs decision` in its State line, and say so.
 
 **Done means:** `pnpm test`, `pnpm build`, `pnpm e2e` and `pnpm format:check` are green; screenshots or video at
-all four viewports for anything visual; `pnpm audit --audit-level high` reviewed; `README.md`/this file updated
+all three viewports for anything visual; `pnpm audit --audit-level high` reviewed; `README.md`/this file updated
 if a command, convention or page changed; a PR into `revamp` (or `dev`) naming its board id with a report that
 separates **what you verified by running** from **what you inferred**; the board card linked and moved; any
 fixed security issue closed by hand.

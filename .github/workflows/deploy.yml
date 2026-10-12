@@ -1,11 +1,10 @@
 name: Build and Deploy to GitHub Pages
 
-# Triggers: push/PR to main, and a manual "Run workflow" button in the
-# GitHub Actions UI (workflow_dispatch).
+# Triggers: a push (merge) to main, and a manual "Run workflow" button in the
+# GitHub Actions UI (workflow_dispatch). PRs into main are checked by ci.yml, so
+# this builds exactly once per release.
 on:
   push:
-    branches: [main]
-  pull_request:
     branches: [main]
   workflow_dispatch:
 
@@ -27,7 +26,7 @@ permissions:
 jobs:
   # ─────────────────────────────────────────────────────────────
   # JOB 1 — Build
-  # Runs on every push AND on pull requests (so PRs get a status check).
+  # Runs on every push to main (and manual runs).
   # ─────────────────────────────────────────────────────────────
   build:
     name: Build
@@ -75,8 +74,7 @@ jobs:
 
   # ─────────────────────────────────────────────────────────────
   # JOB 2 — Deploy
-  # Only runs after a successful build AND only on pushes/manual triggers
-  # (not on pull requests — PRs only get the build status check above).
+  # Only runs after a successful build.
   #
   # Uses `git worktree` — the proper way to work with a second branch —
   # so `git add --all` stages ALL files (including dotfiles like
@@ -90,7 +88,6 @@ jobs:
   deploy:
     name: Deploy to build branch
     needs: build
-    if: github.event_name != 'pull_request'
     runs-on: ubuntu-latest
     permissions:
       contents: write

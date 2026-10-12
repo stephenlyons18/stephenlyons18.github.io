@@ -17,7 +17,7 @@
     "format": "prettier --write \"src/**/*.{astro,ts,tsx,js,mjs,css}\" \"scripts/**/*.mjs\" \"e2e/**/*.ts\"",
     "format:check": "prettier --check \"src/**/*.{astro,ts,tsx,js,mjs,css}\" \"scripts/**/*.mjs\" \"e2e/**/*.ts\"",
     "astro": "astro",
-    "shots": "SHOTS=1 playwright test shots --project desktop --project laptop --project tablet --project mobile"
+    "shots": "SHOTS=1 playwright test shots --project desktop --project laptop --project mobile"
   },
   "dependencies": {
     "@astrojs/react": "^6.0.6",

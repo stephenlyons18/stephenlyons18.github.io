@@ -11,7 +11,7 @@ Stephen Lyons' cybersecurity portfolio: a working in-browser terminal painted on
 - Vanilla TypeScript (bundled with esbuild) for site interactivity and the terminal
 - Build-time ANSI/ASCII art generators: block-letter titles with 3D shading and paint drips, zero runtime JS
 - Self-hosted JetBrains Mono subset (includes the box-drawing and block glyphs the art needs)
-- Tests: **Vitest** (data integrity, generators) and **Playwright** (desktop, laptop, tablet, mobile)
+- Tests: **Vitest** (data integrity, generators) and **Playwright** (desktop, laptop, mobile)
 
 ## Pages
 
@@ -49,7 +49,7 @@ pnpm format         # Prettier
 
 | Workflow           | When                              | What                                                        |
 | ------------------ | --------------------------------- | ----------------------------------------------------------- |
-| `ci.yml`           | PRs to `main`/`dev`/`revamp`      | audit, unit tests, format check, build, e2e on 4 devices    |
+| `ci.yml`           | PRs to `main`                     | audit, unit tests, format check, build, e2e on 3 devices (cached) |
 | `deploy.yml`       | push to `main`                    | build and publish `dist/` to the `build` branch (with rollback) |
 | `prettier.yml`     | after deploy                      | auto-format `main`                                          |
 | `health-check.yml` | after deploy                      | probe every live page                                       |
