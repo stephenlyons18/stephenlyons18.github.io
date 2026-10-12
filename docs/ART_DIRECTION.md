@@ -74,6 +74,18 @@ slots only; the wall and text stay.
 - Font: self-hosted **JetBrains Mono** subset (includes U+2500–259F). Never rely on a fallback font for block
   glyphs, because widths drift and the art shears.
 
+## Site-wide pieces (all build-time, zero JS)
+
+- **Wall** (`AnsiWall.astro`, `renderWall`): a running-bond brick wall of `▓`/`░`/`▒` behind every page,
+  fixed and static at 7% opacity. It replaces the matrix rain, which ran a rAF loop forever. The `matrix`
+  terminal command still plays the rain once, as an easter egg.
+- **Drip divider** (`AnsiDivider.astro`, `renderDivider`): a sprayed `▄` bar with thin drips. Used under page
+  headers and between home sections.
+- **Headers** (`AnsiTitle.astro`): lean wildstyle for page titles, bubble for the 404 and the "SL" avatar.
+- **Components**: buttons and cards carry the art's hard down-right offset shadow (`--title-x2`); section
+  labels start with a `▓▒░` ramp; the timeline is a sprayed sky→forest stripe with square pixel markers; the
+  terminal banner uses the title gradient.
+
 ## What art may never do
 
 - Sit behind body copy, form fields or the terminal text. Art lives in headers, margins, separators and the

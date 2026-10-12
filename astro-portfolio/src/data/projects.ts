@@ -176,7 +176,7 @@ const projects: Project[] = [
         featuredTag: 'Mobile App',
         featuredDesc:
             'Food-finding swiper mobile application that recommends personalized dishes from nearby restaurants using Google Business Profile and Yelp APIs.',
-        featuredTech: ['React Native', 'Expo', 'Next.js', 'Google Cloud', 'Firebase', ''],
+        featuredTech: ['React Native', 'Expo', 'Next.js', 'Google Cloud', 'Firebase'],
     },
     {
         id: 'security-automation',

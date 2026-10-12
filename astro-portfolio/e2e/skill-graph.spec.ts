@@ -59,11 +59,17 @@ async function findNode(page: Page, canvas: Locator, tap: boolean) {
 
 async function expectAnchored(page: Page, canvas: Locator) {
     const card = page.locator('.sg-canvas-wrap .skill-card');
-    await expect(card).toBeVisible();
     const c = await box(canvas);
-    const k = await box(card);
     const [ax, ay, r] = (await canvas.getAttribute('data-anchor'))!.split(',').map(Number);
     const node = { x: c.x + ax, y: c.y + ay };
+    // A node zoomed/panned out of view hides its card instead of pinning it to an edge.
+    const offscreen = ax + r < 0 || ay + r < 0 || ax - r > c.width || ay - r > c.height;
+    if (offscreen) {
+        await expect(card).toBeHidden();
+        return;
+    }
+    await expect(card).toBeVisible();
+    const k = await box(card);
     // Inside the canvas…
     expect(k.x).toBeGreaterThanOrEqual(c.x - 1);
     expect(k.y).toBeGreaterThanOrEqual(c.y - 1);
@@ -145,4 +151,16 @@ test('list card stays attached to its chip when the page scrolls', async ({ page
     const vw = page.viewportSize()!.width;
     expect(after.card.x).toBeGreaterThanOrEqual(0);
     expect(after.card.x + after.card.width).toBeLessThanOrEqual(vw);
+});
+
+test('initial layout: every label readable, none overlapping', async ({ page }) => {
+    await openSkills(page, 'graph');
+    const canvas = page.locator('.sg-canvas-wrap canvas');
+    await canvas.scrollIntoViewIfNeeded();
+    await expect(canvas).toHaveAttribute('data-overlaps', '0');
+    const scale = Number(await canvas.getAttribute('data-scale'));
+    expect(
+        scale,
+        'camera scale (labels shrink relative to nodes below ~0.7)',
+    ).toBeGreaterThanOrEqual(0.7);
 });
