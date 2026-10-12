@@ -14,13 +14,17 @@ async function openSkills(page: Page, view: 'graph' | 'list' | null) {
     if (view) await page.getByRole('button', { name: view === 'graph' ? /Graph/ : /List/ }).click();
 }
 
-/** Wait for entrance animations (.reveal) to finish so taps land where the element ends up. */
+/** Wait for entrance animations (.reveal) to finish so taps land where the element ends up.
+ *  Scroll-linked ones (progress strip, scrubber) never "finish" and don't move content. */
 async function settle(page: Page) {
     await page.waitForFunction(() =>
         document
             .getAnimations()
             .every(
-                (a) => a.playState !== 'running' || a.effect?.getTiming().iterations === Infinity,
+                (a) =>
+                    a.playState !== 'running' ||
+                    a.effect?.getTiming().iterations === Infinity ||
+                    a.timeline !== document.timeline,
             ),
     );
 }

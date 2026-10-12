@@ -7,6 +7,7 @@ import {
     CELL_W,
     COURSE,
     DRIP_BULB,
+    DRIP_RUNS,
     dripRows,
     renderDripStrip,
     renderWallTile,
@@ -63,7 +64,7 @@ describe('renderAnsi', () => {
         for (const style of ['bubble', 'wild', 'block'] as const) {
             for (const t of TITLES) {
                 const s = toPlainText(renderAnsi(t, { style })).replace(/\n/g, '');
-                expect(s).toMatch(/^[ █▓▒░▀▖▗▘▝▟▙▜▛·]*$/);
+                expect(s).toMatch(/^[ █▓▒░▀▖▗▘▝·]*$/);
             }
         }
     });
@@ -162,28 +163,46 @@ describe('drips', () => {
 
     test('strip: drips spaced for their bulbs, inside the strip, deterministic', () => {
         for (const seed of [1, 2, 3, 6, 11]) {
-            const s = renderDripStrip(200, seed, { maxStem: 2 });
+            const s = renderDripStrip(200, seed, { maxStem: 6, minStem: 2 });
             expect(s.drips.length).toBeGreaterThan(5);
-            expect(s.rows).toBe(2 + DRIP_BULB.length);
+            expect(s.rows).toBe(6 + DRIP_BULB.length);
             s.drips.forEach((d, i) => {
                 expect(d.x).toBeGreaterThanOrEqual(2);
                 expect(d.x).toBeLessThanOrEqual(197);
-                expect(d.stem).toBeLessThanOrEqual(2);
+                expect(d.stem).toBeGreaterThanOrEqual(2);
+                expect(d.stem).toBeLessThanOrEqual(6);
                 if (i) expect(d.x - s.drips[i - 1]!.x).toBeGreaterThanOrEqual(5);
             });
-            expect(renderDripStrip(200, seed, { maxStem: 2 })).toEqual(s);
+            expect(renderDripStrip(200, seed, { maxStem: 6, minStem: 2 })).toEqual(s);
         }
     });
 
-    test('html: one positioned element (paint + hidden drop) per drip, optional bar', () => {
+    test('runs: neighbours never share a run, and every run spans the strip', () => {
+        const s = renderDripStrip(280, 31, { maxStem: 4, minStem: 1, density: 0.08 });
+        s.drips.forEach((d, i) => {
+            expect(d.run).toBeGreaterThanOrEqual(0);
+            expect(d.run).toBeLessThan(DRIP_RUNS);
+            if (i) expect(d.run).not.toBe(s.drips[i - 1]!.run);
+        });
+        for (let k = 0; k < DRIP_RUNS; k++) {
+            const xs = s.drips.filter((d) => d.run === k).map((d) => d.x);
+            expect(Math.max(...xs) - Math.min(...xs), `run ${k}`).toBeGreaterThan(280 / 3);
+        }
+    });
+
+    test('html: one layer per run holding its drips, inside one clip, optional bar', () => {
         const s = renderDripStrip(60, 4);
         const html = dripsToHtml(s, true);
+        const runs = new Set(s.drips.map((d) => d.run));
+        expect(html.match(/class="drip-run"/g)).toHaveLength(runs.size);
         expect(html.match(/class="drip"/g)).toHaveLength(s.drips.length);
-        expect(html.match(/class="drip__drop"/g)).toHaveLength(s.drips.length);
+        expect(html.match(/class="drips__clip"/g)).toHaveLength(1);
         expect(html).toContain(`<span class="d-bar">${'▄'.repeat(60)}</span>`);
         expect(dripsToHtml(s, false)).not.toContain('d-bar');
-        expect(html).toContain(`--x:${s.drips[0]!.x};--h:${s.drips[0]!.stem + 3};--i:0`);
-        expect(html).toContain('<i class="drip__drop">▗█▖\n▜█▛</i>');
+        const d0 = s.drips[0]!;
+        expect(html).toContain(`--x:${d0.x};--h:${d0.stem + 3}">`);
+        // No falling drops: paint runs down the wall, it never detaches or splats.
+        expect(html).not.toMatch(/drop/);
     });
 
     test('the teardrop tapers in from the stem and swells to a rounded bottom', () => {
@@ -208,21 +227,19 @@ describe('drips', () => {
         expect(profile).toEqual([2, 4, 4, 6, 6, 4]);
     });
 
-    test('title drips end in a full teardrop or a half-block tip', () => {
-        let bulbs = 0;
+    test('title drips are thin 1-cell runs that fade out (no teardrop bulbs)', () => {
+        let drips = 0;
         for (const t of TITLES) {
-            const rows = toPlainText(renderAnsi(t, { style: 'wild', drips: 0.6 })).split('\n');
-            rows.forEach((row, y) => {
-                for (
-                    let x = row.indexOf(DRIP_BULB[0]);
-                    x >= 0;
-                    x = row.indexOf(DRIP_BULB[0], x + 1)
-                ) {
-                    DRIP_BULB.forEach((b, k) => expect(rows[y + k]?.slice(x, x + 3)).toBe(b));
-                    bulbs++;
-                }
-            });
+            const art = renderAnsi(t, { style: 'wild', drips: 0.6 });
+            const rows = toPlainText(art).split('\n');
+            expect(rows.join('')).not.toContain(DRIP_BULB[1]);
+            for (const l of art.lines)
+                for (const r of l)
+                    if (r.c === 'a-dr') {
+                        expect(r.t, t).toMatch(/^[█▓▒░]+$/);
+                        drips += r.t.length;
+                    }
         }
-        expect(bulbs).toBeGreaterThan(5);
+        expect(drips).toBeGreaterThan(5);
     });
 });

@@ -1,47 +1,24 @@
 /* ============================================================
-   fx.ts: drip physics and interactive motion, lazy-loaded by site.ts only when motion is allowed.
-   Built on Motion's mini animate (WAAPI, so every animation runs on the compositor, with no
-   rAF loop) plus its spring generator. ~5 KB gzipped.
+   fx.ts: interactive motion, lazy-loaded by site.ts only when motion is allowed. Built on
+   Motion's mini animate (WAAPI, so it runs on the compositor with no rAF loop) plus its spring
+   generator. ~5 KB gzipped.
 
-   Drips (AnsiDrips.astro) hang still in the static HTML. Here they:
-   - dividers: run out of their bar with a springy overshoot the first time they scroll into view,
-     then now and then swell a teardrop that stretches, detaches, falls under gravity and splats;
-     a pointer over a divider releases drops (swipe across it to make it rain; tap on touch);
-   - cards: drips exist only while the card is hovered/focused (CSS runs them out); then they
-     drop steadily, and stop the moment the pointer leaves.
-   Cards tilt toward the pointer and squash on press (CSS springs, global.css .card.is-live), and
-   [data-drag] art can be grabbed and flung; it snaps home on a Motion spring.
-   Everything stops offscreen, in a hidden tab, and the moment reduced motion turns on.
+   - Drips (AnsiDrips.astro) are pure CSS: on hover/focus a strip's runs slide out as a few
+     compositor layers (global.css .drip-run). Here: divider drips below the fold are tucked into
+     their bar until they scroll into view, then run out; and a tap on touch screens (no hover
+     there) pours a card's or divider's drips for a moment (.is-poked).
+   - Cards tilt toward the pointer and squash on press (CSS springs, global.css .card.is-live).
+   - [data-drag] art can be grabbed and flung; it snaps home on a Motion spring.
+   Everything stops the moment reduced motion turns on.
    ============================================================ */
 import { animate } from 'motion/mini';
 import { spring } from 'motion';
 
 type Controls = ReturnType<typeof animate>;
 
-interface Drip {
-    el: HTMLElement;
-    paint: HTMLElement;
-    drop: HTMLElement;
-    busy: boolean;
-    /** Centre x in viewport px, refreshed on poke. */
-    cx: () => number;
-}
-
-interface Strip {
-    root: HTMLElement;
-    drips: Drip[];
-    visible: boolean;
-    grown: boolean;
-    timer: number;
-    /** Card drips only drip while their card is hovered/focused; divider drips always may. */
-    card: boolean;
-    active: boolean;
-}
-
 const root = document.documentElement;
 const calm = () => root.hasAttribute('data-reduce-motion');
 const running = new Set<Controls>();
-const strips: Strip[] = [];
 let stopped = false;
 
 function track(c: Controls): Controls {
@@ -50,140 +27,40 @@ function track(c: Controls): Controls {
     return c;
 }
 
-const rand = (a: number, b: number) => a + Math.random() * (b - a);
+// ── Drips ────────────────────────────────────────────────────────────────────
+/** How long a tap keeps a strip's drips pouring (the CSS runs take up to ~2.6 s). */
+const POKE_MS = 2600;
 
-/**
- * Paint slides out of the bar and overshoots a little, like a real run of paint. One Motion
- * spring, turned into a CSS `linear()` easing once, drives every drip as a plain CSS transition:
- * hundreds of drips cost a few style writes, not hundreds of animation objects.
- */
-const GROW = String(spring(0.7, 0.45)); // "<duration>ms linear(…)"
-
-function grow(d: Drip, delayMs: number) {
-    d.paint.style.transition = `transform ${GROW} ${delayMs}ms`;
-    d.paint.style.transform = 'translateY(0)';
-}
-
-/** A drop swells at the bulb, stretches, lets go, falls with gravity and splats. */
-async function release(d: Drip) {
-    if (d.busy || stopped) return;
-    d.busy = true;
-    const fall = rand(2.5, 4.5); // em, in the strip's own cell size: stays in the gap below
-    // The bulb sags as the drop pulls away, then springs back. Motion leaves the last keyframe as
-    // an inline style; on a card that would pin the drip out after hover, so hand it back to CSS.
-    track(
-        animate(
-            d.paint,
-            { transform: ['translateY(0)', 'translateY(0.35em)', 'translateY(0)'] },
-            { duration: 0.9, ease: ['easeIn', 'easeOut'] },
-        ),
-    ).then(() => {
-        if (d.el.closest('.card-drips')) d.paint.style.removeProperty('transform');
-    });
-    try {
-        await track(
-            animate(
-                d.drop,
-                {
-                    opacity: [0, 1, 1, 1, 0],
-                    transform: [
-                        'translate(0, 0) scale(0.5, 0.5)',
-                        'translate(0, 0.2em) scale(1, 1)',
-                        'translate(0, 0.55em) scale(0.85, 1.35)', // stretch before letting go
-                        `translate(0, ${fall}em) scale(0.8, 1.5)`, // gravity: ease-in
-                        `translate(0, ${fall + 0.2}em) scale(2, 0.3)`, // splat
-                    ],
-                },
-                {
-                    duration: 1.5,
-                    times: [0, 0.3, 0.5, 0.88, 1],
-                    ease: ['easeOut', 'easeInOut', [0.55, 0, 1, 0.45], 'easeOut'],
-                },
-            ),
-        );
-    } finally {
-        d.drop.style.opacity = '0';
-        d.busy = false;
-    }
-}
-
-function schedule(s: Strip) {
-    clearTimeout(s.timer);
-    if (!s.visible || !s.active || stopped || document.hidden) return;
-    s.timer = window.setTimeout(
-        () => {
-            const idle = s.drips.filter((d) => !d.busy);
-            const d = idle[Math.floor(Math.random() * idle.length)];
-            if (d) void release(d);
-            schedule(s);
+function initDrips() {
+    // Dividers below the fold start tucked into their bar; they run out once seen.
+    const io = new IntersectionObserver(
+        (entries) => {
+            for (const e of entries) {
+                if (!e.isIntersecting) continue;
+                io.unobserve(e.target);
+                // Next frame, so the tucked state has been painted and the run-out transitions.
+                requestAnimationFrame(() => e.target.classList.remove('is-tucked'));
+            }
         },
-        s.card ? rand(500, 1400) : rand(1800, 6000),
+        { rootMargin: '0px 0px -10% 0px' },
     );
-}
-
-function setup(rootEl: HTMLElement): Strip {
-    const drips: Drip[] = [...rootEl.querySelectorAll<HTMLElement>('.drip')].map((el) => ({
-        el,
-        paint: el.querySelector<HTMLElement>('.drip__paint')!,
-        drop: el.querySelector<HTMLElement>('.drip__drop')!,
-        busy: false,
-        cx: () => {
-            const r = el.getBoundingClientRect();
-            return r.left + r.width / 2;
-        },
-    }));
-    const host = rootEl.closest<HTMLElement>('.ansi-divider, .card') ?? rootEl;
-    const card = host.classList.contains('card');
-    // Card drips are hidden at rest and run out on hover in CSS, so they never "grow in" here.
-    const s: Strip = {
-        root: rootEl,
-        drips,
-        visible: false,
-        grown: card,
-        timer: 0,
-        card,
-        active: !card,
-    };
-
-    // Divider drips below the fold start "inside" the bar, so they can run out when they're seen.
-    const r = rootEl.getBoundingClientRect();
-    if (card || r.top <= innerHeight) s.grown = true;
-    else for (const d of drips) d.paint.style.transform = 'translateY(-100%)';
-
-    // Divider: whichever drip is under the pointer lets go (a swipe makes it rain). The strip
-    // itself ignores pointers (art never blocks), so listen on its divider/card host.
-    if (!card) {
-        const poke = (e: PointerEvent) => {
-            const near = drips.find((d) => Math.abs(d.cx() - e.clientX) < 10);
-            if (near) void release(near);
-        };
-        host.addEventListener('pointermove', poke);
-        host.addEventListener('pointerdown', poke); // a tap on touch screens
-    } else {
-        // Card: while hovered or focused, the drips (run out by CSS) keep dropping; once the
-        // spring has run them out, two or three let go at once.
-        let kick = 0;
-        const on = () => {
-            if (s.active) return;
-            s.active = true;
-            kick = window.setTimeout(() => {
-                const idle = drips.filter((d) => !d.busy && d.cx() > 0 && d.cx() < innerWidth);
-                for (const d of idle.sort(() => Math.random() - 0.5).slice(0, 3)) void release(d);
-                schedule(s);
-            }, 450);
-        };
-        const off = () => {
-            s.active = false;
-            clearTimeout(kick);
-            schedule(s); // clears the timer
-        };
-        host.addEventListener('pointerenter', (e) => e.pointerType === 'mouse' && on());
-        host.addEventListener('pointerleave', off);
-        const focusHost = host.closest('a') ?? host;
-        focusHost.addEventListener('focusin', on);
-        focusHost.addEventListener('focusout', off);
+    for (const d of document.querySelectorAll<HTMLElement>('.ansi-divider')) {
+        if (d.getBoundingClientRect().top > innerHeight) {
+            d.classList.add('is-tucked');
+            io.observe(d);
+        }
     }
-    return s;
+    // Touch: a tap pours the drips (mouse and keyboard already have :hover / :focus-within).
+    for (const host of document.querySelectorAll<HTMLElement>('.ansi-divider, .card')) {
+        if (host.classList.contains('card') && !host.querySelector('.card-drips')) continue;
+        let t = 0;
+        host.addEventListener('pointerdown', (e) => {
+            if (e.pointerType === 'mouse' || stopped) return;
+            host.classList.add('is-poked');
+            clearTimeout(t);
+            t = window.setTimeout(() => host.classList.remove('is-poked'), POKE_MS);
+        });
+    }
 }
 
 // ── Cards: tilt toward the pointer, squash on press ──────────────────────────
@@ -192,21 +69,37 @@ const TILT = { x: 5, y: 7 }; // max degrees: enough to feel, small enough to kee
 const TILT_MAX_W = 760;
 
 function initCards() {
+    // A card's box is read once per hover (and again after a scroll), never per pointer move.
+    let scrolled = 0;
+    addEventListener('scroll', () => scrolled++, { passive: true });
     for (const card of document.querySelectorAll<HTMLElement>('.card')) {
         let settle = 0;
+        let box: DOMRect | null = null;
+        let seen = -1;
+        let last = '';
         const set = (rx: number, ry: number) => {
-            card.style.setProperty('--rx', `${rx.toFixed(2)}deg`);
-            card.style.setProperty('--ry', `${ry.toFixed(2)}deg`);
+            // A tenth of a degree is below what the eye (or the spring) can tell apart.
+            const key = `${rx.toFixed(1)},${ry.toFixed(1)}`;
+            if (key === last) return;
+            last = key;
+            card.style.setProperty('--rx', `${rx.toFixed(1)}deg`);
+            card.style.setProperty('--ry', `${ry.toFixed(1)}deg`);
         };
         card.addEventListener('pointermove', (e) => {
             if (e.pointerType !== 'mouse' || stopped) return;
+            if (!box || seen !== scrolled) {
+                box = card.getBoundingClientRect();
+                seen = scrolled;
+            }
+            // Wide cards only lift (plain :hover), so they never enter tilt mode at all.
+            if (box.width > TILT_MAX_W) return;
             clearTimeout(settle);
-            card.classList.remove('is-settling');
-            card.classList.add('is-live');
-            const r = card.getBoundingClientRect();
-            if (r.width > TILT_MAX_W) return set(0, 0);
-            const px = (e.clientX - r.left) / r.width - 0.5;
-            const py = (e.clientY - r.top) / r.height - 0.5;
+            if (!card.classList.contains('is-live')) {
+                card.classList.remove('is-settling');
+                card.classList.add('is-live');
+            }
+            const px = (e.clientX - box.left) / box.width - 0.5;
+            const py = (e.clientY - box.top) / box.height - 0.5;
             set(-py * TILT.x * 2, px * TILT.y * 2);
         });
         card.addEventListener('pointerdown', (e) => {
@@ -217,6 +110,7 @@ function initCards() {
         card.addEventListener('pointerup', release);
         card.addEventListener('pointerleave', () => {
             release();
+            box = null;
             if (!card.classList.contains('is-live')) return;
             // Swing back level with a bouncy spring, then hand control back to plain CSS.
             card.classList.replace('is-live', 'is-settling');
@@ -273,38 +167,15 @@ function initDrag() {
 
 function start() {
     stopped = false;
+    initDrips();
     initCards();
     initDrag();
-    const io = new IntersectionObserver(
-        (entries) => {
-            for (const e of entries) {
-                const s = strips.find((x) => x.root === e.target);
-                if (!s) continue;
-                s.visible = e.isIntersecting;
-                if (s.visible && !s.grown) {
-                    s.grown = true;
-                    s.drips.forEach((d, i) => grow(d, i * 35));
-                }
-                schedule(s);
-            }
-        },
-        { rootMargin: '0px 0px -8% 0px' },
-    );
-    for (const el of document.querySelectorAll<HTMLElement>('[data-drips]')) {
-        const s = setup(el);
-        strips.push(s);
-        io.observe(el);
-    }
-    document.addEventListener('visibilitychange', () => strips.forEach(schedule));
 
-    // Reduced motion switched on (a11y menu): stop at once and leave every drip hanging still.
-    // Switched off again: carry on.
+    // Reduced motion switched on (a11y menu): stop at once and leave everything still. Switched
+    // off again: carry on.
     new MutationObserver(() => {
         if (!calm()) {
-            if (stopped) {
-                stopped = false;
-                strips.forEach(schedule);
-            }
+            stopped = false;
             return;
         }
         stopped = true;
@@ -316,15 +187,8 @@ function start() {
         }
         for (const el of document.querySelectorAll<HTMLElement>('[data-drag]'))
             el.style.transform = '';
-        for (const s of strips) {
-            clearTimeout(s.timer);
-            for (const d of s.drips) {
-                d.paint.style.transition = '';
-                d.paint.style.transform = '';
-                d.drop.style.opacity = '0';
-                d.busy = false;
-            }
-        }
+        for (const el of document.querySelectorAll('.is-tucked, .is-poked'))
+            el.classList.remove('is-tucked', 'is-poked');
     }).observe(root, { attributes: true, attributeFilter: ['data-reduce-motion'] });
 }
 

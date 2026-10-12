@@ -11,7 +11,8 @@ Stephen Lyons' cybersecurity portfolio: a working in-browser terminal painted on
 - Vanilla TypeScript (bundled with esbuild) for site interactivity and the terminal
 - Build-time ANSI/ASCII art generators: block-letter titles with 3D shading and paint drips, zero runtime JS
 - Pixel type, self-hosted and subset (~22 KB): **Press Start 2P** for display, **Departure Mono** for body. A tiny JetBrains Mono subset sets the art's cells
-- Motion (`motion/mini`) for play: paint drips that run and drop, cards that tilt toward the cursor, art you can grab and fling, and pixel-wipe page transitions. All of it stops under reduced motion
+- Play, all compositor-only: paint drips that pour out of cards and dividers on hover, cards that tilt toward the cursor, art you can grab and fling (Motion `motion/mini`), and pixel-wipe page transitions. All of it stops under reduced motion
+- A pixel-block scroll progress strip, and on touch screens a grip on the right edge to drag through long pages
 - SEO and AI-search ready, all generated from the typed data:
   - canonical URLs, Open Graph/Twitter cards, and an OG image drawn from the ANSI art;
   - JSON-LD (Person, WebSite, ProfilePage, project ItemList);
