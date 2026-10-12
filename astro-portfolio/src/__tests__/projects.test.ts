@@ -60,3 +60,15 @@ describe('projects.ts data integrity', () => {
         expect(bad).toEqual([]);
     });
 });
+
+describe('project images', () => {
+    test('every image has a source file in src/assets/projects/', async () => {
+        const { existsSync } = await import('node:fs');
+        const { join } = await import('node:path');
+        const missing = projects
+            .flatMap((p) => p.images ?? [])
+            .map((img) => img.src.split('/').pop()!)
+            .filter((name) => !existsSync(join(__dirname, '..', 'assets', 'projects', name)));
+        expect(missing).toEqual([]);
+    });
+});
