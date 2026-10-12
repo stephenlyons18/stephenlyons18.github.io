@@ -99,21 +99,24 @@ slots only; the wall and text stay.
   terminal command still plays the rain once, as an easter egg.
 - **Drips** (`AnsiDrips.astro`, `renderDripStrip`): a 1-cell stem ending in a **teardrop** of quadrant blocks
   (`▗█▖` / `▟█▙` / `▜█▛`). It is 2-4-4-6-6-4 half-cell pixels wide: a gentle taper from the stem, then a
-  rounded bottom. Falling drops are a smaller teardrop (`▗█▖` / `▜█▛`). Title drips end the same way where
-  the shoulders have room, else in a `▀` tip. (User direction, 2026-10-12: teardrops, not circles.)
-  - **Divider** (`AnsiDivider.astro`): drips under a sprayed `▄` bar, **always visible**. Used under page
-    headers and between home sections.
+  rounded bottom. **Title drips don't get the teardrop** (user direction, 2026-10-12): they stay thin 1-cell
+  runs fading `█` → `▓` → `▒` → `░`, as in the original pieces. Strips only.
+  - **Like spray paint running down a wall** (user direction, 2026-10-12): paint runs out of the edge, catches,
+    runs again and creeps to a stop. It never detaches, falls or splats.
+  - **The whole strip animates together, never drip by drip.** Drips are dealt into 4 runs (`.drip-run`).
+    On hover/focus every run slides out at its own pace (a beat later and a little slower than the last), so
+    the strip pours without moving in step. Each run is one compositor layer: CSS transitions, no JS.
+  - **Divider** (`AnsiDivider.astro`): drips under a sprayed `▄` bar, **always visible**, about halfway out.
+    Stems are 2–6 cells. Hover (or a tap on touch) runs them all out to full length; they creep back slowly
+    after. Dividers below the fold start tucked in the bar and run out on first view. Used under page headers
+    and between home sections.
   - **Card drips** (`.card-drips`): **only while the card is hovered or focused** (user direction,
     2026-10-12).
-    - At rest the paint sits clipped inside the edge. On hover it runs out on the bouncy spring, staggered,
-      and drops keep falling until the pointer leaves.
-    - Fixed 7px cells and 3 rows, so they stay inside the grid gap (e2e checks this).
+    - At rest every run is hidden and tucked fully inside the clip, so not a pixel shows. On hover they pour,
+      and on leave they pull back quickly and hide.
+    - Fixed 7px cells and 1–4-cell stems. Grids with drip cards get a wider row gap so the drips stay inside
+      it (e2e checks this).
     - Under reduced motion they simply appear on hover.
-  - **Physics** (`src/scripts/fx.ts`, Motion): lazy-loaded, never under reduced motion.
-    - Divider drips run out of their bar on first view.
-    - Drops swell, stretch, fall with an ease-in "gravity" curve and splat.
-    - Swiping or tapping a divider releases drops.
-    - Everything pauses offscreen and in hidden tabs.
 - **Headers** (`AnsiTitle.astro`): lean wildstyle for page titles, bubble for the 404 and the "SL" avatar.
   With the a11y menu's **Plain headings**, the art hides and its real heading shows instead: Press Start 2P,
   the same burner gradient and a two-step block extrusion (`drop-shadow` in `--title-x1`/`--title-x2`).
@@ -126,12 +129,12 @@ slots only; the wall and text stay.
 - Sit behind body copy, form fields or the terminal text. Art lives in headers, margins, separators and the
   hero, on its own rows.
 - Move under the pointer on its own, or shift layout after load. No CLS from art. Movement the user starts is
-  fine: grabbing `[data-drag]` art, poking drips, hovering a card.
+  fine: grabbing `[data-drag]` art, hovering a card or a divider to pour its drips.
 - Animate when motion is off. Every animation stops under `data-reduce-motion` (the OS setting or the a11y
   menu).
-  - Allowed (user OK, 2026-10-12): drip run-out and drops (R12), page transitions, card tilt/press, and
-    draggable art (R13).
-  - Ambient drops recur, but only while their strip is on screen and the tab is visible.
+  - Allowed (user OK, 2026-10-12): drips pouring on hover/focus (R12, R17), page transitions, card
+    tilt/press, and draggable art (R13).
+  - Nothing ambient: no drops recur on their own.
   - Never a rAF loop: compositor-only transforms/opacity via CSS or WAAPI (Motion).
 - Hijack touch scrolling. Large art is draggable with a mouse only (`data-drag="fine"`); only small pieces
   (the avatar) take touch drags.

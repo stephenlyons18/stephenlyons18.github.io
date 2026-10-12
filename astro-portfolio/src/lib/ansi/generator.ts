@@ -12,7 +12,6 @@
  * re-rendering. See docs/ART_DIRECTION.md for the rules this encodes.
  */
 import { GLYPH_HEIGHT, glyphFor } from './font';
-import { DRIP_BULB } from './wall';
 
 export type AnsiStyle = 'bubble' | 'wild' | 'block';
 
@@ -295,7 +294,7 @@ export function renderAnsi(text: string, opts: AnsiOptions = {}): AnsiArt {
 
     // 4. Pixels → cells (2 cells per pixel). Extra rows below for drips.
     const CW = W * 2;
-    const CH = H + dripMax + 1 + DRIP_BULB.length;
+    const CH = H + dripMax + 1;
     const cells: Cell[][] = Array.from({ length: CH }, () =>
         Array.from({ length: CW }, () => ({ ch: ' ', c: '' })),
     );
@@ -326,9 +325,7 @@ export function renderAnsi(text: string, opts: AnsiOptions = {}): AnsiArt {
     }
 
     // 5b. Drips: thin (1-cell) runs hanging from the bottom edge of the fill, through the outline
-    //     and extrusion, ending in a rounded bulb (▗█▖ over ▝█▘, see DRIP_BULB) where there is
-    //     room for its shoulders, else a half-block tip. Never two drips side by side.
-    const blank = (x: number, y: number) => y < CH && x >= 0 && x < CW && !cells[y]![x]!.c;
+    //     and extrusion, fading █ → ▓ → ▒ → ░ at the tip. Never two drips side by side.
     let lastDrip = -3;
     for (let x = 0; x < W; x++) {
         for (let y = 0; y < H; y++) {
@@ -340,27 +337,14 @@ export function renderAnsi(text: string, opts: AnsiOptions = {}): AnsiArt {
                 lastDrip = col;
                 const len = 1 + Math.floor(rand() * dripMax);
                 const cls = `a-f${colorOf[y]![x]}`;
-                let tip = y;
-                for (let i = 1; i <= len; i++) {
+                for (let i = 1; i <= len + 1; i++) {
                     const yy = y + i;
-                    if (yy >= CH - DRIP_BULB.length) break;
+                    if (yy >= CH) break;
                     // Stop if the drip would run into another letter's fill.
                     if (yy < H && isFill(x, yy)) break;
-                    cells[yy]![col] = { ch: '█', c: i === 1 ? cls : 'a-dr' };
-                    tip = yy;
-                }
-                if (tip === y) continue;
-                const room = DRIP_BULB.every(
-                    (_, k) => blank(col - 1, tip + 1 + k) && blank(col + 1, tip + 1 + k),
-                );
-                if (room && DRIP_BULB.every((_, k) => blank(col, tip + 1 + k))) {
-                    DRIP_BULB.forEach((row, k) => {
-                        [...row].forEach((ch, dx) => {
-                            cells[tip + 1 + k]![col - 1 + dx] = { ch, c: 'a-dr' };
-                        });
-                    });
-                } else if (blank(col, tip + 1)) {
-                    cells[tip + 1]![col] = { ch: '▀', c: 'a-dr' };
+                    const left = len + 1 - i; // cells remaining after this one
+                    const ch = left >= 3 ? '█' : left === 2 ? '▓' : left === 1 ? '▒' : '░';
+                    cells[yy]![col] = { ch, c: i === 1 ? cls : 'a-dr' };
                 }
             }
         }

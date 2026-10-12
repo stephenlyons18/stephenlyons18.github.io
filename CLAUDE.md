@@ -121,7 +121,7 @@ pnpm preview        # serve dist/
   `https://github.com/stephenlyons18/stephenlyons18.github.io/blob/pr-media/R<n>/<file>?raw=true`. That branch
   is never merged.
 - **Suites:** `smoke` (load, console, overflow, art fits its box), `skill-graph` (card anchoring, 0 label
-  overlaps), `terminal`, `ux` (axe WCAG 2.2 AA, nav, mobile menu, keyboard, reduced motion, no idle rAF),
+  overlaps), `terminal`, `scroll` (progress strip, touch scrubber drag), `drips`, `ux` (axe WCAG 2.2 AA, nav, mobile menu, keyboard, reduced motion, no idle rAF),
   `budget` (bytes per page by kind vs `e2e/budget.json`, plus LCP/CLS/blocking time on a throttled phone) and
   `perf` (scroll frame timing).
   - The last two run after the functional tests, in the `budget-*` and then `perf-*` projects, so they measure
@@ -133,14 +133,24 @@ pnpm preview        # serve dist/
 ## Architecture
 
 - `src/layouts/BaseLayout.astro` wraps every page (`fixedFooter`, `fullFooter`, `showHeader`,
-  `showScrollProgress` props). Pages: `index`, `about`, `projects`, `contact`, `404`.
+  `showScrollProgress` props; the last also gives touch screens the right-edge scrub grip). Pages: `index`, `about`, `projects`, `contact`, `404`.
 - `src/scripts/site.ts`, `terminal.ts` and `fx.ts` are bundled by **esbuild** (not Astro) into IIFEs at
   `public/scripts/` (generated, git-ignored).
   - Only `site.js` is in the page (`<script is:inline defer>`).
   - It loads `terminal.js` on idle or first use.
-  - It loads `fx.js` (Motion's `motion/mini` + `spring`: drip physics and interactive motion) on idle, only on
-    pages with `[data-drips]` and never under reduced motion. Animation code goes in `fx.ts`, compositor-only
-    (transform/opacity), and stops under `data-reduce-motion`.
+  - It loads `fx.js` (Motion's `motion/mini` + `spring`: card tilt, draggable art, drip taps on touch) on idle,
+    only on pages with something to animate and never under reduced motion. Animation code goes in `fx.ts`
+    or CSS, compositor-only (transform/opacity), and stops under `data-reduce-motion`.
+  - **Smooth hover and scroll are rules, not luck** (perf traces in R17):
+    - Hover never repaints a card. The lift is a transform, the hover skin is a pre-painted `::after` that
+      fades, and `::before` is a still hit area so a moving card can't flicker under a resting pointer.
+    - One transform function list per element across all its states (mixed lists interpolate on the main
+      thread).
+    - Many small moving things move as a few grouped layers (drip runs), never one animation each.
+    - No forced reflow in pointer handlers, and no style writes on every scroll frame (flip a class on change).
+    - No `backdrop-filter` or full-screen fixed overlays.
+    - Scroll-linked UI uses CSS scroll-driven animations. Write `animation-timeline` in its own rule: the CSS
+      minifier folds it into the `animation` shorthand, which browsers reject.
   `terminal.ts` exposes `window.openTerminal` and `window.runInElement` (the hero terminal reuses the same
   command engine). New commands go in `terminal.ts` only.
 - **React islands** only where interaction warrants it: `SkillGraph.tsx` (about, `client:visible`) is the

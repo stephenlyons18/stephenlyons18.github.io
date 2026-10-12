@@ -341,23 +341,12 @@ body {
     min-height: 100vh;
 }
 
-/* Scanline overlay on body */
-body::after {
-    content: '';
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    pointer-events: none;
-    z-index: 9998;
-    background: repeating-linear-gradient(
-        0deg,
-        transparent,
-        transparent 2px,
-        rgba(0, 0, 0, 0.03) 2px,
-        rgba(0, 0, 0, 0.03) 4px
-    );
+/* CRT scanlines: part of the page background (it propagates to the canvas), so they cost one
+   paint, not a full-screen overlay layer re-composited over everything on every scroll frame. */
+body {
+    background:
+        repeating-linear-gradient(0deg, transparent 0 2px, rgba(0, 0, 0, 0.03) 2px 4px),
+        var(--bg-primary);
 }
 
 /* ANSI brick wall (AnsiWall.astro): three layers (bricks, mortar, chips) masked by a seamless
@@ -396,12 +385,16 @@ body {
     background: var(--ui-2);
 }
 
-/* Paint drips (AnsiDrips.astro): a sprayed bar (dividers) or a card's bottom edge, with rounded
-   drips. Each drip is placed in cells (--x centre column, --h rows); 0.6em is one cell. fx.ts
-   slides .drip__paint and releases .drip__drop; without it (no JS, reduced motion) they hang still. */
+/* Paint drips (AnsiDrips.astro): a sprayed bar (dividers) or a card's bottom edge, with teardrop
+   drips. Each drip is placed in cells (--x centre column, --h rows); 0.6em is one cell. The drips
+   are dealt into a few runs (.drip-run, --k); a run slides down out of the clip as one compositor
+   layer, so paint "runs" out of the edge like spray paint down a wall. Transform only: no layout,
+   no repaint, nothing per drip. */
 .drips {
     container-type: inline-size;
     pointer-events: none;
+    /* Viscous paint: it runs, catches, runs again, then creeps to a stop. */
+    --drip-ease: linear(0, 0.34 14%, 0.42 24%, 0.45 33%, 0.66 47%, 0.71 58%, 0.88 74%, 0.96 88%, 1);
 }
 .drips .ansi {
     --ansi-max: 9px;
@@ -416,70 +409,92 @@ body {
     display: block;
     color: var(--drip-bar, var(--ui-dim));
 }
+.drips__clip {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: calc(var(--bar-rows, 0) * 1em);
+    height: calc(var(--rows) * 1em);
+    overflow: clip;
+}
+.drip-run {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 0;
+    height: calc(var(--h) * 1em);
+    /* Each run a little slower than the last, and a beat later, so the strip never moves in step. */
+    --drip-t: calc(1100ms + var(--k) * 380ms);
+    --drip-d: calc(var(--k) * 110ms);
+}
 .drip {
     font-style: normal;
     position: absolute;
+    top: 0;
     left: calc((var(--x) - 1) * 0.6em);
-    top: calc(var(--bar-rows, 0) * 1em);
     width: 1.8em;
-}
-.drip__clip {
-    display: block;
-    font-style: normal;
-    height: calc(var(--h) * 1em);
-    overflow: clip;
-}
-.drip__paint,
-.drip__drop {
-    display: block;
-    font-style: normal;
     white-space: pre;
 }
-.drip__drop {
-    /* The falling teardrop (DROP): starts over the bulb's lower rows, invisible until released. */
-    position: absolute;
-    left: 0;
-    top: calc((var(--h) - 2) * 1em);
-    opacity: 0;
-}
 
-/* Section divider */
+/* Section divider: drips always hang under the bar (about halfway out). Hover, or a tap on touch
+   (fx.ts .is-poked), runs every drip out to full length; they creep back slowly afterwards. fx.ts
+   tucks drips below the fold into the bar until they scroll into view (.is-tucked). */
 .ansi-divider {
     margin: 2.5rem 0;
-    opacity: 0.85;
+    /* Translucent paint (not element opacity, which would make the moving runs a costlier group). */
+    --drip-color: color-mix(in oklab, var(--ui-dim) 85%, transparent);
+    --drip-bar: var(--drip-color);
 }
-/* Drips hanging off a card's bottom edge (absolute: they add no height and sit in the gap).
-   Fixed 7px cells over a long strip, clipped to the card's width (falling drops still escape
-   downwards), so every card gets drips at the same size whatever its width. */
+.ansi-divider .drip-run {
+    transform: translateY(-45%);
+    transition: transform 1.8s cubic-bezier(0.45, 0, 0.3, 1);
+}
+.ansi-divider.is-tucked .drip-run {
+    transform: translateY(-100%);
+    transition: none;
+}
+.ansi-divider:hover .drip-run,
+.ansi-divider.is-poked .drip-run {
+    transform: none;
+    transition: transform var(--drip-t) var(--drip-ease) var(--drip-d);
+}
+/* Drips hanging off a card's bottom edge (absolute: they add no height and sit in the gap below,
+   which grids with drip cards widen). Fixed 7px cells over a long strip, clipped to the card's
+   width, so every card gets drips at the same size whatever its width. */
 .card-drips {
     position: absolute;
     left: 1rem;
     right: 1rem;
-    /* Tuck the first row into the border so the paint runs out of the edge. */
-    top: calc(100% - 3px);
+    top: 100%;
     overflow-x: clip;
-    --drip-color: color-mix(in oklab, var(--border-bright) 80%, var(--ui));
 }
 .card-drips .ansi {
     font-size: 7px;
 }
-/* Card drips only exist while the card is hovered or focused. At rest the paint sits up inside the
-   edge (clipped); on hover it runs out on the bouncy spring, staggered drip by drip, and fx.ts
-   starts dropping. On leave it pulls back quickly. Reduced motion: it just appears. */
-.card-drips .drip__paint {
-    transform: translateY(-101%);
-    transition: transform 0.25s var(--ease);
+/* Card drips only exist while the card is hovered or focused: at rest every run is up inside the
+   clip AND hidden, so not a pixel shows. On hover the runs pour out together, each at its own
+   pace; on leave they pull back quickly and hide. Reduced motion: they just appear. */
+.card-drips .drip-run {
+    visibility: hidden;
+    transform: translateY(-100%);
+    transition:
+        transform 0.26s cubic-bezier(0.5, 0, 0.9, 0.5),
+        visibility 0s 0.26s;
 }
-.card:hover .card-drips .drip__paint,
-.card:focus-within .card-drips .drip__paint,
-.card-link:focus-visible .card-drips .drip__paint {
-    transform: translateY(0);
-    transition: transform var(--spring-bouncy-t) var(--spring-bouncy) calc(var(--i) * 18ms);
+.card:hover .card-drips .drip-run,
+.card:focus-within .card-drips .drip-run,
+.card-link:focus-visible .card-drips .drip-run,
+.card.is-poked .card-drips .drip-run {
+    visibility: visible;
+    transform: none;
+    transition:
+        transform var(--drip-t) var(--drip-ease) var(--drip-d),
+        visibility 0s;
 }
-.card:hover .card-drips,
-.card:focus-within .card-drips,
-.card-link:focus-visible .card-drips {
-    --drip-color: var(--ui-dim);
+/* Room for the drips between rows of drip cards. */
+.featured-grid:has(.card-drips),
+.grid-3:has(.card-drips) {
+    row-gap: 3.5rem;
 }
 
 a {
@@ -690,14 +705,12 @@ body.js-reveal-ready .reveal.revealed {
     /* Grow the bar to cover the device status bar on notched phones */
     height: calc(var(--header-h) + env(safe-area-inset-top, 0px));
     padding-top: env(safe-area-inset-top, 0px);
-    /* Above body::after scanline overlay (z-index 9998) so header chrome
-     is always fully rendered on top of the CRT effect layer. */
     z-index: 9999;
-    background: rgba(10, 10, 10, 0.92);
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
+    /* Opaque instead of translucent + backdrop blur, which re-blurred the page under the header on
+       every scroll frame. */
+    background: rgb(10, 10, 10);
     border-bottom: 1px solid var(--border);
-    transition: background 0.3s var(--ease);
+    transition: border-color 0.3s var(--ease);
 }
 .site-header .container {
     display: flex;
@@ -971,41 +984,70 @@ body.js-reveal-ready .reveal.revealed {
     gap: 1rem;
 }
 
+.site-header.is-scrolled {
+    border-bottom-color: var(--ui-dim);
+}
+
 /* Matrix canvas background */
 /* ---------- Cards ---------- */
+/* Hover is cheap by construction: the card never repaints on hover. The lift is a transform, and
+   the hover skin (bright border, coloured extrusion, sprayed top stripe) is a pre-painted layer
+   (::after) that only fades in. ::before is a still, invisible hit area a little bigger than the
+   card, so a card lifting or tilting under a resting pointer can't slip out from under it and
+   flicker between hovered and not (the old jumpiness while scrolling). */
 .card {
     background: var(--bg-card);
     border: 1px solid var(--border);
     border-radius: var(--radius-lg);
     padding: 1.75rem;
     position: relative;
+    isolation: isolate;
     /* Not clipped: paint drips hang off the bottom edge (.card-drips). */
     overflow: visible;
     /* Same hard extrusion as the art and buttons — deep navy so it reads as depth, not decoration. */
     box-shadow: 5px 5px 0 #04070c;
-    transition:
-        border-color 0.25s var(--ease),
-        box-shadow 0.25s var(--ease),
-        transform 0.25s var(--ease);
+    transform: translate(var(--lift), var(--lift));
+    transition: transform 0.25s var(--ease);
 }
 .card::before {
     content: '';
     position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 3px;
-    /* Follow the card's top corners (the card no longer clips its children). */
-    border-radius: var(--radius-lg) var(--radius-lg) 0 0 / 3px 3px 0 0;
-    /* A sprayed stripe: cyan → aqua, with the faintest pink tip. */
-    background: linear-gradient(90deg, var(--ui), var(--ui-2) 70%, var(--accent));
+    inset: -10px;
+    z-index: -2;
+}
+.card::after {
+    content: '';
+    position: absolute;
+    inset: -1px;
+    z-index: -1;
+    pointer-events: none;
+    border: 1px solid var(--ui-dim);
+    border-radius: inherit;
+    /* A sprayed stripe along the top: cyan → aqua, with the faintest pink tip. */
+    background: linear-gradient(90deg, var(--ui), var(--ui-2) 70%, var(--accent)) top / 100% 3px
+        no-repeat;
+    box-shadow: 7px 7px 0 var(--title-x2);
     opacity: 0;
-    transition: opacity 0.3s var(--ease);
+    transition: opacity 0.25s var(--ease);
 }
 .card:hover {
-    border-color: var(--ui-dim);
-    transform: translate(-2px, -2px);
-    box-shadow: 7px 7px 0 var(--title-x2);
+    --lift: -2px;
+}
+.card:hover::after,
+.card-link:focus-visible .card::after {
+    opacity: 1;
+}
+/* Desktop: keep each card on its own compositor layer, so hovering, lifting and tilting never
+   re-rasterise it (touch screens skip this: no hover there, and layers cost phone memory). */
+@media (hover: hover) and (pointer: fine) {
+    .card {
+        will-change: transform;
+        /* Every state (rest, hover lift, tilt, press) is this one function list, only the numbers
+           change, so the browser interpolates it on the compositor. Mixed lists fall back to
+           matrix maths on the main thread, every frame. */
+        transform: perspective(900px) rotateX(var(--rx)) rotateY(var(--ry))
+            translate(var(--lift), var(--lift)) scale(var(--press));
+    }
 }
 @media (prefers-reduced-motion: reduce) {
     .card,
@@ -1013,9 +1055,6 @@ body.js-reveal-ready .reveal.revealed {
         transform: none;
         transition: none;
     }
-}
-.card:hover::before {
-    opacity: 1;
 }
 
 .card__tag {
@@ -1066,33 +1105,153 @@ body.js-reveal-ready .reveal.revealed {
     color: var(--ui-3);
 }
 
-/* ---------- Scroll progress bar ---------- */
-.scroll-progress-bar {
+/* ---------- Scroll progress + touch scrubber (site.ts) ---------- */
+/* Progress: a strip of pixel blocks in the sprayed-stripe gradient (cyan → aqua → pink tip, as on
+   cards) that fills from the left. The outer box slides in from the left while the fill slides the
+   other way, so the blocks and gradient stay put and are revealed, not stretched. Both are scroll-
+   driven animations: they run on the compositor, no JS. */
+.scroll-progress {
     position: fixed;
     top: 0;
     left: 0;
     right: 0;
-    height: 3px;
-    background: var(--accent);
-    box-shadow: 0 0 8px var(--accent-glow);
-    transform-origin: 0 50%;
-    transform: scaleX(0);
+    height: 4px;
+    overflow: hidden;
     z-index: 10001;
     pointer-events: none;
+    transform: translateX(-100%);
 }
-/* Pure CSS where supported (no JS, runs off the main thread); site.ts falls back to rAF. */
+.scroll-progress__fill {
+    height: 100%;
+    background: linear-gradient(
+        90deg,
+        var(--ui-dim),
+        var(--ui) 35%,
+        var(--ui-2) 72%,
+        var(--accent)
+    );
+    /* 6px blocks with 2px gaps: the ANSI cell grid, one step per block. */
+    mask: repeating-linear-gradient(90deg, #000 0 6px, transparent 6px 8px);
+    transform: translateX(100%);
+}
+.scrub {
+    display: none;
+}
+/* Scrubber (touch only): a pixel grip on the right edge, shown while the page scrolls. The rail
+   is a size container so the thumb's scroll-driven travel is "rail height − thumb height". */
+@media (pointer: coarse) {
+    .scrub {
+        display: block;
+        position: fixed;
+        right: 0;
+        top: calc(var(--header-h) + env(safe-area-inset-top, 0px) + 10px);
+        bottom: calc(14px + env(safe-area-inset-bottom, 0px));
+        width: 34px;
+        z-index: 9990;
+        pointer-events: none;
+        container-type: size;
+    }
+    /* The rail: a dotted pixel track, only while active. */
+    .scrub::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        bottom: 0;
+        right: 7px;
+        width: 2px;
+        background: repeating-linear-gradient(var(--ui-3) 0 2px, transparent 2px 6px);
+        opacity: 0;
+        transition: opacity 0.25s var(--ease);
+    }
+    .scrub__thumb {
+        position: absolute;
+        top: 0;
+        right: 0;
+        /* 34 × 52 touch target around a 12 × 40 grip. */
+        width: 34px;
+        height: 52px;
+        opacity: 0;
+        transition: opacity 0.25s var(--ease);
+        touch-action: none;
+    }
+    .scrub__thumb::before {
+        content: '';
+        position: absolute;
+        top: 6px;
+        right: 2px;
+        width: 12px;
+        height: 40px;
+        border-radius: 2px;
+        /* Grip lines (≡) over the sprayed gradient, with the hard extrusion every sticker gets. */
+        background:
+            repeating-linear-gradient(
+                    transparent 0 14px,
+                    var(--bg-primary) 14px 16px,
+                    transparent 16px 18px
+                )
+                0 0 / 100% 100%,
+            linear-gradient(var(--ui), var(--ui-2));
+        box-shadow: -3px 3px 0 var(--title-x2);
+    }
+    .scrub.is-on::before,
+    .scrub.is-on .scrub__thumb {
+        opacity: 1;
+    }
+    .scrub.is-on .scrub__thumb {
+        pointer-events: auto;
+    }
+    .scrub.is-drag .scrub__thumb::before {
+        background:
+            repeating-linear-gradient(
+                    transparent 0 14px,
+                    var(--bg-primary) 14px 16px,
+                    transparent 16px 18px
+                )
+                0 0 / 100% 100%,
+            linear-gradient(var(--white), var(--ui));
+    }
+}
 @supports (animation-timeline: scroll()) {
-    .scroll-progress-bar {
-        animation: scroll-progress linear both;
+    /* Longhands only, and the timeline in its own rule: the CSS minifier folds a timeline into
+       the animation shorthand, which browsers reject (that silently killed the bar before). */
+    .scroll-progress,
+    .scroll-progress__fill,
+    .scrub__thumb {
+        animation-duration: auto;
+        animation-timing-function: linear;
+        animation-fill-mode: both;
+    }
+    .scroll-progress {
+        animation-name: progress-in;
+    }
+    .scroll-progress__fill {
+        animation-name: progress-fill;
+    }
+    .scrub__thumb {
+        animation-name: scrub-travel;
+    }
+    html .scroll-progress,
+    html .scroll-progress__fill,
+    html .scrub__thumb {
         animation-timeline: scroll(root block);
     }
 }
-@keyframes scroll-progress {
+@keyframes progress-in {
+    to {
+        transform: translateX(0);
+    }
+}
+@keyframes progress-fill {
+    to {
+        transform: translateX(0);
+    }
+}
+@keyframes scrub-travel {
     from {
-        transform: scaleX(0);
+        transform: translateY(0);
     }
     to {
-        transform: scaleX(1);
+        transform: translateY(calc(100cqh - 100%));
     }
 }
 
@@ -1823,17 +1982,14 @@ html:has(dialog.lightbox[open]) {
 }
 
 /* Card link wrapper for featured project tiles */
+/* The link itself never moves (the card inside lifts), so its hit area stays put. */
 .card-link {
     display: block;
     text-decoration: none;
     color: inherit;
     border-radius: 4px;
-    transition: transform 0.15s ease;
 }
-.card-link:hover {
-    transform: translateY(-3px);
-}
-.card-link:hover .card {
+.card-link:hover .card::after {
     border-color: var(--ui);
 }
 
@@ -2094,7 +2250,6 @@ html:has(dialog.lightbox[open]) {
        remain clickable even while the dropdown is animating. */
         z-index: 9998;
         background: rgba(10, 10, 10, 0.97);
-        backdrop-filter: blur(12px);
         flex-direction: column;
         padding: 1.5rem;
         gap: 1rem;
@@ -2258,8 +2413,9 @@ html:has(dialog.lightbox[open]) {
 /* ---------- Print ---------- */
 @media print {
     body::before,
-    body::after,
     .site-header,
+    .scroll-progress,
+    .scrub,
     .terminal-overlay,
     #matrix-canvas {
         display: none !important;
@@ -2495,13 +2651,13 @@ html[data-a11y-contrast] {
     --border: #4a6a8a;
     --border-bright: #7aa3c8;
 }
-html[data-a11y-contrast] body::after {
-    display: none;
+html[data-a11y-contrast] body,
+html[data-a11y-wall] body {
+    background: var(--bg-primary);
 }
 
 /* Hide wall texture (and the CRT scanlines). */
-html[data-a11y-wall] .ansi-wall,
-html[data-a11y-wall] body::after {
+html[data-a11y-wall] .ansi-wall {
     display: none;
 }
 
@@ -2517,6 +2673,11 @@ html[data-reduce-motion] *::after {
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
     transition-delay: 0s !important;
+}
+/* Shortening a duration doesn't stop a transition already under way; dropping it does. */
+html[data-reduce-motion] .drip-run,
+html[data-reduce-motion] .card {
+    transition: none !important;
 }
 html[data-reduce-motion]::view-transition-group(*),
 html[data-reduce-motion]::view-transition-old(*),
@@ -2602,24 +2763,35 @@ html:active-view-transition-type(page)::view-transition-group(site-header) {
 
 /* ---------- Playful cards (fx.ts sets --rx/--ry from the pointer) ---------- */
 /* A spring-eased tilt toward the pointer and a squash on press. Small angles: text stays crisp. */
-.card.is-live,
-.card.is-settling {
-    /* Keep one compositor layer while it moves, so a retargeted tilt never re-rasterises. */
-    will-change: transform;
+/* Registered and not inherited: moving the pointer restyles the card alone, not every element
+   inside it. */
+@property --rx {
+    syntax: '<angle>';
+    inherits: false;
+    initial-value: 0deg;
 }
+@property --ry {
+    syntax: '<angle>';
+    inherits: false;
+    initial-value: 0deg;
+}
+@property --press {
+    syntax: '<number>';
+    inherits: false;
+    initial-value: 1;
+}
+@property --lift {
+    syntax: '<length>';
+    inherits: false;
+    initial-value: 0px;
+}
+/* The transform itself is the one on .card (desktop block above); these only change its pace. */
 .card.is-live {
-    transform: perspective(900px) rotateX(var(--rx, 0deg)) rotateY(var(--ry, 0deg))
-        translate(-2px, -2px) scale(var(--press, 1));
-    transition:
-        transform var(--spring-snappy-t) var(--spring-snappy),
-        border-color 0.25s var(--ease),
-        box-shadow 0.25s var(--ease);
+    --lift: -2px;
+    transition: transform var(--spring-snappy-t) var(--spring-snappy);
 }
 .card.is-settling {
-    transition:
-        transform var(--spring-bouncy-t) var(--spring-bouncy),
-        border-color 0.25s var(--ease),
-        box-shadow 0.25s var(--ease);
+    transition: transform var(--spring-bouncy-t) var(--spring-bouncy);
 }
 /* Buttons squash on press with the same spring. */
 .btn:active,
