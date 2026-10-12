@@ -134,8 +134,13 @@ pnpm preview        # serve dist/
 
 - `src/layouts/BaseLayout.astro` wraps every page (`fixedFooter`, `fullFooter`, `showHeader`,
   `showScrollProgress` props). Pages: `index`, `about`, `projects`, `contact`, `404`.
-- `src/scripts/site.ts` + `src/scripts/terminal.ts` are bundled by **esbuild** (not Astro) into IIFEs at
-  `public/scripts/` (generated, git-ignored) and loaded with `<script is:inline defer>` on every page.
+- `src/scripts/site.ts`, `terminal.ts` and `fx.ts` are bundled by **esbuild** (not Astro) into IIFEs at
+  `public/scripts/` (generated, git-ignored).
+  - Only `site.js` is in the page (`<script is:inline defer>`).
+  - It loads `terminal.js` on idle or first use.
+  - It loads `fx.js` (Motion's `motion/mini` + `spring`: drip physics and interactive motion) on idle, only on
+    pages with `[data-drips]` and never under reduced motion. Animation code goes in `fx.ts`, compositor-only
+    (transform/opacity), and stops under `data-reduce-motion`.
   `terminal.ts` exposes `window.openTerminal` and `window.runInElement` (the hero terminal reuses the same
   command engine). New commands go in `terminal.ts` only.
 - **React islands** only where interaction warrants it: `SkillGraph.tsx` (about, `client:visible`) is the

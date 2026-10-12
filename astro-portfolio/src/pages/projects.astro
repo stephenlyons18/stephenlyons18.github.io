@@ -2,6 +2,7 @@
 import BaseLayout from '../layouts/BaseLayout.astro';
 import AnsiTitle from '../components/AnsiTitle.astro';
 import AnsiDivider from '../components/AnsiDivider.astro';
+import AnsiDrips from '../components/AnsiDrips.astro';
 import projects from '../data/projects';
 import ProjectGallery from '../components/ProjectGallery.astro';
 import Lightbox from '../components/Lightbox.astro';
@@ -103,6 +104,13 @@ const galleries = Object.fromEntries(
                             ))}
                         </div>
                     )}
+                    <AnsiDrips
+                        cols={280}
+                        seed={i + 31}
+                        maxStem={1}
+                        density={0.08}
+                        class="card-drips"
+                    />
                 </article>
             ))}
         </div>

@@ -68,6 +68,31 @@ function loadTerminal(): Promise<void> {
     return terminalLoading ?? Promise.resolve();
 }
 
+// fx.js (drip physics, Motion) — only on pages with drips, only when motion is allowed, on idle.
+const FX_SRC = TERMINAL_SRC?.replace(/terminal\.js$/, 'fx.js');
+let fxLoaded = false;
+function initFx(): void {
+    if (!FX_SRC || !document.querySelector('[data-drips]')) return;
+    const load = () => {
+        if (fxLoaded || motionOff()) return;
+        fxLoaded = true;
+        const s = document.createElement('script');
+        s.src = FX_SRC;
+        document.head.appendChild(s);
+    };
+    idle(load);
+    // Reduced motion turned off from the a11y menu later on: load it then.
+    new MutationObserver(load).observe(document.documentElement, {
+        attributes: true,
+        attributeFilter: ['data-reduce-motion'],
+    });
+}
+
+const idle = (cb: () => void) =>
+    'requestIdleCallback' in window
+        ? (window as Window & typeof globalThis).requestIdleCallback(cb, { timeout: 2000 })
+        : setTimeout(cb, 1200);
+
 function initTerminalLoader(): void {
     // Every [data-open-terminal] button (the 404 page has two), loading on demand.
     document
@@ -82,10 +107,6 @@ function initTerminalLoader(): void {
         e.preventDefault();
         loadTerminal().then(() => window.openTerminal?.());
     });
-    const idle = (cb: () => void) =>
-        'requestIdleCallback' in window
-            ? (window as Window & typeof globalThis).requestIdleCallback(cb, { timeout: 2500 })
-            : setTimeout(cb, 1200);
     idle(() => void loadTerminal());
 }
 
@@ -492,6 +513,7 @@ function init(): void {
     initGlitch();
     initHeaderScroll();
     initTerminalLoader();
+    initFx();
     initScrollProgress();
 }
 

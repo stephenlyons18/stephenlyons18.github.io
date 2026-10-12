@@ -6,10 +6,14 @@ import {
     CELL_H,
     CELL_W,
     COURSE,
+    DRIP_BULB,
+    dripRows,
+    renderDripStrip,
     renderWallTile,
     svgDataUrl,
     wallCells,
 } from '../lib/ansi/wall';
+import { dripsToHtml } from '../lib/ansi/html';
 
 const TITLES = [
     'Stephen Lyons',
@@ -55,11 +59,11 @@ describe('renderAnsi', () => {
         expect(fill(a).length).toBeGreaterThan(0);
     });
 
-    test('only block, shade, half-block and dot glyphs are used', () => {
+    test('only block, shade, half/quadrant-block and dot glyphs are used', () => {
         for (const style of ['bubble', 'wild', 'block'] as const) {
             for (const t of TITLES) {
                 const s = toPlainText(renderAnsi(t, { style })).replace(/\n/g, '');
-                expect(s).toMatch(/^[ █▓▒░▀·]*$/);
+                expect(s).toMatch(/^[ █▓▒░▀▖▗▘▝·]*$/);
             }
         }
     });
@@ -146,5 +150,52 @@ describe('wall tile', () => {
     test('data URL escapes everything a CSS url() / data URI chokes on', () => {
         const u = svgDataUrl('<svg a="#x">100%</svg>');
         expect(u).toBe(`url("data:image/svg+xml,%3Csvg a='%23x'%3E100%25%3C/svg%3E")`);
+    });
+});
+
+describe('drips', () => {
+    test('a drip is a 1-cell stem over a rounded 3-cell bulb', () => {
+        expect(dripRows(0)).toEqual(['▗█▖', '▝█▘']);
+        expect(dripRows(2)).toEqual([' █ ', ' █ ', '▗█▖', '▝█▘']);
+        for (const r of dripRows(3)) expect([...r]).toHaveLength(3);
+    });
+
+    test('strip: drips spaced for their bulbs, inside the strip, deterministic', () => {
+        for (const seed of [1, 2, 3, 6, 11]) {
+            const s = renderDripStrip(200, seed, { maxStem: 2 });
+            expect(s.drips.length).toBeGreaterThan(5);
+            expect(s.rows).toBe(2 + DRIP_BULB.length);
+            s.drips.forEach((d, i) => {
+                expect(d.x).toBeGreaterThanOrEqual(2);
+                expect(d.x).toBeLessThanOrEqual(197);
+                expect(d.stem).toBeLessThanOrEqual(2);
+                if (i) expect(d.x - s.drips[i - 1]!.x).toBeGreaterThanOrEqual(5);
+            });
+            expect(renderDripStrip(200, seed, { maxStem: 2 })).toEqual(s);
+        }
+    });
+
+    test('html: one positioned element (paint + hidden drop) per drip, optional bar', () => {
+        const s = renderDripStrip(60, 4);
+        const html = dripsToHtml(s, true);
+        expect(html.match(/class="drip"/g)).toHaveLength(s.drips.length);
+        expect(html.match(/class="drip__drop"/g)).toHaveLength(s.drips.length);
+        expect(html).toContain(`<span class="d-bar">${'▄'.repeat(60)}</span>`);
+        expect(dripsToHtml(s, false)).not.toContain('d-bar');
+        expect(html).toContain(`--x:${s.drips[0]!.x};--h:${s.drips[0]!.stem + 2}`);
+    });
+
+    test('title drips end in a full bulb (▗█▖ over ▝█▘) or a half-block tip', () => {
+        let bulbs = 0;
+        for (const t of TITLES) {
+            const rows = toPlainText(renderAnsi(t, { style: 'wild', drips: 0.6 })).split('\n');
+            rows.forEach((row, y) => {
+                for (let x = row.indexOf('▗█▖'); x >= 0; x = row.indexOf('▗█▖', x + 1)) {
+                    expect(rows[y + 1]?.slice(x, x + 3)).toBe('▝█▘');
+                    bulbs++;
+                }
+            });
+        }
+        expect(bulbs).toBeGreaterThan(5);
     });
 });

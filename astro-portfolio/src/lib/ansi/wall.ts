@@ -1,8 +1,7 @@
 /**
- * Build-time ANSI textures: the brick wall behind every page and the paint-drip divider.
- * Same contract as generator.ts — pure, deterministic, output is run-length-encoded class runs.
+ * Build-time ANSI textures: the brick wall behind every page and the paint drips (dividers, cards).
+ * Same contract as generator.ts: pure and deterministic.
  */
-import type { AnsiArt, Run } from './generator';
 
 function rng(seed: number): () => number {
     let a = seed >>> 0;
@@ -13,22 +12,6 @@ function rng(seed: number): () => number {
         t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
         return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
     };
-}
-
-function encode(grid: { ch: string; c: string }[][]): AnsiArt {
-    const lines: Run[][] = grid.map((row) => {
-        const runs: Run[] = [];
-        for (const cell of row) {
-            const last = runs[runs.length - 1];
-            if (last && last.c === cell.c) last.t += cell.ch;
-            else runs.push({ c: cell.c, t: cell.ch });
-        }
-        // Drop trailing blanks.
-        while (runs.length && !runs[runs.length - 1]!.c && !runs[runs.length - 1]!.t.trim())
-            runs.pop();
-        return runs;
-    });
-    return { lines, cols: grid[0]?.length ?? 0, rows: grid.length };
 }
 
 /** Brick period: cells per brick (incl. mortar column) and rows per course (incl. mortar row). */
@@ -134,23 +117,46 @@ export function svgDataUrl(svg: string): string {
         .replace(/>/g, '%3E')}")`;
 }
 
-/** A sprayed bar (`▄`) with thin drips hanging off it, fading `▓ → ▒ → ░`. */
-export function renderDivider(cols = 120, seed = 1, maxDrip = 3): AnsiArt {
+/**
+ * A paint drip, 3 cells wide and centred on its middle cell: a 1-cell stem, then a rounded bulb
+ * built from quadrant blocks, so the tip reads as a drop of paint rather than a cut-off bar.
+ * In half-cell pixels the bulb is 2-4-4-2 wide: a chamfered oval.
+ *
+ *      █      stem (× stem)
+ *     ▗█▖     shoulder
+ *     ▝█▘     round bottom
+ */
+export const DRIP_BULB = ['▗█▖', '▝█▘'] as const;
+
+export function dripRows(stem: number): string[] {
+    return [...Array.from({ length: stem }, () => ' █ '), ...DRIP_BULB];
+}
+
+export interface DripStrip {
+    cols: number;
+    /** Rows below the bar the tallest drip can reach (stem + bulb). */
+    rows: number;
+    /** Drips by centre column; each hangs `stem` cells, then the 2-row bulb. */
+    drips: { x: number; stem: number }[];
+}
+
+/**
+ * Where drips hang along a strip `cols` cells wide: never closer than `minGap` cells (bulbs are 3
+ * wide), never at the very ends. Deterministic per seed. Used by the divider (under a sprayed
+ * bar) and by cards (off their bottom edge).
+ */
+export function renderDripStrip(
+    cols = 120,
+    seed = 1,
+    { maxStem = 2, density = 0.16, minGap = 5 } = {},
+): DripStrip {
     const rand = rng(seed * 7919 + cols);
-    const rows = maxDrip + 1;
-    const grid = Array.from({ length: rows }, () =>
-        Array.from({ length: cols }, () => ({ ch: ' ', c: '' })),
-    );
-    for (let x = 0; x < cols; x++) grid[0]![x] = { ch: '▄', c: 'd-bar' };
-    let last = -4;
-    for (let x = 1; x < cols - 1; x++) {
-        if (x - last < 4 || rand() > 0.16) continue;
+    const drips: { x: number; stem: number }[] = [];
+    let last = -minGap;
+    for (let x = 2; x < cols - 2; x++) {
+        if (x - last < minGap || rand() > density) continue;
         last = x;
-        const len = 1 + Math.floor(rand() * maxDrip);
-        for (let i = 1; i <= len; i++) {
-            const left = len - i;
-            grid[i]![x] = { ch: left >= 2 ? '▓' : left === 1 ? '▒' : '░', c: 'd-drip' };
-        }
+        drips.push({ x, stem: Math.floor(rand() * (maxStem + 1)) });
     }
-    return encode(grid);
+    return { cols, rows: maxStem + DRIP_BULB.length, drips };
 }
