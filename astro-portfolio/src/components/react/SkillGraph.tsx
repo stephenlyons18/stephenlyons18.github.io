@@ -1,5 +1,4 @@
-import { useRef, useEffect, useState } from 'react';
-import { createPortal } from 'react-dom';
+import { useRef, useEffect, useLayoutEffect, useState } from 'react';
 import {
     forceSimulation,
     forceLink,
@@ -13,6 +12,8 @@ import {
     type SimulationLinkDatum,
 } from 'd3-force';
 import { skills, CATEGORY_META, type Skill, type SkillCategory } from '../../data/skills';
+import { JOBS_BY_SKILL } from '../../data/experience';
+import { placeCard } from '../../lib/placeCard';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -34,16 +35,6 @@ interface Camera {
     x: number;
     y: number;
     scale: number;
-}
-
-interface TooltipState {
-    name: string;
-    weight: number;
-    category: SkillCategory;
-    projects: string[];
-    cssX: number;
-    cssY: number;
-    below: boolean;
 }
 
 type ViewMode = 'graph' | 'list';
@@ -74,22 +65,22 @@ function weightToRadius(w: number, minR: number, maxR: number): number {
 }
 
 // Visual (clockwise, starting at the top) order for the category clusters.
+// Jobs are not nodes: they show up as "Used at" context on each skill's card.
 const CATEGORY_ORDER: SkillCategory[] = [
     'languages',
     'frameworks',
     'cloud',
-    'experience',
     'security-skills',
     'security-tools',
 ];
 
 // Cluster centroids sit on a circle around the canvas centre, but unlike a
-// fixed pentagon/hexagon of equal slices, each category claims an angular
-// arc proportional to how many skills it holds and is pushed to a radius
-// that also grows with its member count. A fixed equal-slice layout crammed
-// the two ~12-13 node security categories while leaving smaller categories
-// (cloud, experience) surrounded by disproportionate empty space — this
-// keeps categories grouped but gives each roughly the canvas area it needs.
+// fixed pentagon of equal slices, each category claims an angular arc
+// proportional to how many skills it holds and is pushed to a radius that
+// also grows with its member count. A fixed equal-slice layout crammed the
+// two ~12-13 node security categories while leaving the small cloud category
+// surrounded by disproportionate empty space — this keeps categories grouped
+// but gives each roughly the canvas area it needs.
 // Values are fractions of half-canvas width/height.
 function buildClusterOffsets(): Record<SkillCategory, [number, number]> {
     const counts = new Map<SkillCategory, number>();
@@ -109,8 +100,8 @@ function buildClusterOffsets(): Record<SkillCategory, [number, number]> {
 }
 const CLUSTER_OFFSET = buildClusterOffsets();
 
-// Pre-compute bidirectional adjacency for the ListView — `skills` is static,
-// so this never changes after module load.
+// Bidirectional adjacency — `skills` is static, so this never changes after
+// module load. (Tests enforce symmetry; this also normalises any slip.)
 const SKILL_ADJACENCY: Map<string, Set<string>> = (() => {
     const m = new Map<string, Set<string>>();
     for (const s of skills) {
@@ -124,6 +115,8 @@ const SKILL_ADJACENCY: Map<string, Set<string>> = (() => {
     }
     return m;
 })();
+
+const SKILL_BY_NAME = new Map(skills.map((s) => [s.name, s]));
 
 // ─── Pure helpers ─────────────────────────────────────────────────────────────
 
@@ -149,73 +142,154 @@ function touchMid(a: Touch, b: Touch, c: HTMLCanvasElement): [number, number] {
         c,
     );
 }
+/** Read a CSS custom property once (callers cache the result — never per frame). */
+function cssVar(name: string, fallback: string): string {
+    if (typeof document === 'undefined') return fallback;
+    return getComputedStyle(document.documentElement).getPropertyValue(name).trim() || fallback;
+}
+
+// ─── Skill card (shared by graph + list) ──────────────────────────────────────
+//
+// Weight, category, the jobs that used the skill ("Used at"), related projects
+// and connection count. Positioned by the caller through `style`.
+
+function SkillCard({
+    skill,
+    cardRef,
+    style,
+}: {
+    skill: Skill;
+    cardRef: React.Ref<HTMLDivElement>;
+    style?: React.CSSProperties;
+}) {
+    const meta = CATEGORY_META[skill.category];
+    const jobs = JOBS_BY_SKILL.get(skill.name) ?? [];
+    const projects = [...new Set(skill.relatedProjects ?? [])];
+    const links = SKILL_ADJACENCY.get(skill.name)?.size ?? 0;
+    return (
+        <div
+            ref={cardRef}
+            role="tooltip"
+            className="skill-card"
+            style={{ ...style, ['--cat' as string]: meta.color }}
+        >
+            <div className="skill-card__head">
+                <strong className="skill-card__name">{skill.name}</strong>
+                <span className="skill-card__weight" aria-label={`${skill.weight} out of 10`}>
+                    {'█'.repeat(skill.weight)}
+                    <span aria-hidden="true">{'░'.repeat(10 - skill.weight)}</span>
+                </span>
+            </div>
+            <div className="skill-card__cat">{meta.label}</div>
+            {jobs.length > 0 && (
+                <div className="skill-card__section">
+                    <div className="skill-card__label">Used at</div>
+                    <ul>
+                        {jobs.map((j) => (
+                            <li key={j.id}>
+                                <span className="skill-card__role">{j.role}</span> · {j.shortOrg}
+                                <span className="skill-card__date"> {j.date.split(' & ')[0]}</span>
+                            </li>
+                        ))}
+                    </ul>
+                </div>
+            )}
+            {projects.length > 0 && (
+                <div className="skill-card__section">
+                    <div className="skill-card__label">Projects</div>
+                    <ul>
+                        {projects.map((p) => (
+                            <li key={p}>› {p}</li>
+                        ))}
+                    </ul>
+                </div>
+            )}
+            {links > 0 && (
+                <div className="skill-card__foot">
+                    {links} connection{links !== 1 ? 's' : ''}
+                </div>
+            )}
+        </div>
+    );
+}
+
+/**
+ * Hover is for real mice only. Touch opens/closes cards via click; on hover-less
+ * devices the browser also keeps a virtual pointer at the last tap point and fires
+ * enter/leave on whatever scrolls under it, which would swap or close the card.
+ */
+function isMouseHover(e: React.PointerEvent): boolean {
+    return e.pointerType === 'mouse' && window.matchMedia('(hover: hover)').matches;
+}
 
 // ─── List view ────────────────────────────────────────────────────────────────
 //
-// Top-level component so it keeps its hover state across parent re-renders.
-// Renders the same categorised skill grid as the graph but as text chips, with
-// a fixed-position tooltip anchored to the hovered chip's bounding box (NOT
-// the mouse position — that was causing the tooltip to drift far from its
-// anchor). On hover/focus, related skills get a subtle highlight and unrelated
-// skills are dimmed, mirroring the graph's behaviour.
-
-interface ListHoverState {
-    skill: Skill;
-    rect: DOMRect;
-}
+// Categorised chips. The card is absolutely positioned inside this view's own
+// wrapper (not `position:fixed` in a portal), so it scrolls *with* its chip
+// instead of detaching when the page moves. Placement is recomputed on
+// hover and whenever the wrapper resizes.
 
 function ListView() {
-    const [listHovered, setListHovered] = useState<ListHoverState | null>(null);
-    const [tooltipPos, setTooltipPos] = useState<{ left: number; top: number } | null>(null);
-    const tooltipRef = useRef<HTMLDivElement>(null);
+    const [hovered, setHovered] = useState<{ skill: Skill; chip: HTMLElement } | null>(null);
+    const [pos, setPos] = useState<{ left: number; top: number } | null>(null);
+    const wrapRef = useRef<HTMLDivElement>(null);
+    const cardRef = useRef<HTMLDivElement>(null);
 
-    const listMeta = listHovered ? CATEGORY_META[listHovered.skill.category] : null;
-    const cats = Object.keys(CATEGORY_META) as SkillCategory[];
-
-    // Skills directly connected to the hovered one — used to highlight related
-    // chips and dim everything else.
-    const relatedSet: Set<string> | null = listHovered
-        ? (SKILL_ADJACENCY.get(listHovered.skill.name) ?? new Set())
+    const cats = CATEGORY_ORDER;
+    const relatedSet: Set<string> | null = hovered
+        ? (SKILL_ADJACENCY.get(hovered.skill.name) ?? new Set())
         : null;
 
-    // Re-measure the tooltip after render so we can keep it on-screen no matter
-    // which chip the user hovered. We anchor below-left by default and flip to
-    // above the chip when there isn't enough room below.
-    useEffect(() => {
-        if (!listHovered) {
-            setTooltipPos(null);
-            return;
-        }
-        const tooltip = tooltipRef.current;
-        if (!tooltip) return;
-        const tw = tooltip.offsetWidth || 240;
-        const th = tooltip.offsetHeight || 80;
-        const r = listHovered.rect;
-        const vw = typeof window !== 'undefined' ? window.innerWidth : 1200;
-        const vh = typeof window !== 'undefined' ? window.innerHeight : 800;
-
-        // Prefer below the chip; flip above if it would overflow.
-        let top = r.bottom + 8;
-        if (top + th > vh - 8) top = Math.max(8, r.top - th - 8);
-
-        // Align tooltip's left edge with the chip's left edge, clamped to viewport.
-        let left = r.left;
-        if (left + tw > vw - 8) left = vw - 8 - tw;
-        if (left < 8) left = 8;
-
-        setTooltipPos({ left, top });
-    }, [listHovered]);
-
-    function onItemEnter(skill: Skill, el: HTMLElement) {
-        setListHovered({ skill, rect: el.getBoundingClientRect() });
+    function place() {
+        const wrap = wrapRef.current;
+        const card = cardRef.current;
+        if (!wrap || !card || !hovered) return;
+        const w = wrap.getBoundingClientRect();
+        const c = hovered.chip.getBoundingClientRect();
+        // Prefer below the chip unless that would run off the bottom of the viewport.
+        const roomBelow = window.innerHeight - c.bottom;
+        const p = placeCard(
+            { x: c.left - w.left, y: c.top - w.top, w: c.width, h: c.height },
+            { w: card.offsetWidth, h: card.offsetHeight },
+            // Bounds: the wrapper's width; vertically, generous (the page scrolls).
+            { x: 0, y: -10_000, w: w.width, h: 20_000 },
+            { prefer: roomBelow < card.offsetHeight + 16 ? 'above' : 'below', margin: 0 },
+        );
+        setPos({ left: p.left, top: p.top });
     }
 
+    useLayoutEffect(() => {
+        if (!hovered) {
+            setPos(null);
+            return;
+        }
+        place();
+        const ro = new ResizeObserver(place);
+        if (wrapRef.current) ro.observe(wrapRef.current);
+        return () => ro.disconnect();
+    }, [hovered]); // eslint-disable-line react-hooks/exhaustive-deps
+
+    // Tap outside clears a tapped-open card on touch devices.
+    useEffect(() => {
+        if (!hovered) return;
+        const onDown = (e: PointerEvent) => {
+            if (!wrapRef.current?.contains(e.target as Node)) setHovered(null);
+        };
+        document.addEventListener('pointerdown', onDown);
+        return () => document.removeEventListener('pointerdown', onDown);
+    }, [hovered]);
+
+    // A tap fires focus/mouseenter *and* click; remember when the card opened so
+    // the click that belongs to the same tap doesn't immediately close it.
+    const openedAt = useRef(0);
+    const show = (skill: Skill, chip: HTMLElement) => {
+        if (hovered?.skill.name !== skill.name) openedAt.current = performance.now();
+        setHovered({ skill, chip });
+    };
+
     return (
-        <div style={{ position: 'relative' }}>
-            <div
-                className="skills-grid"
-                style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))' }}
-            >
+        <div ref={wrapRef} className="skill-list-view" style={{ position: 'relative' }}>
+            <div className="skills-grid">
                 {cats.map((cat) => (
                     <div key={cat} className="skill-category">
                         <h3 style={{ color: CATEGORY_META[cat].color }}>
@@ -226,51 +300,45 @@ function ListView() {
                                 .filter((s) => s.category === cat)
                                 .sort((a, b) => b.weight - a.weight)
                                 .map((s) => {
-                                    const isHovered = listHovered?.skill.name === s.name;
+                                    const isHovered = hovered?.skill.name === s.name;
                                     const isRelated =
                                         !isHovered && relatedSet !== null && relatedSet.has(s.name);
-                                    const isDimmed =
-                                        listHovered !== null && !isHovered && !isRelated;
-                                    const meta = CATEGORY_META[s.category];
-
-                                    const style: React.CSSProperties = { cursor: 'pointer' };
-                                    if (isHovered) {
-                                        // Brightest: own category colour + glow.
-                                        style.borderColor = meta.color;
-                                        style.color = meta.color;
-                                        style.background = hexToRgba(meta.color, 0.12);
-                                        style.boxShadow = `0 0 10px ${hexToRgba(meta.color, 0.45)}`;
-                                    } else if (isRelated) {
-                                        // Subtle: tinted border, no glow, slightly brighter text.
-                                        style.borderColor = hexToRgba(meta.color, 0.6);
-                                        style.color = hexToRgba(meta.color, 0.95);
-                                        style.background = hexToRgba(meta.color, 0.06);
-                                    } else if (isDimmed) {
-                                        style.opacity = 0.28;
-                                    }
-
+                                    const isDimmed = hovered !== null && !isHovered && !isRelated;
                                     return (
                                         <li
                                             key={s.name}
                                             tabIndex={0}
-                                            style={style}
-                                            onMouseEnter={(e) =>
-                                                onItemEnter(s, e.currentTarget as HTMLLIElement)
+                                            data-skill={s.name}
+                                            className={
+                                                isHovered
+                                                    ? 'is-active'
+                                                    : isRelated
+                                                      ? 'is-related'
+                                                      : isDimmed
+                                                        ? 'is-dimmed'
+                                                        : undefined
                                             }
-                                            onMouseLeave={() => setListHovered(null)}
-                                            onFocus={(e) =>
-                                                onItemEnter(s, e.currentTarget as HTMLLIElement)
-                                            }
-                                            onBlur={() => setListHovered(null)}
-                                            // Mobile: tap to reveal. A second tap on the same item clears it.
-                                            onClick={(e) => {
-                                                const el = e.currentTarget as HTMLLIElement;
-                                                if (listHovered?.skill.name === s.name) {
-                                                    setListHovered(null);
-                                                } else {
-                                                    onItemEnter(s, el);
-                                                }
+                                            style={{
+                                                ['--cat' as string]:
+                                                    CATEGORY_META[s.category].color,
                                             }}
+                                            // Hover is for real mice only; touch opens/closes via click
+                                            // (emulated mouseleave after a tap would close it at once).
+                                            onPointerEnter={(e) =>
+                                                isMouseHover(e) && show(s, e.currentTarget)
+                                            }
+                                            onPointerLeave={(e) =>
+                                                isMouseHover(e) && setHovered(null)
+                                            }
+                                            onFocus={(e) => show(s, e.currentTarget)}
+                                            onBlur={() => setHovered(null)}
+                                            // Touch: tap to reveal, tap again to clear.
+                                            onClick={(e) =>
+                                                isHovered &&
+                                                performance.now() - openedAt.current > 400
+                                                    ? setHovered(null)
+                                                    : show(s, e.currentTarget)
+                                            }
                                         >
                                             {s.name}
                                         </li>
@@ -280,93 +348,18 @@ function ListView() {
                     </div>
                 ))}
             </div>
-
-            {/* Skill detail tooltip — rendered via portal into document.body so it
-          is never clipped or mispositioned by ancestor transforms (the .reveal
-          animation leaves transform:translateY(0) on its element, which creates
-          a new containing block for position:fixed children). */}
-            {listHovered &&
-                listMeta &&
-                typeof document !== 'undefined' &&
-                createPortal(
-                    <div
-                        ref={tooltipRef}
-                        role="tooltip"
-                        style={{
-                            position: 'fixed',
-                            left: tooltipPos?.left ?? 0,
-                            top: tooltipPos?.top ?? 0,
-                            visibility: tooltipPos ? 'visible' : 'hidden',
-                            background: 'var(--bg-elevated)',
-                            border: `1px solid ${listMeta.color}`,
-                            borderRadius: 'var(--radius)',
-                            padding: '8px 12px',
-                            pointerEvents: 'none',
-                            fontFamily: 'var(--font-display)',
-                            fontSize: '0.75rem',
-                            color: listMeta.color,
-                            zIndex: 9999,
-                            boxShadow: `0 0 12px ${hexToRgba(listMeta.color, 0.25)}`,
-                            maxWidth: 260,
-                        }}
-                    >
-                        <div style={{ marginBottom: 2 }}>
-                            <strong>{listHovered.skill.name}</strong>
-                            <span style={{ color: 'var(--text-secondary)', marginLeft: 8 }}>
-                                {listHovered.skill.weight}/10
-                            </span>
-                        </div>
-                        <div
-                            style={{
-                                color: 'var(--text-muted)',
-                                fontSize: '0.68rem',
-                                marginBottom: 4,
-                            }}
-                        >
-                            {listMeta.label}
-                        </div>
-                        {(listHovered.skill.relatedProjects?.length ?? 0) > 0 && (
-                            <ul
-                                style={{
-                                    margin: 0,
-                                    padding: 0,
-                                    listStyle: 'none',
-                                    borderTop: '1px solid var(--border)',
-                                    paddingTop: 4,
-                                    marginTop: 2,
-                                }}
-                            >
-                                {listHovered.skill.relatedProjects!.map((p) => (
-                                    <li
-                                        key={p}
-                                        style={{
-                                            color: 'var(--text-secondary)',
-                                            fontSize: '0.7rem',
-                                            lineHeight: 1.5,
-                                            whiteSpace: 'normal',
-                                        }}
-                                    >
-                                        › {p}
-                                    </li>
-                                ))}
-                            </ul>
-                        )}
-                        {relatedSet && relatedSet.size > 0 && (
-                            <div
-                                style={{
-                                    color: 'var(--text-muted)',
-                                    fontSize: '0.68rem',
-                                    marginTop: 4,
-                                    borderTop: '1px solid var(--border)',
-                                    paddingTop: 4,
-                                }}
-                            >
-                                {relatedSet.size} connection{relatedSet.size !== 1 ? 's' : ''}
-                            </div>
-                        )}
-                    </div>,
-                    document.body,
-                )}
+            {hovered && (
+                <SkillCard
+                    skill={hovered.skill}
+                    cardRef={cardRef}
+                    style={{
+                        position: 'absolute',
+                        left: pos?.left ?? 0,
+                        top: pos?.top ?? 0,
+                        visibility: pos ? 'visible' : 'hidden',
+                    }}
+                />
+            )}
         </div>
     );
 }
@@ -376,24 +369,30 @@ function ListView() {
 export default function SkillGraph({ height = 700 }: { height?: number }) {
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const containerRef = useRef<HTMLDivElement>(null);
+    const cardRef = useRef<HTMLDivElement>(null);
     const simRef = useRef<Simulation<GraphNode, GraphLink> | null>(null);
     const nodesRef = useRef<GraphNode[]>([]);
     const linksRef = useRef<GraphLink[]>([]);
-    // Bidirectional adjacency for the active graph instance (used during draw).
-    const biAdjRef = useRef<Map<string, Set<string>>>(SKILL_ADJACENCY);
     const cameraRef = useRef<Camera>({ x: 0, y: 0, scale: 1 });
     const hoveredRef = useRef<GraphNode | null>(null);
+    /** The hovered node + its neighbours; recomputed only when the hover changes. */
+    const hlSetRef = useRef<Set<string> | null>(null);
     const draggedRef = useRef<GraphNode | null>(null);
     const isPanRef = useRef(false);
     const panStartRef = useRef({ camX: 0, camY: 0, mx: 0, my: 0 });
     const pinchRef = useRef<{ dist: number; mx: number; my: number } | null>(null);
     const activeCatRef = useRef<Set<SkillCategory>>(new Set());
-    const isMobileRef = useRef(false);
     const labelPxRef = useRef(LABEL_PX_DESKTOP);
+    /** Theme colours, read from CSS once and refreshed when the theme changes. */
+    const themeRef = useRef({
+        accent: '#00FF41',
+        halo: 'rgba(11, 13, 16, 0.92)',
+        label: '#E6EDF3',
+    });
 
     const [zoomLevel, setZoomLevel] = useState(1);
     const [activeCategories, setActiveCategories] = useState<Set<SkillCategory>>(new Set());
-    const [tooltip, setTooltip] = useState<TooltipState | null>(null);
+    const [hoveredName, setHoveredName] = useState<string | null>(null);
     const [viewMode, setViewMode] = useState<ViewMode>(() =>
         typeof window !== 'undefined' && window.innerWidth < MOBILE_BREAKPOINT ? 'list' : 'graph',
     );
@@ -427,10 +426,16 @@ export default function SkillGraph({ height = 700 }: { height?: number }) {
         for (let i = nodesRef.current.length - 1; i >= 0; i--) {
             const n = nodesRef.current[i];
             if (n.x == null || n.y == null) continue;
-            const hit = Math.max(n.r, 16);
+            const hit = Math.max(n.r, 16 / cameraRef.current.scale);
             if ((sx - n.x) ** 2 + (sy - n.y) ** 2 <= hit ** 2) return n;
         }
         return null;
+    }
+
+    function setHover(n: GraphNode | null) {
+        hoveredRef.current = n;
+        hlSetRef.current = n ? new Set([n.id, ...(SKILL_ADJACENCY.get(n.id) ?? [])]) : null;
+        setHoveredName(n?.id ?? null);
     }
 
     // ─── Camera ───────────────────────────────────────────────────────────────
@@ -448,18 +453,21 @@ export default function SkillGraph({ height = 700 }: { height?: number }) {
     function fitAll(w: number, h: number) {
         const nodes = nodesRef.current;
         if (!nodes.length) return;
-        const PAD = 52;
+        const PAD = 28;
         let minX = Infinity,
             minY = Infinity,
             maxX = -Infinity,
             maxY = -Infinity;
         for (const n of nodes) {
             if (n.x == null || n.y == null) continue;
-            minX = Math.min(minX, n.x - n.r);
+            // Labels are drawn at a fixed screen size under each node, so reserve
+            // their half-width horizontally and one label line vertically —
+            // otherwise long names get clipped at the canvas edge.
+            const halfW = Math.max(n.r, n.labelHalfW);
+            minX = Math.min(minX, n.x - halfW);
+            maxX = Math.max(maxX, n.x + halfW);
             minY = Math.min(minY, n.y - n.r);
-            maxX = Math.max(maxX, n.x + n.r);
-            // Account for label clearance below node in sim space (approx)
-            maxY = Math.max(maxY, n.y + n.r + 24);
+            maxY = Math.max(maxY, n.y + n.r + labelPxRef.current + 6);
         }
         const gw = maxX - minX,
             gh = maxY - minY;
@@ -506,6 +514,32 @@ export default function SkillGraph({ height = 700 }: { height?: number }) {
         setZoomLevel(MIN_READABLE_SCALE);
     }
 
+    // ─── Card anchoring ───────────────────────────────────────────────────────
+    //
+    // Called at the end of every draw(), so the card follows its node through
+    // simulation ticks, drags, pans and zooms — it is positioned by writing
+    // style directly (no React re-render per frame) and clamped/flipped to stay
+    // inside the canvas.
+
+    function positionCard() {
+        const card = cardRef.current;
+        const canvas = canvasRef.current;
+        const n = hoveredRef.current;
+        if (!card || !canvas || !n || n.x == null || n.y == null) return;
+        const [sx, sy] = toScreen(n.x, n.y);
+        const nr = n.r * cameraRef.current.scale;
+        const p = placeCard(
+            { x: sx - nr, y: sy - nr, w: nr * 2, h: nr * 2 },
+            { w: card.offsetWidth, h: card.offsetHeight },
+            { x: 0, y: 0, w: canvas.clientWidth, h: canvas.clientHeight },
+            { prefer: 'above', gap: 10 },
+        );
+        card.style.transform = `translate(${p.left}px, ${p.top}px)`;
+        // Anchor point for e2e tests (cheap: two attribute writes per frame while hovering).
+        canvas.dataset.anchor = `${Math.round(sx)},${Math.round(sy)},${Math.round(nr)}`;
+        card.style.visibility = 'visible';
+    }
+
     // ─── Draw ──────────────────────────────────────────────────────────────────
 
     function draw() {
@@ -513,25 +547,15 @@ export default function SkillGraph({ height = 700 }: { height?: number }) {
         if (!canvas) return;
         const ctx = canvas.getContext('2d');
         if (!ctx) return;
-        const dpr = window.devicePixelRatio || 1;
+        const dpr = Math.min(window.devicePixelRatio || 1, 2);
         ctx.clearRect(0, 0, canvas.width, canvas.height);
 
         const cam = cameraRef.current;
         const hovered = hoveredRef.current;
+        const hlSet = hlSetRef.current;
         const active = activeCatRef.current;
         const hasCatFilter = active.size > 0;
-        // hlSet: the hovered node + its direct neighbors — used for NODE dimming/highlighting only
-        const hlSet = hovered
-            ? new Set([hovered.id, ...(biAdjRef.current.get(hovered.id) ?? [])])
-            : null;
-
-        // Read accent color from CSS for edge tinting
-        const accentColor =
-            getComputedStyle(document.documentElement).getPropertyValue('--accent').trim() ||
-            '#00FF41';
-        // Background color for label halo — should match the graph card background
-        // so the label "punches out" of any edges crossing behind it.
-        const haloColor = 'rgba(11, 13, 16, 0.92)';
+        const { accent, halo, label } = themeRef.current;
 
         // Pass 1 — edges (sim space via camera)
         ctx.save();
@@ -565,7 +589,7 @@ export default function SkillGraph({ height = 700 }: { height?: number }) {
                 ctx.strokeStyle = grad;
                 ctx.lineWidth = 2.5 / cam.scale;
             } else {
-                ctx.strokeStyle = hexToRgba(accentColor, 0.16);
+                ctx.strokeStyle = hexToRgba(accent, 0.16);
                 ctx.lineWidth = 1.25 / cam.scale;
             }
             ctx.stroke();
@@ -634,34 +658,17 @@ export default function SkillGraph({ height = 700 }: { height?: number }) {
                 // dimmed labels — they should recede into the background.
                 if (!dim) {
                     ctx.lineWidth = 4;
-                    ctx.strokeStyle = haloColor;
+                    ctx.strokeStyle = halo;
                     ctx.strokeText(n.skill.name, sx, ty);
                 }
 
-                ctx.fillStyle = dim ? 'rgba(139,148,158,0.30)' : isSelf ? meta.color : '#E6EDF3';
+                ctx.fillStyle = dim ? 'rgba(139,148,158,0.30)' : isSelf ? meta.color : label;
                 ctx.fillText(n.skill.name, sx, ty);
             }
             ctx.restore();
         }
-    }
 
-    // ─── Tooltip ──────────────────────────────────────────────────────────────
-
-    function showTooltip(n: GraphNode) {
-        const canvas = canvasRef.current;
-        if (!canvas) return;
-        const [sx, sy] = toScreen(n.x ?? 0, n.y ?? 0);
-        const nr = n.r * cameraRef.current.scale;
-        const below = sy - nr - 8 < 80;
-        setTooltip({
-            name: n.skill.name,
-            weight: n.skill.weight,
-            category: n.skill.category,
-            projects: n.skill.relatedProjects ?? [],
-            cssX: sx,
-            cssY: sy + (below ? nr + 6 : -nr - 8),
-            below,
-        });
+        positionCard();
     }
 
     // ─── Simulation ───────────────────────────────────────────────────────────
@@ -672,7 +679,6 @@ export default function SkillGraph({ height = 700 }: { height?: number }) {
             cy = ch / 2;
 
         const mobile = cw < MOBILE_BREAKPOINT;
-        isMobileRef.current = mobile;
 
         // Continuous interpolation across the 375–1200px range instead of a hard
         // cutoff at MOBILE_BREAKPOINT, so intermediate widths (tablet / small
@@ -712,35 +718,24 @@ export default function SkillGraph({ height = 700 }: { height?: number }) {
 
         const nodeMap = new Map(nodes.map((n) => [n.id, n]));
 
-        // Build bidirectional adjacency (normalises any remaining data asymmetries)
-        const biAdj = new Map<string, Set<string>>();
-        for (const n of nodes) {
-            if (!biAdj.has(n.id)) biAdj.set(n.id, new Set());
-            for (const conn of n.skill.connections ?? []) {
-                if (conn === n.id) continue; // ignore self-connections
-                biAdj.get(n.id)!.add(conn);
-                if (!biAdj.has(conn)) biAdj.set(conn, new Set());
-                biAdj.get(conn)!.add(n.id);
-            }
-        }
-        biAdjRef.current = biAdj;
-
-        // Build de-duplicated edge list using bidirectional adjacency
+        // De-duplicated edge list from the bidirectional adjacency
         const seenEdges = new Set<string>();
         const links: GraphLink[] = [];
-        for (const [aid, neighbours] of biAdj) {
+        for (const [aid, neighbours] of SKILL_ADJACENCY) {
             for (const bid of neighbours) {
                 const edgeKey = aid < bid ? `${aid}||${bid}` : `${bid}||${aid}`;
                 if (seenEdges.has(edgeKey)) continue;
                 seenEdges.add(edgeKey);
                 const s = nodeMap.get(aid),
-                    t = nodeMap.get(bid);
-                if (s && t) links.push({ source: s, target: t });
+                    tg = nodeMap.get(bid);
+                if (s && tg) links.push({ source: s, target: tg });
             }
         }
 
         nodesRef.current = nodes;
         linksRef.current = links;
+        // A rebuilt simulation means new node objects — drop any stale hover.
+        if (hoveredRef.current) setHover(nodeMap.get(hoveredRef.current.id) ?? null);
 
         const sim = forceSimulation<GraphNode>(nodes)
             .force(
@@ -794,12 +789,33 @@ export default function SkillGraph({ height = 700 }: { height?: number }) {
         else fitAll(cw, ch);
         draw();
 
+        // A gentle "breathing" settle after layout; d3 stops the timer by itself
+        // once alpha decays below alphaMin, so nothing runs forever.
         if (!prefersReduced) {
             sim.alpha(0.04).on('tick', draw).restart();
+        } else {
+            sim.on('tick', draw);
         }
     }
 
     // ─── Effects ─────────────────────────────────────────────────────────────
+
+    // Theme colours: read once, re-read when the terminal `theme` command flips
+    // data-theme on <html>.
+    useEffect(() => {
+        const read = () => {
+            themeRef.current = {
+                accent: cssVar('--accent', '#00FF41'),
+                halo: cssVar('--graph-halo', 'rgba(11, 13, 16, 0.92)'),
+                label: cssVar('--graph-label', '#E6EDF3'),
+            };
+            draw();
+        };
+        read();
+        const mo = new MutationObserver(read);
+        mo.observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
+        return () => mo.disconnect();
+    }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
     useEffect(() => {
         const container = containerRef.current;
@@ -811,7 +827,7 @@ export default function SkillGraph({ height = 700 }: { height?: number }) {
             // Skip when the container is CSS-hidden (display:none → width=0)
             if (w <= 0) return;
             const h = effectiveHeight;
-            const dpr = window.devicePixelRatio || 1;
+            const dpr = Math.min(window.devicePixelRatio || 1, 2);
             canvas.width = w * dpr;
             canvas.height = h * dpr;
             canvas.style.width = `${w}px`;
@@ -830,8 +846,15 @@ export default function SkillGraph({ height = 700 }: { height?: number }) {
         window.addEventListener('resize', onResize);
         window.addEventListener('orientationchange', onResize);
 
+        // Browsers replay a tap as mousemove/mousedown/mouseup ~instantly after
+        // touchend. By then the tapped node may have drifted, so the replayed
+        // hit-test would clear the card the tap just opened — ignore them.
+        let lastTouch = 0;
+        const fromTouch = () => performance.now() - lastTouch < 800;
+
         // Mouse
         function onMouseMove(e: MouseEvent) {
+            if (fromTouch()) return;
             const [cx, cy] = cssCoord(e, canvas!);
             if (draggedRef.current) {
                 const [sx, sy] = toSim(cx, cy);
@@ -840,7 +863,6 @@ export default function SkillGraph({ height = 700 }: { height?: number }) {
                 draggedRef.current.fx = sx;
                 draggedRef.current.fy = sy;
                 simRef.current?.alpha(0.2).restart();
-                showTooltip(draggedRef.current);
                 draw();
                 return;
             }
@@ -848,19 +870,18 @@ export default function SkillGraph({ height = 700 }: { height?: number }) {
                 const { camX, camY, mx, my } = panStartRef.current;
                 cameraRef.current.x = camX + (cx - mx);
                 cameraRef.current.y = camY + (cy - my);
-                if (hoveredRef.current) showTooltip(hoveredRef.current);
                 draw();
                 return;
             }
             const hit = nodeAt(cx, cy);
             if (hit?.id !== hoveredRef.current?.id) {
-                hoveredRef.current = hit;
+                setHover(hit);
                 canvas!.style.cursor = hit ? 'grab' : 'default';
-                hit ? showTooltip(hit) : setTooltip(null);
                 draw();
             }
         }
         function onMouseDown(e: MouseEvent) {
+            if (fromTouch()) return;
             const [cx, cy] = cssCoord(e, canvas!);
             const hit = nodeAt(cx, cy);
             if (hit) {
@@ -899,13 +920,13 @@ export default function SkillGraph({ height = 700 }: { height?: number }) {
             }
         }
         function onMouseLeave() {
+            if (fromTouch()) return;
             if (draggedRef.current) {
                 simRef.current?.alphaTarget(0);
                 draggedRef.current = null;
             }
             isPanRef.current = false;
-            hoveredRef.current = null;
-            setTooltip(null);
+            setHover(null);
             canvas!.style.cursor = 'default';
             draw();
         }
@@ -913,7 +934,6 @@ export default function SkillGraph({ height = 700 }: { height?: number }) {
             e.preventDefault();
             const [cx, cy] = cssCoord(e, canvas!);
             zoomAt(cx, cy, Math.pow(0.999, e.deltaY));
-            if (hoveredRef.current) showTooltip(hoveredRef.current);
             draw();
         }
 
@@ -922,6 +942,7 @@ export default function SkillGraph({ height = 700 }: { height?: number }) {
         // empty canvas, we let the browser handle vertical scrolling so the page
         // doesn't get scroll-trapped inside the graph.
         function onTouchStart(e: TouchEvent) {
+            lastTouch = performance.now();
             const ts = e.touches;
             if (ts.length === 2) {
                 e.preventDefault();
@@ -938,18 +959,16 @@ export default function SkillGraph({ height = 700 }: { height?: number }) {
                 // Touching a node → drag intent, swallow the gesture from the page.
                 e.preventDefault();
                 draggedRef.current = hit;
-                hoveredRef.current = hit;
+                setHover(hit);
                 hit.fx = hit.x;
                 hit.fy = hit.y;
                 simRef.current?.alphaTarget(0.3).restart();
-                showTooltip(hit);
                 draw();
             } else {
                 // Empty canvas → let the browser scroll the page. We do NOT enable
                 // one-finger panning here on touch; users have pinch-zoom + the fit/
                 // zoom buttons, and they need the canvas to be scroll-pass-through.
-                hoveredRef.current = null;
-                setTooltip(null);
+                setHover(null);
                 draw();
             }
         }
@@ -966,7 +985,6 @@ export default function SkillGraph({ height = 700 }: { height?: number }) {
                 cameraRef.current.y += my - pinchRef.current.my;
                 zoomAt(mx, my, nd / pinchRef.current.dist);
                 pinchRef.current = { dist: nd, mx, my };
-                if (hoveredRef.current) showTooltip(hoveredRef.current);
                 draw();
                 return;
             }
@@ -979,12 +997,12 @@ export default function SkillGraph({ height = 700 }: { height?: number }) {
                 draggedRef.current.fx = sx;
                 draggedRef.current.fy = sy;
                 simRef.current?.alpha(0.2).restart();
-                showTooltip(draggedRef.current);
                 draw();
             }
             // Otherwise (1 finger, not dragging a node) → don't preventDefault.
         }
         function onTouchEnd(e: TouchEvent) {
+            lastTouch = performance.now();
             if (e.touches.length < 2) pinchRef.current = null;
             if (draggedRef.current) {
                 simRef.current?.alphaTarget(0);
@@ -1019,6 +1037,12 @@ export default function SkillGraph({ height = 700 }: { height?: number }) {
             canvas.removeEventListener('touchend', onTouchEnd);
         };
     }, [effectiveHeight]); // eslint-disable-line react-hooks/exhaustive-deps
+
+    // The card mounts after the hover state renders — anchor it immediately so
+    // it never flashes at the origin.
+    useLayoutEffect(() => {
+        if (hoveredName) positionCard();
+    }, [hoveredName]); // eslint-disable-line react-hooks/exhaustive-deps
 
     useEffect(() => {
         activeCatRef.current = activeCategories;
@@ -1058,289 +1082,134 @@ export default function SkillGraph({ height = 700 }: { height?: number }) {
         }
     }
 
-    // ─── Style helpers ────────────────────────────────────────────────────────
-
-    const btnBase: React.CSSProperties = {
-        display: 'inline-flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        width: 32,
-        height: 32,
-        padding: 0,
-        fontFamily: 'var(--font-display)',
-        fontSize: '1rem',
-        background: 'var(--bg-elevated)',
-        border: '1px solid var(--border)',
-        borderRadius: 'var(--radius)',
-        color: 'var(--text-secondary)',
-        cursor: 'pointer',
-        transition: 'all 0.15s ease',
-        lineHeight: 1,
-    };
-
-    const tooltipMeta = tooltip ? CATEGORY_META[tooltip.category] : null;
-
-    const cats = Object.keys(CATEGORY_META) as SkillCategory[];
+    const hoveredSkill = hoveredName ? SKILL_BY_NAME.get(hoveredName) : undefined;
 
     // ─── Render ──────────────────────────────────────────────────────────────
 
     return (
-        <div style={{ width: '100%' }}>
+        <div className="skill-graph">
             {/* ── View toggle ── */}
-            <div
-                style={{
-                    display: 'flex',
-                    justifyContent: 'flex-end',
-                    marginBottom: '0.75rem',
-                    gap: '0.5rem',
-                }}
-            >
+            <div className="sg-toggle" role="group" aria-label="Skill view">
                 {(['graph', 'list'] as ViewMode[]).map((m) => (
                     <button
                         key={m}
+                        type="button"
                         onClick={() => setViewMode(m)}
                         aria-pressed={viewMode === m}
-                        style={{
-                            padding: '5px 14px',
-                            fontSize: '0.72rem',
-                            fontFamily: 'var(--font-display)',
-                            textTransform: 'uppercase',
-                            letterSpacing: '0.06em',
-                            background: viewMode === m ? 'var(--accent-bg)' : 'var(--bg-elevated)',
-                            border: `1px solid ${viewMode === m ? 'var(--accent)' : 'var(--border)'}`,
-                            borderRadius: 'var(--radius)',
-                            color: viewMode === m ? 'var(--accent)' : 'var(--text-secondary)',
-                            cursor: 'pointer',
-                            transition: 'all 0.15s ease',
-                        }}
+                        className="sg-btn"
                     >
                         {m === 'graph' ? '⬡ Graph' : '≡ List'}
                     </button>
                 ))}
             </div>
+
             {/* ── List view — always mounted, shown/hidden via CSS ── */}
-            <div style={{ display: viewMode === 'list' ? 'block' : 'none' }}>
+            <div hidden={viewMode !== 'list'}>
                 <ListView />
             </div>
+
             {/* ── Graph view — always mounted so ResizeObserver stays alive ── */}
-            <div style={{ display: viewMode === 'graph' ? 'block' : 'none' }}>
-                <div
-                    ref={containerRef}
-                    style={{
-                        position: 'relative',
-                        width: '100%',
-                        background: 'rgba(27, 27, 27, 0.29)',
-                        borderRadius: '12px',
-                        border: '1px solid rgba(255,255,255,0.05)',
-                    }}
-                >
+            <div hidden={viewMode !== 'graph'}>
+                <div ref={containerRef} className="sg-canvas-wrap">
                     <canvas
                         ref={canvasRef}
                         role="img"
-                        aria-label="Interactive skill graph. Hover to highlight, drag to pin, double-click to unpin, scroll or pinch to zoom."
+                        aria-label="Interactive skill graph. Hover or tap a skill to see where it was used, drag to pin, double-click to unpin, scroll or pinch to zoom. The List view has the same content."
                         // touch-action: pan-y lets the browser scroll the page vertically
                         // when the user drags inside the canvas with one finger on empty
                         // space; our touchstart handler only calls preventDefault when the
                         // gesture actually hits a node or starts a pinch.
-                        style={{
-                            display: 'block',
-                            width: '100%',
-                            cursor: 'default',
-                            touchAction: 'pan-y',
-                        }}
+                        style={{ display: 'block', width: '100%', touchAction: 'pan-y' }}
                     />
 
                     {/* Zoom buttons */}
-                    <div
-                        aria-label="Zoom controls"
-                        style={{
-                            position: 'absolute',
-                            top: 12,
-                            right: 12,
-                            display: 'flex',
-                            flexDirection: 'column',
-                            gap: 4,
-                            zIndex: 5,
-                        }}
-                    >
+                    <div className="sg-zoom" aria-label="Zoom controls">
                         <button
+                            type="button"
                             onClick={handleZoomIn}
                             disabled={zoomLevel >= MAX_ZOOM}
                             aria-label="Zoom in"
-                            style={btnBase}
                             title="Zoom in"
                         >
                             +
                         </button>
                         <button
+                            type="button"
                             onClick={handleFit}
                             aria-label="Fit all nodes"
-                            style={btnBase}
                             title="Fit all"
                         >
                             ⊙
                         </button>
                         <button
+                            type="button"
                             onClick={handleZoomOut}
                             disabled={zoomLevel <= MIN_ZOOM}
                             aria-label="Zoom out"
-                            style={btnBase}
                             title="Zoom out"
                         >
                             −
                         </button>
                     </div>
 
-                    {/* Tooltip */}
-                    {tooltip && tooltipMeta && (
-                        <div
-                            role="tooltip"
+                    {/* Card — anchored to the hovered node by positionCard() every frame. */}
+                    {hoveredSkill && (
+                        <SkillCard
+                            key={hoveredSkill.name}
+                            skill={hoveredSkill}
+                            cardRef={cardRef}
                             style={{
                                 position: 'absolute',
-                                left: tooltip.cssX,
-                                top: tooltip.cssY,
-                                transform: tooltip.below
-                                    ? 'translate(-50%,0)'
-                                    : 'translate(-50%,-100%)',
-                                background: 'var(--bg-elevated)',
-                                border: `1px solid ${tooltipMeta.color}`,
-                                borderRadius: 'var(--radius)',
-                                padding: '8px 12px',
+                                left: 0,
+                                top: 0,
+                                visibility: 'hidden',
                                 pointerEvents: 'none',
-                                fontFamily: 'var(--font-display)',
-                                fontSize: '0.75rem',
-                                color: tooltipMeta.color,
-                                whiteSpace: 'nowrap',
-                                zIndex: 10,
-                                boxShadow: `0 0 12px ${hexToRgba(tooltipMeta.color, 0.25)}`,
-                                maxWidth: 230,
                             }}
-                        >
-                            <div style={{ marginBottom: tooltip.projects.length ? 4 : 0 }}>
-                                <strong>{tooltip.name}</strong>
-                                <span style={{ color: 'var(--text-secondary)', marginLeft: 8 }}>
-                                    {' '}
-                                    {tooltip.weight}/10
-                                </span>
-                            </div>
-                            {tooltip.projects.length > 0 && (
-                                <ul
-                                    style={{
-                                        margin: 0,
-                                        padding: 0,
-                                        listStyle: 'none',
-                                        borderTop: '1px solid var(--border)',
-                                        paddingTop: 4,
-                                        marginTop: 2,
-                                    }}
-                                >
-                                    {tooltip.projects.map((p) => (
-                                        <li
-                                            key={p}
-                                            style={{
-                                                color: 'var(--text-secondary)',
-                                                fontSize: '0.7rem',
-                                                lineHeight: 1.5,
-                                                whiteSpace: 'normal',
-                                            }}
-                                        >
-                                            › {p}
-                                        </li>
-                                    ))}
-                                </ul>
-                            )}
-                        </div>
+                        />
                     )}
-
-                    {/* Legend / filter — multi-select. Click multiple categories to
-              highlight them all at once; click again to remove. */}
-                    <div
-                        role="group"
-                        aria-label="Filter by category (multi-select)"
-                        style={{
-                            display: 'flex',
-                            flexWrap: 'wrap',
-                            gap: '0.5rem',
-                            marginTop: '0.875rem',
-                            justifyContent: 'center',
-                        }}
-                    >
-                        {cats.map((cat) => {
-                            const { label, color } = CATEGORY_META[cat];
-                            const on = activeCategories.has(cat);
-                            return (
-                                <button
-                                    key={cat}
-                                    onClick={() => toggleCategory(cat)}
-                                    aria-pressed={on}
-                                    style={{
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        gap: '0.4rem',
-                                        padding: '5px 14px',
-                                        fontSize: '0.75rem',
-                                        fontFamily: 'var(--font-display)',
-                                        background: on
-                                            ? hexToRgba(color, 0.15)
-                                            : 'var(--bg-elevated)',
-                                        border: `1px solid ${on ? color : 'var(--border)'}`,
-                                        borderRadius: 'var(--radius)',
-                                        color: on ? color : 'var(--text-secondary)',
-                                        cursor: 'pointer',
-                                        transition: 'all 0.15s ease',
-                                        minHeight: 44,
-                                    }}
-                                >
-                                    <span
-                                        style={{
-                                            width: 8,
-                                            height: 8,
-                                            borderRadius: '50%',
-                                            background: color,
-                                            flexShrink: 0,
-                                            boxShadow: on ? `0 0 6px ${color}` : 'none',
-                                        }}
-                                    />
-                                    {label}
-                                </button>
-                            );
-                        })}
-                        {activeCategories.size > 0 && (
-                            <button
-                                onClick={() => setActiveCategories(new Set())}
-                                style={{
-                                    padding: '5px 14px',
-                                    fontSize: '0.75rem',
-                                    fontFamily: 'var(--font-display)',
-                                    background: 'transparent',
-                                    border: '1px solid var(--border)',
-                                    borderRadius: 'var(--radius)',
-                                    color: 'var(--text-muted)',
-                                    cursor: 'pointer',
-                                    minHeight: 44,
-                                }}
-                            >
-                                clear
-                            </button>
-                        )}
-                    </div>
-
-                    <p
-                        style={{
-                            textAlign: 'center',
-                            fontSize: '0.68rem',
-                            color: 'var(--text-muted)',
-                            fontFamily: 'var(--font-display)',
-                            marginTop: '0.5rem',
-                        }}
-                    >
-                        {isMobile
-                            ? 'two-finger drag to pan · pinch to zoom · ⊙ fits everything'
-                            : 'scroll / pinch to zoom · drag to pin · double-click to release'}
-                    </p>
                 </div>
-            </div>{' '}
-            {/* end graph show/hide wrapper */}
+
+                {/* Legend / filter — multi-select. Click multiple categories to
+                    highlight them all at once; click again to remove. */}
+                <div
+                    className="sg-legend"
+                    role="group"
+                    aria-label="Filter by category (multi-select)"
+                >
+                    {CATEGORY_ORDER.map((cat) => {
+                        const { label, color } = CATEGORY_META[cat];
+                        const on = activeCategories.has(cat);
+                        return (
+                            <button
+                                key={cat}
+                                type="button"
+                                onClick={() => toggleCategory(cat)}
+                                aria-pressed={on}
+                                className="sg-chip"
+                                style={{ ['--cat' as string]: color }}
+                            >
+                                <span className="sg-chip__dot" aria-hidden="true" />
+                                {label}
+                            </button>
+                        );
+                    })}
+                    {activeCategories.size > 0 && (
+                        <button
+                            type="button"
+                            className="sg-chip sg-chip--clear"
+                            onClick={() => setActiveCategories(new Set())}
+                        >
+                            clear
+                        </button>
+                    )}
+                </div>
+
+                <p className="sg-hint">
+                    {isMobile
+                        ? 'tap a skill · pinch to zoom · two-finger drag to pan · ⊙ fits everything'
+                        : 'hover a skill · scroll / pinch to zoom · drag to pin · double-click to release'}
+                </p>
+            </div>
         </div>
     );
 }

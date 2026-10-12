@@ -3,6 +3,8 @@
    ============================================================ */
 
 import projects from '../data/projects';
+import { jobs } from '../data/experience';
+import { CATEGORY_META, skills, type SkillCategory } from '../data/skills';
 
 declare global {
     interface Window {
@@ -424,29 +426,36 @@ function cmdCd(args: string[], outputEl: HTMLElement, onDone?: () => void): void
 }
 
 function cmdSkills(_args: string[], outputEl: HTMLElement, onDone?: () => void): void {
-    const categories = [
-        {
-            title: 'Languages',
-            items: 'TypeScript, Python, JavaScript, HTML, CSS, Rust, PHP, Java, C++, C#',
-        },
-        {
-            title: 'Frameworks & Tools',
-            items: 'React.js, Next.js, React Native, Node.js, Docker, Git, Linux/UNIX',
-        },
-        {
-            title: 'Security Tools',
-            items: 'CrowdStrike, Netskope, Zscaler, Azure, Intune, GitHub Enterprise, SIEM, EDR, DLP',
-        },
-        { title: 'Cloud Platforms', items: 'AWS, Azure, Google Cloud, Firebase, Vercel' },
-    ];
+    // Generated from skills.ts so the terminal never drifts from the graph.
     const lines: string[] = [''];
-    categories.forEach((cat) => {
-        lines.push(`  ┌─ ${cat.title}`);
-        lines.push(`  │  ${cat.items}`);
+    for (const cat of Object.keys(CATEGORY_META) as SkillCategory[]) {
+        const names = skills
+            .filter((s) => s.category === cat)
+            .sort((a, b) => b.weight - a.weight)
+            .map((s) => s.name);
+        lines.push(`  ┌─ ${CATEGORY_META[cat].label}`);
+        lines.push(...wrapList(names, 56).map((l) => `  │  ${l}`));
         lines.push('  └──────────────────────');
         lines.push('');
-    });
+    }
+    lines.push('  Tip: the About page has the interactive skill graph — cd about');
+    lines.push('');
     streamLines(lines, '', outputEl, onDone);
+}
+
+/** Greedy-wrap a comma list to `width` characters per line. */
+function wrapList(items: string[], width: number): string[] {
+    const out: string[] = [];
+    let line = '';
+    for (const it of items) {
+        const next = line ? `${line}, ${it}` : it;
+        if (next.length > width && line) {
+            out.push(line + ',');
+            line = it;
+        } else line = next;
+    }
+    if (line) out.push(line);
+    return out;
 }
 
 function cmdProjects(_args: string[], outputEl: HTMLElement, onDone?: () => void): void {
@@ -478,61 +487,16 @@ function cmdProjects(_args: string[], outputEl: HTMLElement, onDone?: () => void
 }
 
 function cmdExperience(_args: string[], outputEl: HTMLElement, onDone?: () => void): void {
-    const jobs = [
-        {
-            period: 'Aug 2023 – Present',
-            role: 'Cybersecurity Engineer',
-            org: 'Yamaha Motor Corporation, Cypress, CA',
-            highlights: [
-                'Manages on-prem and cloud security operations',
-                'Implements DevSecOps practices using GitHub Actions & GitHub Enterprise',
-                'Develops Infrastructure as Code solutions',
-                'Oversees CrowdStrike, Netskope, Zscaler deployments',
-                'Manages Azure infrastructure, groups, and Intune MDM',
-                'Builds & maintains CI/CD pipelines with security checks',
-                'Develops SIEM platforms for real-time threat detection',
-            ],
-        },
-        {
-            period: 'May 2022 – Aug 2022',
-            role: 'Business Application Development Intern',
-            org: 'Yamaha Motor Corporation, Cypress, CA',
-            highlights: [
-                'Designed testing methods for code and data quality',
-                'Developed SAP programs using ABAP',
-                'Utilized Python and React.js for business applications',
-            ],
-        },
-        {
-            period: 'Feb 2020 – Jul 2023',
-            role: 'Web Developer',
-            org: 'Associated Students Inc., Long Beach, CA',
-            highlights: [
-                'Led team of graduate student developers',
-                'Improved websites with SEO and daily content updates',
-                'Developed React.js quiz game during COVID-19',
-            ],
-        },
-        {
-            period: 'May 2021 – Jan 2022',
-            role: 'Lead Security Engineer',
-            org: 'Down (joindown.com), Remote',
-            highlights: [
-                'Coordinated Android & iOS testing for React Native app',
-                'Developed Firebase security rules',
-                'Tested application using Jest and Detox',
-            ],
-        },
-    ];
+    // Generated from experience.ts (same source as the About timeline).
     const lines: string[] = [''];
-    jobs.forEach((j) => {
-        lines.push(`  ╔══ ${j.period}`);
+    for (const j of jobs) {
+        lines.push(`  ╔══ ${j.date}`);
         lines.push(`  ║  ${j.role}`);
         lines.push(`  ║  ${j.org}`);
-        j.highlights.forEach((h) => lines.push(`  ║  > ${h}`));
+        for (const d of j.details.slice(0, 4)) lines.push(`  ║  > ${d}`);
         lines.push('  ╚══════════════════════════════');
         lines.push('');
-    });
+    }
     streamLines(lines, '', outputEl, onDone);
 }
 
