@@ -333,20 +333,75 @@ body {
     background: var(--ui-2);
 }
 
-/* Drip divider (AnsiDivider.astro) */
-.ansi-divider {
+/* Paint drips (AnsiDrips.astro): a sprayed bar (dividers) or a card's bottom edge, with rounded
+   drips. Each drip is placed in cells (--x centre column, --h rows); 0.6em is one cell. fx.ts
+   slides .drip__paint and releases .drip__drop; without it (no JS, reduced motion) they hang still. */
+.drips {
     container-type: inline-size;
+    pointer-events: none;
+}
+.drips .ansi {
+    --ansi-max: 9px;
+    position: relative;
+    height: calc((var(--rows) + var(--bar-rows, 0)) * 1em);
+    color: var(--drip-color, var(--ui-dim));
+}
+.drips--bar {
+    --bar-rows: 1;
+}
+.d-bar {
+    display: block;
+    color: var(--drip-bar, var(--ui-dim));
+}
+.drip {
+    font-style: normal;
+    position: absolute;
+    left: calc((var(--x) - 1) * 0.6em);
+    top: calc(var(--bar-rows, 0) * 1em);
+    width: 1.8em;
+}
+.drip__clip {
+    display: block;
+    font-style: normal;
+    height: calc(var(--h) * 1em);
+    overflow: clip;
+}
+.drip__paint,
+.drip__drop {
+    display: block;
+    font-style: normal;
+    white-space: pre;
+}
+.drip__drop {
+    position: absolute;
+    left: 0.6em;
+    top: calc((var(--h) - 1.5) * 1em);
+    opacity: 0;
+}
+
+/* Section divider */
+.ansi-divider {
     margin: 2.5rem 0;
     opacity: 0.85;
 }
-.ansi-divider .ansi {
-    --ansi-max: 9px;
+/* Drips hanging off a card's bottom edge (absolute: they add no height and sit in the gap).
+   Fixed 7px cells over a long strip, clipped to the card's width (falling drops still escape
+   downwards), so every card gets drips at the same size whatever its width. */
+.card-drips {
+    position: absolute;
+    left: 1rem;
+    right: 1rem;
+    /* Tuck the first row into the border so the paint runs out of the edge. */
+    top: calc(100% - 3px);
+    overflow-x: clip;
+    --drip-color: color-mix(in oklab, var(--border-bright) 80%, var(--ui));
 }
-.d-bar {
-    color: var(--ui-dim);
+.card-drips .ansi {
+    font-size: 7px;
 }
-.d-drip {
-    color: var(--ui-dim);
+.card:hover .card-drips,
+.card-link:focus-visible .card-drips {
+    --drip-color: var(--ui-dim);
 }
 
 a {
@@ -847,7 +902,8 @@ body.js-reveal-ready .reveal.revealed {
     border-radius: var(--radius-lg);
     padding: 1.75rem;
     position: relative;
-    overflow: hidden;
+    /* Not clipped: paint drips hang off the bottom edge (.card-drips). */
+    overflow: visible;
     /* Same hard extrusion as the art and buttons — deep navy so it reads as depth, not decoration. */
     box-shadow: 5px 5px 0 #04070c;
     transition:
@@ -862,6 +918,8 @@ body.js-reveal-ready .reveal.revealed {
     left: 0;
     width: 100%;
     height: 3px;
+    /* Follow the card's top corners (the card no longer clips its children). */
+    border-radius: var(--radius-lg) var(--radius-lg) 0 0 / 3px 3px 0 0;
     /* A sprayed stripe: cyan → aqua, with the faintest pink tip. */
     background: linear-gradient(90deg, var(--ui), var(--ui-2) 70%, var(--accent));
     opacity: 0;

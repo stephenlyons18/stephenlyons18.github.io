@@ -2,6 +2,7 @@
 import BaseLayout from '../layouts/BaseLayout.astro';
 import AnsiTitle from '../components/AnsiTitle.astro';
 import AnsiDivider from '../components/AnsiDivider.astro';
+import AnsiDrips from '../components/AnsiDrips.astro';
 import { featuredProjects } from '../data/projects';
 ---
 
@@ -61,7 +62,7 @@ import { featuredProjects } from '../data/projects';
             </div>
 
             <div class="featured-grid">
-                {featuredProjects.map((p) => (
+                {featuredProjects.map((p, i) => (
                     <a href={`/projects#${p.id}`} class="card-link">
                         <article class="card reveal">
                             <span class="card__tag">{p.featuredTag ?? p.tag}</span>
@@ -72,6 +73,13 @@ import { featuredProjects } from '../data/projects';
                                     <span>{t}</span>
                                 ))}
                             </div>
+                            <AnsiDrips
+                                cols={110}
+                                seed={i + 11}
+                                maxStem={1}
+                                density={0.1}
+                                class="card-drips"
+                            />
                         </article>
                     </a>
                 ))}
@@ -95,6 +103,7 @@ import { featuredProjects } from '../data/projects';
                         security checks, compliance gates, and automated deployments across AWS and
                         Azure.
                     </p>
+                    <AnsiDrips cols={110} seed={21} maxStem={1} density={0.1} class="card-drips" />
                 </div>
                 <div class="card reveal">
                     <h3 class="card__title">Cloud Security Architecture</h3>
@@ -103,6 +112,7 @@ import { featuredProjects } from '../data/projects';
                         infrastructure hardening, and continuous monitoring across multi-cloud
                         environments.
                     </p>
+                    <AnsiDrips cols={110} seed={22} maxStem={1} density={0.1} class="card-drips" />
                 </div>
                 <div class="card reveal">
                     <h3 class="card__title">Threat Detection &amp; SIEM</h3>
@@ -111,6 +121,7 @@ import { featuredProjects } from '../data/projects';
                         Automating log collection, normalization, and enrichment from cloud,
                         endpoint, and SaaS sources.
                     </p>
+                    <AnsiDrips cols={110} seed={23} maxStem={1} density={0.1} class="card-drips" />
                 </div>
                 <div class="card reveal">
                     <h3 class="card__title">Endpoint Security &amp; DLP</h3>
@@ -118,6 +129,7 @@ import { featuredProjects } from '../data/projects';
                         Deploying EDR solutions for comprehensive device protection and implementing
                         DLP controls to safeguard sensitive data across the enterprise.
                     </p>
+                    <AnsiDrips cols={110} seed={24} maxStem={1} density={0.1} class="card-drips" />
                 </div>
                 <div class="card reveal">
                     <h3 class="card__title">Incident Response</h3>
@@ -126,6 +138,7 @@ import { featuredProjects } from '../data/projects';
                         and remediation. Maintaining and improving automated playbooks and
                         escalation workflows.
                     </p>
+                    <AnsiDrips cols={110} seed={25} maxStem={1} density={0.1} class="card-drips" />
                 </div>
                 <div class="card reveal">
                     <h3 class="card__title">Infrastructure as Code</h3>
@@ -134,6 +147,7 @@ import { featuredProjects } from '../data/projects';
                         standardize configurations, enforce compliance, and ensure consistent,
                         secure deployments.
                     </p>
+                    <AnsiDrips cols={110} seed={26} maxStem={1} density={0.1} class="card-drips" />
                 </div>
             </div>
 

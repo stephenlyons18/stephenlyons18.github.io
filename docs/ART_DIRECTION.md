@@ -97,8 +97,18 @@ slots only; the wall and text stay.
   80 × 30-cell SVG tile, where each shade glyph becomes its 2 × 2 dither. The tile is served as three CSS masks
   (`/art/wall.css`, generated at build) over theme-coloured layers, so there are no glyphs in the DOM. It replaces the matrix rain, which ran a rAF loop forever. The `matrix`
   terminal command still plays the rain once, as an easter egg.
-- **Drip divider** (`AnsiDivider.astro`, `renderDivider`): a sprayed `▄` bar with thin drips. Used under page
-  headers and between home sections.
+- **Drips** (`AnsiDrips.astro`, `renderDripStrip`): a 1-cell stem ending in a rounded quadrant-block bulb
+  (`▗█▖` over `▝█▘`, a chamfered oval in half-cell pixels). Title drips end the same way where there is room
+  for the bulb's shoulders, else in a `▀` tip.
+  - **Divider** (`AnsiDivider.astro`): drips under a sprayed `▄` bar. Used under page headers and between home
+    sections.
+  - **Card drips** (`.card-drips`): fixed 7px cells hanging off a card's bottom edge, at most 3 rows, so they
+    stay inside the grid gap and never reach the next card (e2e checks this).
+  - **Physics** (`src/scripts/fx.ts`, Motion): lazy-loaded, never under reduced motion.
+    - Drips run out of their bar on a Motion spring, applied as one CSS `linear()` transition.
+    - Drops swell, stretch, fall with an ease-in "gravity" curve and splat.
+    - Swiping or tapping a divider, or hovering a card, releases drops.
+    - Everything pauses offscreen and in hidden tabs.
 - **Headers** (`AnsiTitle.astro`): lean wildstyle for page titles, bubble for the 404 and the "SL" avatar.
   With the a11y menu's **Plain headings**, the art hides and its real heading shows instead: Press Start 2P,
   the same burner gradient and a two-step block extrusion (`drop-shadow` in `--title-x1`/`--title-x2`).

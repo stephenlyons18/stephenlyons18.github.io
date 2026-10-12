@@ -1,0 +1,29 @@
+---
+/**
+ * Paint drips (src/lib/ansi/wall.ts renderDripStrip): under a sprayed bar (`bar`, the section
+ * divider) or hanging off a card's bottom edge. Static, aria-hidden text; fx.ts (lazy, skipped
+ * under reduced motion) animates it: drips run out of the bar, drops swell, fall and splat.
+ */
+import { renderDripStrip } from '../lib/ansi/wall';
+import { dripsToHtml } from '../lib/ansi/html';
+
+interface Props {
+    cols: number;
+    seed?: number;
+    bar?: boolean;
+    maxStem?: number;
+    density?: number;
+    class?: string;
+}
+const { cols, seed = 1, bar = false, maxStem = 2, density, class: className } = Astro.props;
+const strip = renderDripStrip(cols, seed, { maxStem, ...(density ? { density } : {}) });
+---
+
+<div
+    class:list={['drips', bar && 'drips--bar', className]}
+    data-drips
+    aria-hidden="true"
+    style={`--rows:${strip.rows}`}
+>
+    <pre class="ansi" style={`--cols:${cols}`} set:html={dripsToHtml(strip, bar)} />
+</div>
