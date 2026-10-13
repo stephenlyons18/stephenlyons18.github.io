@@ -535,6 +535,35 @@ ol {
 }
 
 /* ---------- Utilities ---------- */
+/* Keyboard-only hints (Ctrl+K) vs their touch wording: a phone has no Ctrl key. */
+.only-touch {
+    display: none;
+}
+@media (hover: none) and (pointer: coarse) {
+    .only-kbd {
+        display: none;
+    }
+    .only-touch {
+        display: inline;
+    }
+    /* The pixel scrubber (.scrub) is the scrollbar on touch screens; the native one would sit on
+       top of it. */
+    html {
+        scrollbar-width: none;
+    }
+    html::-webkit-scrollbar,
+    body::-webkit-scrollbar {
+        display: none;
+    }
+}
+.kbd {
+    background: var(--bg-elevated);
+    border: 1px solid var(--border);
+    padding: 0.15rem 0.5rem;
+    border-radius: 3px;
+    font-family: var(--font-display);
+    font-size: 0.8rem;
+}
 .container {
     width: min(var(--max-w), 90%);
     margin-inline: auto;
@@ -2461,6 +2490,12 @@ html:has(dialog.lightbox[open]) {
     background: color-mix(in srgb, var(--ui-2) 12%, transparent);
     box-shadow: 0 0 12px color-mix(in srgb, var(--ui-2) 35%, transparent);
 }
+/* Same type as the Terminal button's label, so the pair reads as one set. */
+.nav-icon-btn__label {
+    font-size: 0.65rem;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+}
 .pixel-icon {
     display: block;
     image-rendering: pixelated;
@@ -2683,6 +2718,20 @@ html[data-reduce-motion]::view-transition-group(*),
 html[data-reduce-motion]::view-transition-old(*),
 html[data-reduce-motion]::view-transition-new(*) {
     animation: none !important;
+}
+/* Mid widths (small laptops, tablets): the nav needs the room, so the header buttons go icon-only
+   (their aria-labels still name them). */
+@media (max-width: 1100px) {
+    .nav-icon-btn__label,
+    .nav-terminal-btn__label {
+        display: none;
+    }
+    .nav-icon-btn,
+    .nav-terminal-btn {
+        min-width: 44px;
+        min-height: 44px;
+        justify-content: center;
+    }
 }
 @media (max-width: 768px) {
     .nav-icon-btn {
