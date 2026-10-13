@@ -9,7 +9,7 @@ Stephen Lyons' cybersecurity portfolio: a working in-browser terminal painted on
 - **Astro 7** static site (`astro-portfolio/`), deployed to GitHub Pages from the `build` branch
 - A **React 19** island only where interaction needs it: the **d3-force** skill graph. The project lightbox is a native `<dialog>`
 - Vanilla TypeScript (bundled with esbuild) for site interactivity and the terminal
-- Build-time ANSI/ASCII art generators: block-letter titles with 3D shading and paint drips, zero runtime JS
+- Build-time ANSI/ASCII art: wildstyle and bubble pieces (titles and original pieces painted in the wall's whitespace) with ink outlines, 3D shading and paint drips, zero runtime JS
 - Pixel type, self-hosted and subset (~22 KB): **Press Start 2P** for display, **Departure Mono** for body. A tiny JetBrains Mono subset sets the art's cells
 - Play, all compositor-only: paint drips that pour out of cards and dividers on hover, cards that tilt toward the cursor, art you can grab and fling (Motion `motion/mini`), and pixel-wipe page transitions. All of it stops under reduced motion
 - A pixel-block scroll progress strip, and on touch screens a grip on the right edge to drag through long pages
@@ -35,7 +35,7 @@ Stephen Lyons' cybersecurity portfolio: a working in-browser terminal painted on
 Press **Ctrl+K** / **⌘K** (or the `>_` button) on any page; the homepage hero terminal is live too.
 
 `help` · `whoami` · `ls pages` · `cd <page>` · `skills` · `projects` · `experience` · `education` · `contact` ·
-`theme <wildstyle|bubble|ansi|green>` · `matrix` · `clear` · `exit` · and `sudo`, if you must. Tab completes and
+`theme <wildstyle|bubble|ansi|sunset|green>` · `matrix` · `clear` · `exit` · and `sudo`, if you must. Tab completes and
 ↑/↓ walks history.
 
 ## Develop

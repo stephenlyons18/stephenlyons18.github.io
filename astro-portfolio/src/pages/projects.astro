@@ -1,5 +1,6 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
+import WallPiece from '../components/WallPiece.astro';
 import AnsiTitle from '../components/AnsiTitle.astro';
 import AnsiDivider from '../components/AnsiDivider.astro';
 import AnsiDrips from '../components/AnsiDrips.astro';
@@ -32,7 +33,10 @@ const galleries = Object.fromEntries(
     <section class="page-header" aria-label="Page header">
         <div class="container reveal">
             <span class="section-label">Portfolio</span>
-            <AnsiTitle text="Projects" as="h1" style="wild" />
+            <!-- Grab-and-fling with a mouse (fx.ts), like the home title; touch keeps scrolling. -->
+            <div class="drag-art" data-drag="fine">
+                <AnsiTitle text="Projects" as="h1" style="wild" />
+            </div>
             <p class="page-desc">
                 A selection of notable projects spanning full-stack development, mobile apps, and
                 security engineering.
@@ -42,6 +46,42 @@ const galleries = Object.fromEntries(
     </section>
 
     <section class="section" style="padding-top:0;" aria-label="Project showcase">
+        <WallPiece
+            text="PWN3D"
+            spot="gutter-right"
+            style="bubble"
+            seed={21}
+            h="6.5rem"
+            tilt={4}
+            top="8%"
+        />
+        <WallPiece
+            text="CV3"
+            spot="gutter-left"
+            style="wild"
+            seed={22}
+            h="6.5rem"
+            tilt={-5}
+            top="30%"
+        />
+        <WallPiece
+            text="0DAY"
+            spot="gutter-right"
+            style="bubble"
+            seed={23}
+            h="6rem"
+            tilt={3}
+            top="55%"
+        />
+        <WallPiece
+            text="H4CK"
+            spot="gutter-left"
+            style="wild"
+            seed={24}
+            h="6.5rem"
+            tilt={-3}
+            top="80%"
+        />
         <div class="container">
             {projects.map((p, i) => (
                 <article

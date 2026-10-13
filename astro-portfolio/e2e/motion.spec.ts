@@ -41,10 +41,7 @@ test('same-site navigation runs a page view transition (and none under reduced m
         });
     });
     await page.goto('/');
-    await page
-        .locator('.nav-links a[href$="about/index.html"], .nav-links a[href="/about"]')
-        .first()
-        .click();
+    await page.locator('.nav-links a', { hasText: 'About' }).first().click();
     await page.waitForURL(/about/);
     expect(await page.evaluate(() => sessionStorage.getItem('vt'))).toBe('true');
     // The header is its own transition group, so it stays put while the page changes.
@@ -108,3 +105,24 @@ test('reduced motion: no tilt, no drag, nothing moves', async ({ page, isMobile 
     expect(Math.abs((await art.boundingBox())!.x - b.x)).toBeLessThan(1);
     await page.mouse.up();
 });
+
+for (const path of ['/about/', '/projects/', '/contact/']) {
+    test(`${path} header can be grabbed with a mouse and snaps home`, async ({
+        page,
+        isMobile,
+    }) => {
+        test.skip(isMobile, 'big art drags with a mouse only; touch keeps scrolling');
+        await page.goto(path);
+        await fxReady(page);
+        const art = page.locator('.drag-art[data-drag="fine"]').first();
+        const b = (await art.boundingBox())!;
+        await page.mouse.move(b.x + b.width / 3, b.y + b.height / 2);
+        await page.mouse.down();
+        await page.mouse.move(b.x + b.width / 3 + 120, b.y + b.height / 2 + 40, { steps: 8 });
+        expect((await art.boundingBox())!.x - b.x).toBeGreaterThan(30);
+        await page.mouse.up();
+        await expect
+            .poll(async () => Math.abs((await art.boundingBox())!.x - b.x), { timeout: 2500 })
+            .toBeLessThan(1);
+    });
+}

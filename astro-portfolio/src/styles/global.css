@@ -65,8 +65,16 @@
     --ui-2: var(--spray-aqua);
     --ui-3: var(--spray-forest);
     --accent: var(--spray-magenta);
-    --title-top: var(--spray-cyan);
+    /* Title pieces (piece.ts, R25): a five-stop fill borrowed from the reference burners (ice →
+       cyan → royal blue → violet → magenta, no yellow), lime accent cuts, a dark ink line, a white
+       outline and deep indigo 3D. */
+    --title-top: #9ff0ff;
+    --title-hi: var(--spray-cyan);
+    --title-mid: #2f6bff;
+    --title-lo: #8a3ffc;
     --title-bottom: var(--spray-magenta);
+    --title-cut: #9dff6a;
+    --title-ink: #060914;
     --title-outline: var(--white);
     --title-x1: #7b3fe4;
     --title-x2: #3b2385;
@@ -166,8 +174,12 @@
     --ui: var(--spray-aqua);
     --ui-2: var(--spray-sky);
     --ui-3: var(--spray-forest);
-    --title-top: var(--spray-aqua);
-    --title-bottom: var(--spray-cyan);
+    --title-top: #c4fff3;
+    --title-hi: var(--spray-aqua);
+    --title-mid: var(--spray-cyan);
+    --title-lo: #2f6bff;
+    --title-bottom: #3b2385;
+    --title-cut: var(--spray-magenta);
     --title-outline: var(--spray-magenta);
     --title-x1: #2f5bd0;
     --title-x2: #1b2f73;
@@ -177,8 +189,12 @@
     --ui: var(--ansi-steel);
     --ui-2: var(--ansi-blue);
     --ui-3: #8fb7ff;
-    --title-top: #c9d3f2;
-    --title-bottom: var(--ansi-blue);
+    --title-top: #eef2ff;
+    --title-hi: #c9d3f2;
+    --title-mid: var(--ansi-steel);
+    --title-lo: var(--ansi-blue);
+    --title-bottom: #3346b8;
+    --title-cut: #8fb7ff;
     --title-outline: var(--ansi-steel);
     --title-x1: #3346b8;
     --title-x2: #1d2766;
@@ -188,8 +204,12 @@
     --ui: var(--spray-orange);
     --ui-2: var(--spray-yellow);
     --ui-3: var(--spray-aqua);
-    --title-top: var(--spray-yellow);
-    --title-bottom: var(--spray-magenta);
+    --title-top: #ffe9a8;
+    --title-hi: var(--spray-yellow);
+    --title-mid: var(--spray-orange);
+    --title-lo: var(--spray-magenta);
+    --title-bottom: #8a2a5c;
+    --title-cut: var(--spray-aqua);
     --title-outline: var(--white);
     --title-x1: var(--spray-orange);
     --title-x2: #8a2a5c;
@@ -201,8 +221,12 @@
     --ui-2: #00bfff;
     --ui-3: #00ff41;
     --accent: #00ff41;
-    --title-top: #b6ffc8;
-    --title-bottom: #00ff41;
+    --title-top: #e6ffe9;
+    --title-hi: #b6ffc8;
+    --title-mid: #00ff41;
+    --title-lo: #00a82b;
+    --title-bottom: #005c17;
+    --title-cut: #00bfff;
     --title-outline: #e6edf3;
     --title-x1: #00a82b;
     --title-x2: #005c17;
@@ -237,48 +261,209 @@
 .ansi-title__stack {
     display: none;
 }
+/* Terminal banner and other text art (a-f0…a-f7): the same five-stop ramp as the pieces. */
 .a-f0 {
     color: var(--title-top);
 }
 .a-f1 {
-    color: color-mix(in oklab, var(--title-top) 86%, var(--title-bottom));
+    color: color-mix(in oklab, var(--title-top) 40%, var(--title-hi));
 }
 .a-f2 {
-    color: color-mix(in oklab, var(--title-top) 71%, var(--title-bottom));
+    color: color-mix(in oklab, var(--title-hi) 70%, var(--title-mid));
 }
 .a-f3 {
-    color: color-mix(in oklab, var(--title-top) 57%, var(--title-bottom));
+    color: var(--title-mid);
 }
 .a-f4 {
-    color: color-mix(in oklab, var(--title-top) 43%, var(--title-bottom));
+    color: color-mix(in oklab, var(--title-mid) 40%, var(--title-lo));
 }
 .a-f5 {
-    color: color-mix(in oklab, var(--title-top) 29%, var(--title-bottom));
+    color: var(--title-lo);
 }
 .a-f6 {
-    color: color-mix(in oklab, var(--title-top) 14%, var(--title-bottom));
+    color: color-mix(in oklab, var(--title-lo) 40%, var(--title-bottom));
 }
 .a-f7,
 .a-dr {
     color: var(--title-bottom);
 }
-.a-ol {
-    color: var(--title-outline);
+
+/* Pieces (piece.ts → inline SVG, one path per class; AnsiTitle.astro). A unit is one cell wide and
+   half a cell tall. The SVG scales to its container, never past --ansi-max per cell (0.6 × that per
+   unit). Static: nothing here animates. */
+.ansi-svg {
+    display: block;
+    width: min(100%, calc(var(--w) * var(--ansi-max, 13px) * 0.6));
+    height: auto;
+    overflow: visible;
 }
-.a-x1 {
-    color: var(--title-x1);
+.p-f0 {
+    fill: var(--title-top);
 }
-.a-x2 {
-    color: var(--title-x2);
+.p-f1 {
+    fill: color-mix(in oklab, var(--title-top) 50%, var(--title-hi));
 }
-.a-gl {
-    color: #fff;
-    background: var(--title-top);
+.p-f2 {
+    fill: var(--title-hi);
 }
-.a-os {
-    color: var(--title-spray);
+.p-f3 {
+    fill: color-mix(in oklab, var(--title-hi) 50%, var(--title-mid));
+}
+.p-f4 {
+    fill: var(--title-mid);
+}
+.p-f5 {
+    fill: color-mix(in oklab, var(--title-mid) 50%, var(--title-lo));
+}
+.p-f6 {
+    fill: var(--title-lo);
+}
+.p-f7 {
+    fill: color-mix(in oklab, var(--title-lo) 50%, var(--title-bottom));
+}
+.p-f8,
+.p-dr {
+    fill: var(--title-bottom);
+}
+.p-f9 {
+    fill: color-mix(in oklab, var(--title-bottom) 80%, var(--title-ink));
+}
+.p-d1 {
+    fill: color-mix(in oklab, var(--title-bottom) 60%, transparent);
+}
+.p-d2 {
+    fill: color-mix(in oklab, var(--title-bottom) 30%, transparent);
+}
+.p-ik {
+    fill: var(--title-ink);
+}
+.p-ol {
+    fill: var(--title-outline);
+}
+/* Piece 3D: deeper than the UI's --title-x2 shadows, so it reads as depth behind the outline. */
+.p-x1 {
+    fill: var(--title-x2);
+}
+.p-x2 {
+    fill: color-mix(in oklab, var(--title-x2) 55%, var(--title-ink));
+}
+.p-sh,
+.p-sp {
+    fill: #fff;
+}
+.p-cu {
+    fill: var(--title-cut);
+}
+.p-os {
+    fill: var(--title-spray);
+    opacity: 0.6;
+}
+
+/* ---------- Wall pieces (WallPiece.astro, R27) ---------- */
+/* Painted on the wall, not on the page: behind every element (z -1, after the wall in the DOM, so
+   above it), never interactive, quieter than the titles. One transform list for every state. */
+.section,
+.page-header {
+    position: relative;
+}
+.wall-piece {
+    position: absolute;
+    z-index: -1;
+    pointer-events: none;
+    height: var(--h);
+    aspect-ratio: var(--ratio);
     opacity: 0.55;
-    -webkit-text-stroke: 0; /* the seam-closing stroke would bloat dots into blocks */
+    --ty: 0%;
+    transform: translateY(var(--ty)) rotate(var(--tilt)) scale(1);
+}
+.wall-piece svg {
+    display: block;
+    width: 100%;
+    height: 100%;
+}
+.wall-piece--gap-left,
+.wall-piece--gap-right {
+    top: calc(var(--h) / -2);
+}
+.wall-piece--inside {
+    top: 0.75rem;
+}
+@media (max-width: 768px) {
+    .wall-piece--gap-left,
+    .wall-piece--gap-right {
+        top: calc(var(--h-m) / -2);
+    }
+    .wall-piece--inside {
+        top: 0.25rem;
+    }
+}
+.wall-piece--gap-left,
+.wall-piece--side-left {
+    left: max(5%, (100% - var(--max-w)) / 2);
+}
+.wall-piece--gap-right,
+.wall-piece--side-right {
+    right: max(5%, (100% - var(--max-w)) / 2);
+}
+.wall-piece--side-left,
+.wall-piece--side-right,
+.wall-piece--gutter-left,
+.wall-piece--gutter-right {
+    top: var(--top);
+    --ty: -50%;
+}
+/* Gutters: centred in the margin outside the container. */
+.wall-piece--gutter-left {
+    left: calc((100% - var(--max-w)) / 4);
+    translate: -50% 0;
+}
+.wall-piece--gutter-right {
+    right: calc((100% - var(--max-w)) / 4);
+    translate: 50% 0;
+}
+.wall-piece--side-left,
+.wall-piece--side-right,
+.wall-piece--gutter-left,
+.wall-piece--gutter-right {
+    display: none;
+}
+@media (min-width: 1280px) {
+    .wall-piece--side-left,
+    .wall-piece--side-right {
+        display: block;
+    }
+}
+/* Only where the margin outside the container fits a piece. */
+@media (min-width: 1560px) {
+    .wall-piece--gutter-left,
+    .wall-piece--gutter-right {
+        display: block;
+    }
+}
+@media (max-width: 768px) {
+    .wall-piece {
+        height: var(--h-m);
+    }
+}
+/* Sprayed on once when first seen (site.ts): a few stepped coats, like a can going over it. */
+.wall-piece.is-waiting {
+    opacity: 0;
+}
+.wall-piece.is-sprayed {
+    animation: spray-on 0.9s steps(6, end) both;
+}
+@keyframes spray-on {
+    from {
+        opacity: 0;
+        transform: translateY(var(--ty)) rotate(var(--tilt)) scale(0.94);
+    }
+}
+html[data-reduce-motion] .wall-piece {
+    opacity: 0.55;
+    animation: none;
+}
+html[data-a11y-wall] .wall-piece {
+    display: none;
 }
 
 /* ---------- Reset & Base ---------- */
@@ -349,10 +534,12 @@ body {
         var(--bg-primary);
 }
 
-/* ANSI brick wall (AnsiWall.astro): three layers (bricks, mortar, chips) masked by a seamless
-   80 × 30-cell tile from /art/wall.css. It spans the whole document and scrolls with it. The tile
-   keeps the old cell size: a 0.6-aspect cell of max(12px, 100vw / 96) font. Opacity keeps it a
-   texture, never a pattern you read. */
+/* ANSI brick wall (AnsiWall.astro): one seamless 80 × 30-cell tile, baked per theme into a PNG
+   (/art/wall-<theme>.png, colour and 7% strength included) and tiled down the whole document, so it
+   scrolls with the content. A tiled bitmap is nearly free to raster; the old theme-coloured masks
+   were re-drawn for every tile that scrolled in and cost most of the raster time on phones (R22).
+   The tile keeps the old cell size: a 0.6-aspect cell of max(12px, 100vw / 96) font. --wall-tile
+   (the active theme's PNG) is set in AnsiWall.astro. */
 body {
     position: relative;
 }
@@ -361,28 +548,11 @@ body {
     position: absolute;
     inset: 0;
     z-index: -1;
-    overflow: clip;
     pointer-events: none;
-    opacity: 0.07;
     contain: strict;
-}
-.ansi-wall > div {
-    position: absolute;
-    inset: 0;
-    mask-repeat: repeat;
-    mask-size: calc(var(--wall-fs) * 0.6 * 80) calc(var(--wall-fs) * 30);
-    /* Nothing paints until /art/wall.css supplies the masks (no flash of solid colour). */
-    mask-image: linear-gradient(transparent, transparent);
-}
-.ansi-wall .w-b {
-    background: var(--ui);
-}
-.ansi-wall .w-m {
-    background: var(--ui-3);
-    opacity: 0.6;
-}
-.ansi-wall .w-c {
-    background: var(--ui-2);
+    background: var(--wall-tile) 0 0 / calc(var(--wall-fs) * 0.6 * 80) calc(var(--wall-fs) * 30)
+        repeat;
+    image-rendering: pixelated;
 }
 
 /* Paint drips (AnsiDrips.astro): a sprayed bar (dividers) or a card's bottom edge, with teardrop
@@ -393,8 +563,40 @@ body {
 .drips {
     container-type: inline-size;
     pointer-events: none;
-    /* Viscous paint: it runs, catches, runs again, then creeps to a stop. */
-    --drip-ease: linear(0, 0.34 14%, 0.42 24%, 0.45 33%, 0.66 47%, 0.71 58%, 0.88 74%, 0.96 88%, 1);
+    /* Viscous paint: it runs, catches, runs again, then creeps to a stop. Sampled from a speed
+       curve that swells and eases but never stops or jumps (R22): the old one went flat and then
+       lurched, which read as stutter. */
+    --drip-ease: linear(
+        0,
+        0.059,
+        0.14,
+        0.227,
+        0.318,
+        0.405,
+        0.485,
+        0.544,
+        0.585,
+        0.615,
+        0.635,
+        0.653,
+        0.674,
+        0.703,
+        0.739,
+        0.78,
+        0.826,
+        0.866,
+        0.901,
+        0.929,
+        0.949,
+        0.962,
+        0.97,
+        0.976,
+        0.981,
+        0.987,
+        0.993,
+        0.997,
+        1
+    );
 }
 .drips .ansi {
     --ansi-max: 9px;
@@ -436,8 +638,9 @@ body {
     white-space: pre;
 }
 
-/* Section divider: drips always hang under the bar (about halfway out). Hover, or a tap on touch
-   (fx.ts .is-poked), runs every drip out to full length; they creep back slowly afterwards. fx.ts
+/* Section divider: drips always hang under the bar (about halfway out). Hover, or on touch the
+   divider scrolling through the middle of the screen (fx.ts .is-focus), runs every drip out to full
+   length; they creep back slowly afterwards. fx.ts
    tucks drips below the fold into the bar until they scroll into view (.is-tucked). */
 .ansi-divider {
     margin: 2.5rem 0;
@@ -454,7 +657,7 @@ body {
     transition: none;
 }
 .ansi-divider:hover .drip-run,
-.ansi-divider.is-poked .drip-run {
+.ansi-divider.is-focus .drip-run {
     transform: none;
     transition: transform var(--drip-t) var(--drip-ease) var(--drip-d);
 }
@@ -484,7 +687,7 @@ body {
 .card:hover .card-drips .drip-run,
 .card:focus-within .card-drips .drip-run,
 .card-link:focus-visible .card-drips .drip-run,
-.card.is-poked .card-drips .drip-run {
+.card.is-focus .card-drips .drip-run {
     visibility: visible;
     transform: none;
     transition:
@@ -535,6 +738,35 @@ ol {
 }
 
 /* ---------- Utilities ---------- */
+/* Keyboard-only hints (Ctrl+K) vs their touch wording: a phone has no Ctrl key. */
+.only-touch {
+    display: none;
+}
+@media (hover: none) and (pointer: coarse) {
+    .only-kbd {
+        display: none;
+    }
+    .only-touch {
+        display: inline;
+    }
+    /* The pixel scrubber (.scrub) is the scrollbar on touch screens; the native one would sit on
+       top of it. */
+    html {
+        scrollbar-width: none;
+    }
+    html::-webkit-scrollbar,
+    body::-webkit-scrollbar {
+        display: none;
+    }
+}
+.kbd {
+    background: var(--bg-elevated);
+    border: 1px solid var(--border);
+    padding: 0.15rem 0.5rem;
+    border-radius: 3px;
+    font-family: var(--font-display);
+    font-size: 0.8rem;
+}
 .container {
     width: min(var(--max-w), 90%);
     margin-inline: auto;
@@ -603,11 +835,12 @@ ol {
 
 /* JS-enhanced path: hide until observed */
 /* Only the not-yet-revealed state declares a transform: a revealed element must not, or it would
-   out-specify (and silently cancel) card hover lifts and fx.ts tilts. */
+   out-specify (and silently cancel) card hover lifts and fx.ts tilts. No will-change here: it kept
+   every waiting element on its own layer, ~15–20 Mpx of extra GPU tiles on a phone, and the tile
+   budget overflowing is what stuttered (R22). The entrance animation promotes each one briefly. */
 body.js-reveal-ready .reveal:not(.revealed) {
     opacity: 0;
     transform: translateY(24px);
-    will-change: transform, opacity;
 }
 body.js-reveal-ready .reveal.revealed {
     /* backwards (not both): once the entrance finishes, no transform is held, so hover lifts work. */
@@ -626,7 +859,6 @@ body.js-reveal-ready .reveal.revealed {
         animation: none;
         opacity: 1;
         transform: none;
-        will-change: auto;
     }
 }
 
@@ -853,6 +1085,11 @@ body.js-reveal-ready .reveal.revealed {
     position: relative;
     z-index: 2;
 }
+/* The subheader piece (R24) tucks up under the name: its 3D and drips overlap the name's
+   bottom margin, like a second piece sprayed below the first. */
+.hero-sub {
+    margin-top: clamp(-2.25rem, -3vw, -0.5rem);
+}
 
 .hero-terminal {
     background: var(--bg-secondary);
@@ -978,7 +1215,7 @@ body.js-reveal-ready .reveal.revealed {
 }
 
 .hero-cta {
-    margin-top: 2rem;
+    margin: 1.75rem 0 2.5rem;
     display: flex;
     flex-wrap: wrap;
     gap: 1rem;
@@ -1030,10 +1267,17 @@ body.js-reveal-ready .reveal.revealed {
     opacity: 0;
     transition: opacity 0.25s var(--ease);
 }
-.card:hover {
+.card:hover,
+.card.is-focus {
     --lift: -2px;
 }
+/* Touch (fx.ts .is-focus): the card in the middle of the screen lifts a touch further and its skin
+   fades in, so focus reads at arm's length. */
+.card.is-focus {
+    --lift: -3px;
+}
 .card:hover::after,
+.card.is-focus::after,
 .card-link:focus-visible .card::after {
     opacity: 1;
 }
@@ -1337,9 +1581,8 @@ html:has(dialog.lightbox[open]) {
     animation: lightbox-in 0.18s var(--ease);
 }
 .lightbox::backdrop {
-    background: rgba(7, 11, 18, 0.88);
-    backdrop-filter: blur(6px);
-    -webkit-backdrop-filter: blur(6px);
+    /* Solid, no blur (CLAUDE.md: no backdrop-filter). */
+    background: rgba(7, 11, 18, 0.92);
 }
 @keyframes lightbox-in {
     from {
@@ -2074,9 +2317,9 @@ html:has(dialog.lightbox[open]) {
     display: flex;
     align-items: center;
     justify-content: center;
-    background: rgba(0, 0, 0, 0.7);
-    backdrop-filter: blur(8px);
-    -webkit-backdrop-filter: blur(8px);
+    /* A solid dim, no backdrop blur: blurring the whole page under a fixed overlay costs a full
+       re-composite every frame (CLAUDE.md, smooth hover and scroll). */
+    background: rgba(4, 7, 12, 0.86);
     opacity: 0;
     visibility: hidden;
     transition:
@@ -2093,8 +2336,18 @@ html:has(dialog.lightbox[open]) {
         visibility 0s;
 }
 
-.terminal-panel {
+/* The window and the paint running off it move together (the panel clips its own content). */
+.terminal-wrap {
+    position: relative;
     width: min(900px, 92vw);
+    transform: translateY(20px) scale(0.97);
+    transition: transform 0.3s var(--ease);
+}
+.terminal-overlay.active .terminal-wrap {
+    transform: translateY(0) scale(1);
+}
+.terminal-panel {
+    width: 100%;
     max-height: 80vh;
     background: var(--bg-secondary);
     border: 1px solid var(--ui-dim);
@@ -2105,11 +2358,31 @@ html:has(dialog.lightbox[open]) {
     display: flex;
     flex-direction: column;
     overflow: hidden;
-    transform: translateY(20px) scale(0.97);
-    transition: transform 0.3s var(--ease);
 }
-.terminal-overlay.active .terminal-panel {
-    transform: translateY(0) scale(1);
+/* Drips off the window's bottom edge (terminal.ts termDrips): tucked and hidden while closed; on
+   open they pour once, a beat after the window lands, and hang there until it closes. Same runs
+   and easing as card drips; under reduced motion they simply appear. */
+.term-drips {
+    position: absolute;
+    left: 1.25rem;
+    right: 1.25rem;
+    top: 100%;
+    overflow-x: clip;
+    --drip-color: var(--ui-dim);
+}
+.term-drips .ansi {
+    font-size: 7px;
+}
+.term-drips .drip-run {
+    visibility: hidden;
+    transform: translateY(-100%);
+}
+.terminal-overlay.active .term-drips .drip-run {
+    visibility: visible;
+    transform: none;
+    transition:
+        transform var(--drip-t) var(--drip-ease) calc(var(--drip-d) + 0.25s),
+        visibility 0s 0.25s;
 }
 
 .terminal-bar {
@@ -2365,9 +2638,12 @@ html:has(dialog.lightbox[open]) {
         left: -1.5rem;
     }
 
-    .terminal-panel {
-        max-height: 90vh;
+    .terminal-wrap {
         width: 96vw;
+    }
+    .terminal-panel {
+        /* Leaves room under the window for its drips. */
+        max-height: 84vh;
         border-radius: var(--radius);
     }
     .terminal-body {
@@ -2460,6 +2736,12 @@ html:has(dialog.lightbox[open]) {
 .nav-icon-btn:focus-visible {
     background: color-mix(in srgb, var(--ui-2) 12%, transparent);
     box-shadow: 0 0 12px color-mix(in srgb, var(--ui-2) 35%, transparent);
+}
+/* Same type as the Terminal button's label, so the pair reads as one set. */
+.nav-icon-btn__label {
+    font-size: 0.65rem;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
 }
 .pixel-icon {
     display: block;
@@ -2602,7 +2884,7 @@ html:has(dialog.lightbox[open]) {
 
 /* Plain headings: hide the art, show the real heading — still pixel type, still the burner
    gradient and a two-step block extrusion, so the page keeps its look. */
-html[data-a11y-plain] .ansi-title:not(.ansi-title--deco) > :is(pre, .ansi-title__stack) {
+html[data-a11y-plain] .ansi-title:not(.ansi-title--deco) > :is(pre, svg, .ansi-title__stack) {
     display: none !important;
 }
 html[data-a11y-plain] .ansi-title__text {
@@ -2629,6 +2911,9 @@ html[data-a11y-plain] .ansi-title__text {
 html[data-a11y-plain] h2.ansi-title__text,
 html[data-a11y-plain] h3.ansi-title__text {
     font-size: clamp(1rem, 3.2vw, 1.75rem);
+}
+html[data-a11y-plain] p.ansi-title__text {
+    font-size: clamp(0.85rem, 2.4vw, 1.25rem);
 }
 
 /* Readable font: the pixel faces become the platform's UI sans (art keeps its cells). */
@@ -2683,6 +2968,20 @@ html[data-reduce-motion]::view-transition-group(*),
 html[data-reduce-motion]::view-transition-old(*),
 html[data-reduce-motion]::view-transition-new(*) {
     animation: none !important;
+}
+/* Mid widths (small laptops, tablets): the nav needs the room, so the header buttons go icon-only
+   (their aria-labels still name them). */
+@media (max-width: 1100px) {
+    .nav-icon-btn__label,
+    .nav-terminal-btn__label {
+        display: none;
+    }
+    .nav-icon-btn,
+    .nav-terminal-btn {
+        min-width: 44px;
+        min-height: 44px;
+        justify-content: center;
+    }
 }
 @media (max-width: 768px) {
     .nav-icon-btn {

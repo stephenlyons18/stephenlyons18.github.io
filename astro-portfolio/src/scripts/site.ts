@@ -19,13 +19,11 @@ interface HeroLine {
 }
 
 function initActiveNav(): void {
-    // Astro routes don't have .html — match by pathname
-    const path = window.location.pathname.replace(/\/$/, '') || '/';
+    // Compare resolved paths (hrefs are relative after postbuild: "../about/"), slash-insensitive.
+    const norm = (p: string) => p.replace(/(index)?\.html$/, '').replace(/\/$/, '') || '/';
+    const here = norm(window.location.pathname);
     document.querySelectorAll<HTMLAnchorElement>('.nav-links a').forEach((a) => {
-        const href = a.getAttribute('href') || '';
-        const norm = href.replace(/\/$/, '') || '/';
-        if (norm === path) a.classList.add('active');
-        else a.classList.remove('active');
+        a.classList.toggle('active', norm(a.pathname) === here);
     });
 }
 
@@ -497,6 +495,29 @@ function initReveal(): void {
     });
 }
 
+// ── Wall pieces (WallPiece.astro): sprayed on once, when first rendered or scrolled into view.
+// Pieces already on screen spray at once; the rest wait (invisible) until they come into view.
+// Under reduced motion nothing waits or animates: they are simply there.
+function initWallPieces(): void {
+    const pieces = [...document.querySelectorAll<HTMLElement>('[data-wall-piece]')];
+    if (!pieces.length || motionOff() || !('IntersectionObserver' in window)) return;
+    const spray = (el: Element) => el.classList.replace('is-waiting', 'is-sprayed');
+    const io = new IntersectionObserver(
+        (entries) => {
+            for (const e of entries) {
+                if (!e.isIntersecting) continue;
+                io.unobserve(e.target);
+                spray(e.target);
+            }
+        },
+        { rootMargin: '0px 0px -8% 0px' },
+    );
+    for (const el of pieces) {
+        el.classList.add('is-waiting');
+        io.observe(el);
+    }
+}
+
 // ── Accessibility menu (Header.astro) ────────────────────────────────────────
 // Each switch mirrors a data-a11y-<key> attribute on <html>, persisted as JSON in localStorage.
 // "motion" also drives data-reduce-motion, which stays on regardless when the OS asks for it.
@@ -566,6 +587,7 @@ function init(): void {
     initActiveNav();
     initMobileNav();
     initReveal();
+    initWallPieces();
     initHeroTyping();
     initHeroTerminalInteractive();
     initHeaderScroll();

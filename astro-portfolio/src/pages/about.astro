@@ -1,5 +1,6 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
+import WallPiece from '../components/WallPiece.astro';
 import AnsiTitle from '../components/AnsiTitle.astro';
 import AnsiDivider from '../components/AnsiDivider.astro';
 import SkillGraph from '../components/react/SkillGraph';
@@ -12,9 +13,21 @@ import { jobs } from '../data/experience';
     description="About Stephen Lyons — Cybersecurity Engineer specializing in DevSecOps, cloud security, and threat detection."
 >
     <section class="page-header" aria-label="Page header">
+        <WallPiece
+            text="LY0NS"
+            spot="side-right"
+            style="bubble"
+            seed={5}
+            h="8.5rem"
+            tilt={4}
+            top="42%"
+        />
         <div class="container reveal">
             <span class="section-label">About Me</span>
-            <AnsiTitle text="About" label="About Stephen Lyons" as="h1" style="wild" seed={3} />
+            <!-- Grab-and-fling with a mouse (fx.ts), like the home title; touch keeps scrolling. -->
+            <div class="drag-art" data-drag="fine">
+                <AnsiTitle text="About" label="About Stephen Lyons" as="h1" style="wild" seed={3} />
+            </div>
             <p class="page-desc">
                 Cybersecurity Engineer building secure, resilient systems at enterprise scale.
             </p>
@@ -23,6 +36,33 @@ import { jobs } from '../data/experience';
     </section>
 
     <section class="section" style="padding-top:0;" aria-label="Biography and details">
+        <WallPiece
+            text="r00t"
+            spot="gutter-left"
+            style="bubble"
+            seed={13}
+            h="6.5rem"
+            tilt={-4}
+            top="12%"
+        />
+        <WallPiece
+            text="H4CK"
+            spot="gutter-right"
+            style="wild"
+            seed={12}
+            h="6.5rem"
+            tilt={5}
+            top="40%"
+        />
+        <WallPiece
+            text="1337"
+            spot="gutter-left"
+            style="wild"
+            seed={14}
+            h="6rem"
+            tilt={-3}
+            top="70%"
+        />
         <div class="container">
             <div class="about-grid">
                 <aside class="about-sidebar reveal">

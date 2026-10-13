@@ -1,5 +1,6 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
+import WallPiece from '../components/WallPiece.astro';
 import AnsiTitle from '../components/AnsiTitle.astro';
 import AnsiDivider from '../components/AnsiDivider.astro';
 ---
@@ -10,9 +11,21 @@ import AnsiDivider from '../components/AnsiDivider.astro';
     description="Get in touch with Stephen Lyons — Cybersecurity Engineer. Contact for collaboration, consulting, or opportunities."
 >
     <section class="page-header" aria-label="Page header">
+        <WallPiece
+            text="PWN"
+            spot="side-right"
+            style="wild"
+            seed={31}
+            h="7.5rem"
+            tilt={-4}
+            top="40%"
+        />
         <div class="container reveal">
             <span class="section-label">Get In Touch</span>
-            <AnsiTitle text="Contact" as="h1" style="wild" seed={7} />
+            <!-- Grab-and-fling with a mouse (fx.ts), like the home title; touch keeps scrolling. -->
+            <div class="drag-art" data-drag="fine">
+                <AnsiTitle text="Contact" as="h1" style="wild" seed={7} />
+            </div>
             <p class="page-desc">
                 Have a question, opportunity, or want to collaborate? Let's connect.
             </p>
@@ -21,6 +34,24 @@ import AnsiDivider from '../components/AnsiDivider.astro';
     </section>
 
     <section class="section" style="padding-top:0;" aria-label="Contact information and form">
+        <WallPiece
+            text="SL"
+            spot="gutter-left"
+            style="bubble"
+            seed={32}
+            h="6.5rem"
+            tilt={-5}
+            top="25%"
+        />
+        <WallPiece
+            text="SUD0"
+            spot="gutter-right"
+            style="wild"
+            seed={33}
+            h="6rem"
+            tilt={4}
+            top="65%"
+        />
         <div class="container">
             <div class="grid-2" style="align-items:start;">
                 <!-- Contact Form -->
@@ -81,7 +112,7 @@ import AnsiDivider from '../components/AnsiDivider.astro';
                             style="font-size:0.75rem;color:var(--text-muted);margin-top:0.75rem;"
                         >
                             Submitting opens your email client with the message pre-filled. Or write
-                            directly to
+                            directly to{' '}
                             <a href="mailto:stephen.lyons18@gmail.com">stephen.lyons18@gmail.com</a>
                             .
                         </p>
@@ -232,14 +263,17 @@ import AnsiDivider from '../components/AnsiDivider.astro';
                             Prefer the terminal?
                         </h3>
                         <p class="card__desc">
-                            Press{' '}
-                            <kbd style="background:var(--bg-elevated);border:1px solid var(--border);padding:0.15rem 0.5rem;border-radius:3px;font-family:var(--font-display);font-size:0.8rem;">
-                                Ctrl+K
-                            </kbd>{' '}
-                            to open the interactive terminal and type{' '}
+                            <span class="only-kbd">
+                                Press <kbd class="kbd">Ctrl+K</kbd> (or the button below)
+                            </span>
+                            <span class="only-touch">Tap the button below</span> to open the
+                            interactive terminal and type{' '}
                             <code style="color:var(--ui);">contact</code> to see my info, or try{' '}
                             <code style="color:var(--ui);">whoami</code> for a quick bio.
                         </p>
+                        <button type="button" class="btn" data-open-terminal>
+                            &gt;_ Open terminal
+                        </button>
                     </div>
                 </div>
             </div>

@@ -5,6 +5,9 @@
 import projects from '../data/projects';
 import { jobs } from '../data/experience';
 import { CATEGORY_META, skills, type SkillCategory } from '../data/skills';
+import { ROUTES } from '../data/site';
+import { renderDripStrip } from '../lib/ansi/wall';
+import { dripsToHtml } from '../lib/ansi/html';
 
 declare global {
     interface Window {
@@ -56,12 +59,10 @@ const WELCOME_MSG = [
     '',
 ];
 
+/** cd/goto targets, from the one route list (clean directory URLs: /about/, never index.html). */
 const PAGES: Record<string, string> = {
-    home: '/',
+    ...Object.fromEntries(ROUTES.map((r) => [r.name.toLowerCase(), r.path])),
     index: '/',
-    about: '/about',
-    projects: '/projects',
-    contact: '/contact',
 };
 
 let history: string[] = [];
@@ -189,6 +190,15 @@ void printHTML; // silence unused warnings — kept for future convenience
 
 // ── Build popup terminal DOM ──────────────────────────────
 
+/** Paint running off the window frame's bottom edge: the same strip as card drips (7px cells,
+ *  clipped to the window's width), poured once when the terminal opens (global.css .term-drips).
+ *  Seeded, so it's the same on every open. Never over the terminal's text. */
+const DRIP_COLS = 220;
+const termDrips = (): string => {
+    const strip = renderDripStrip(DRIP_COLS, 31, { maxStem: 5, minStem: 1, density: 0.09 });
+    return `<div class="drips term-drips" data-drips aria-hidden="true" style="--rows:${strip.rows}"><pre class="ansi" style="--cols:${DRIP_COLS}">${dripsToHtml(strip, false)}</pre></div>`;
+};
+
 function buildTerminal(): void {
     overlay = document.createElement('div');
     overlay.className = 'terminal-overlay';
@@ -196,6 +206,7 @@ function buildTerminal(): void {
     overlay.setAttribute('aria-label', 'Interactive terminal');
 
     overlay.innerHTML = `
+    <div class="terminal-wrap">
     <div class="terminal-panel">
       <div class="terminal-bar">
         <div class="terminal-bar__dots">
@@ -210,6 +221,8 @@ function buildTerminal(): void {
         <span class="terminal-prompt">stephen@lyons:~$&nbsp;</span>
         <input class="terminal-input" id="terminal-input" type="text" autocomplete="off" autocorrect="off" spellcheck="false" aria-label="Terminal input">
       </div>
+    </div>
+    ${termDrips()}
     </div>
   `;
 
@@ -492,7 +505,7 @@ function cmdProjects(_args: string[], outputEl: HTMLElement, onDone?: () => void
         appendHTML(
             outputEl,
             `  <span style="color:var(--ui);font-weight:600;">&gt;</span> ` +
-                `<a href="/projects#${encodeURIComponent(p.id)}" ` +
+                `<a href="/projects/#${encodeURIComponent(p.id)}" ` +
                 `style="color:var(--ui);text-decoration:underline;text-decoration-color:var(--ui-dim);" ` +
                 `title="View on projects page">${escapeHTML(p.title)}</a>`,
         );

@@ -5,8 +5,8 @@
 
    - Drips (AnsiDrips.astro) are pure CSS: on hover/focus a strip's runs slide out as a few
      compositor layers (global.css .drip-run). Here: divider drips below the fold are tucked into
-     their bar until they scroll into view, then run out; and a tap on touch screens (no hover
-     there) pours a card's or divider's drips for a moment (.is-poked).
+     their bar until they scroll into view, then run out. Touch screens have no hover, so the card
+     or divider scrolling through the middle of the screen gets its hover state (.is-focus).
    - Cards tilt toward the pointer and squash on press (CSS springs, global.css .card.is-live).
    - [data-drag] art can be grabbed and flung; it snaps home on a Motion spring.
    Everything stops the moment reduced motion turns on.
@@ -28,8 +28,12 @@ function track(c: Controls): Controls {
 }
 
 // ── Drips ────────────────────────────────────────────────────────────────────
-/** How long a tap keeps a strip's drips pouring (the CSS runs take up to ~2.6 s). */
-const POKE_MS = 2600;
+/**
+ * Touch screens have no hover, so what's in focus animates instead of what's tapped: the card or
+ * divider crossing the middle band of the screen gets its hover state (.is-focus: lift, skin, drips
+ * pouring) as it arrives, and lets go as it leaves. The band is the middle 30% of the viewport.
+ */
+const FOCUS_BAND = '-35% 0px -35% 0px';
 
 function initDrips() {
     // Dividers below the fold start tucked into their bar; they run out once seen.
@@ -50,16 +54,15 @@ function initDrips() {
             io.observe(d);
         }
     }
-    // Touch: a tap pours the drips (mouse and keyboard already have :hover / :focus-within).
-    for (const host of document.querySelectorAll<HTMLElement>('.ansi-divider, .card')) {
-        if (host.classList.contains('card') && !host.querySelector('.card-drips')) continue;
-        let t = 0;
-        host.addEventListener('pointerdown', (e) => {
-            if (e.pointerType === 'mouse' || stopped) return;
-            host.classList.add('is-poked');
-            clearTimeout(t);
-            t = window.setTimeout(() => host.classList.remove('is-poked'), POKE_MS);
-        });
+    if (matchMedia('(hover: none)').matches) {
+        const focus = new IntersectionObserver(
+            (entries) => {
+                for (const e of entries)
+                    e.target.classList.toggle('is-focus', e.isIntersecting && !stopped);
+            },
+            { rootMargin: FOCUS_BAND },
+        );
+        for (const el of document.querySelectorAll('.card, .ansi-divider')) focus.observe(el);
     }
 }
 
@@ -187,8 +190,8 @@ function start() {
         }
         for (const el of document.querySelectorAll<HTMLElement>('[data-drag]'))
             el.style.transform = '';
-        for (const el of document.querySelectorAll('.is-tucked, .is-poked'))
-            el.classList.remove('is-tucked', 'is-poked');
+        for (const el of document.querySelectorAll('.is-tucked, .is-focus'))
+            el.classList.remove('is-tucked', 'is-focus');
     }).observe(root, { attributes: true, attributeFilter: ['data-reduce-motion'] });
 }
 

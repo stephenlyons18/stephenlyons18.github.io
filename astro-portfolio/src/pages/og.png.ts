@@ -4,13 +4,10 @@
  */
 import type { APIRoute } from 'astro';
 import sharp from 'sharp';
-import { renderAnsi } from '../lib/ansi/generator';
-import { artToSvg, SVG_CELL } from '../lib/ansi/svg';
+import { pieceToSvg, renderPiece, type Piece, type PieceClass } from '../lib/ansi/piece';
 
 const W = 1200;
 const H = 630;
-const TOP = '#22c7ff';
-const BOTTOM = '#ff3d9a';
 
 const mix = (a: string, b: string, t: number) => {
     const p = (h: string) => [1, 3, 5].map((i) => parseInt(h.slice(i, i + 2), 16));
@@ -24,39 +21,73 @@ const mix = (a: string, b: string, t: number) => {
         .join('')}`;
 };
 
-const TITLE_COLORS: Record<string, string> = {
-    ...Object.fromEntries(
-        Array.from({ length: 8 }, (_, i) => [`a-f${i}`, mix(TOP, BOTTOM, i / 7)]),
-    ),
-    'a-dr': BOTTOM,
-    'a-ol': '#eef6ff',
-    'a-x1': '#7b3fe4',
-    'a-x2': '#3b2385',
-    'a-gl': '#ffffff',
-    'a-os': '#b99cff',
+// The default (wildstyle) theme's piece colours, as global.css resolves them (no CSS in sharp).
+const [TOP, HI, MID, LO, BOTTOM, INK] = [
+    '#9ff0ff',
+    '#22c7ff',
+    '#2f6bff',
+    '#8a3ffc',
+    '#ff3d9a',
+    '#060914',
+];
+const X2 = '#3b2385';
+const COLORS: Partial<Record<PieceClass, string>> = {
+    'p-f0': TOP,
+    'p-f1': mix(TOP, HI, 0.5),
+    'p-f2': HI,
+    'p-f3': mix(HI, MID, 0.5),
+    'p-f4': MID,
+    'p-f5': mix(MID, LO, 0.5),
+    'p-f6': LO,
+    'p-f7': mix(LO, BOTTOM, 0.5),
+    'p-f8': BOTTOM,
+    'p-f9': mix(BOTTOM, INK, 0.2),
+    'p-dr': BOTTOM,
+    'p-d1': 'rgba(255,61,154,0.6)',
+    'p-d2': 'rgba(255,61,154,0.3)',
+    'p-ik': INK,
+    'p-ol': '#eef6ff',
+    'p-x1': X2,
+    'p-x2': mix(X2, INK, 0.45),
+    'p-sh': '#ffffff',
+    'p-sp': '#ffffff',
+    'p-cu': '#9dff6a',
+    'p-os': 'rgba(185,156,255,0.6)',
 };
 
-/** Fit art `cols` cells into `width` px: SVG units per cell unit. */
-const fit = (cols: number, width: number) => width / (cols * SVG_CELL.w);
+/** A piece placed at (x, y), scaled to `width` px. Returns its SVG and drawn height. */
+const place = (p: Piece, x: number, y: number, width: number) => {
+    const h = (width / p.w) * p.h;
+    const svg = pieceToSvg(p, {
+        colors: COLORS,
+        attrs: { x: String(x), y: String(y), width: String(width), height: h.toFixed(1) },
+    });
+    return { svg, h };
+};
 
 export const GET: APIRoute = async () => {
-    const title = renderAnsi('Stephen Lyons', { style: 'wild', seed: 3 });
-    const sub = renderAnsi('Cybersecurity Engineer', { style: 'block', drips: 0, overspray: 0 });
-    const url = renderAnsi('stephenlyons.dev', { style: 'block', drips: 0, overspray: 0 });
-
-    const tScale = fit(title.cols, 1080);
-    const sScale = fit(sub.cols, 760);
-    const uScale = fit(url.cols, 360);
-    const tH = title.rows * SVG_CELL.h * tScale;
-    const sH = sub.rows * SVG_CELL.h * sScale;
-    const top = (H - tH - sH - 70) / 2;
+    const title = renderPiece('Stephen Lyons', { style: 'wild', seed: 3 });
+    const sub = renderPiece('Cyber Security Engineer', {
+        style: 'wild',
+        seed: 4,
+        blades: 0,
+        arrow: false,
+        sparkles: 0,
+        drips: 0.12,
+    });
+    const tw = 1080;
+    const sw = 900;
+    const th = (tw / title.w) * title.h;
+    const sh = (sw / sub.w) * sub.h;
+    const top = (H - th - sh - 30) / 2;
+    const t = place(title, 60, top, tw);
+    const s = place(sub, 60, top + th + 30, sw);
 
     const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" shape-rendering="crispEdges">
 <rect width="${W}" height="${H}" fill="#070b12"/>
 <rect x="0" y="${H - 14}" width="${W}" height="14" fill="#3cc4ff" fill-opacity="0.55"/>
-${artToSvg(title, { colors: TITLE_COLORS, backgrounds: { 'a-gl': TOP }, opacity: { 'a-os': 0.55 }, x: 60, y: top, scale: tScale })}
-${artToSvg(sub, { colors: { ...TITLE_COLORS, 'a-ol': '#36e2c6' }, opacity: { 'a-os': 0 }, x: 60, y: top + tH + 40, scale: sScale })}
-${artToSvg(url, { colors: Object.fromEntries(Object.keys(TITLE_COLORS).map((k) => [k, k === 'a-ol' ? '#4cc38a' : k.startsWith('a-x') ? '#14301f' : '#96aac0'])), x: W - 60 - 360, y: H - 70, scale: uScale })}
+${t.svg}
+${s.svg}
 </svg>`;
     const png = await sharp(Buffer.from(svg))
         .png({ compressionLevel: 9, palette: true })

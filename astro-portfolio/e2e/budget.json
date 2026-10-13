@@ -2,35 +2,35 @@
     "pages": {
         "/": {
             "js": 66,
-            "css": 84,
+            "css": 50,
             "font": 30,
             "img": 10,
-            "html": 80
+            "html": 135
         },
         "/about/": {
             "js": 336,
-            "css": 84,
+            "css": 50,
             "font": 30,
             "img": 10,
-            "html": 50
+            "html": 65
         },
         "/projects/": {
             "js": 66,
-            "css": 84,
+            "css": 50,
             "font": 30,
             "img": 100,
-            "html": 72
+            "html": 75
         },
         "/contact/": {
             "js": 66,
-            "css": 84,
+            "css": 50,
             "font": 30,
             "img": 10,
-            "html": 35
+            "html": 42
         },
         "/404.html": {
             "js": 66,
-            "css": 84,
+            "css": 50,
             "font": 30,
             "img": 10,
             "html": 20

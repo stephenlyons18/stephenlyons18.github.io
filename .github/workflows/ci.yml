@@ -1,6 +1,6 @@
 name: CI
 
-# Gate for main only. Work merged into dev / revamp is checked locally (CLAUDE.md, "Done means"),
+# Gate for main only. Work merged into dev or an epic branch is checked locally (CLAUDE.md, "Done means"),
 # so Actions minutes are spent once per release PR, not on every merge. Skipped when a PR touches
 # neither the site nor the workflows.
 on:
@@ -44,6 +44,12 @@ jobs:
           cache-dependency-path: astro-portfolio/pnpm-lock.yaml
 
       - run: pnpm install --frozen-lockfile
+
+      # Astro's optimised-image cache: unchanged images aren't re-encoded by sharp on every run.
+      - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: astro-portfolio/node_modules/.astro
+          key: astro-assets-${{ runner.os }}-${{ hashFiles('astro-portfolio/src/assets/**') }}
 
       - name: Audit — critical fails the build
         run: pnpm audit --audit-level critical
