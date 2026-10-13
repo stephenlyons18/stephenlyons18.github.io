@@ -126,9 +126,11 @@ pnpm preview        # serve dist/
   `https://github.com/stephenlyons18/stephenlyons18.github.io/blob/pr-media/R<n>/<file>?raw=true`. That branch
   is never merged.
 - **Suites:** `smoke` (load, console, overflow, art fits its box), `skill-graph` (card anchoring, 0 label
-  overlaps), `terminal`, `scroll` (progress strip, touch scrubber drag), `drips`, `ux` (axe WCAG 2.2 AA, nav, mobile menu, keyboard, reduced motion, no idle rAF),
+  overlaps), `terminal` (incl. window drips), `scroll` (progress strip, touch scrubber drag), `drips` (incl. touch
+  focus), `urls` (clean directory URLs, nested 404), `wall` (pieces never over content, spray once), `motion`
+  (tilt, draggable art), `a11y-menu`, `seo`, `gallery`, `ux` (axe WCAG 2.2 AA, nav, mobile menu, keyboard, reduced motion, no idle rAF),
   `budget` (bytes per page by kind vs `e2e/budget.json`, plus LCP/CLS/blocking time on a throttled phone) and
-  `perf` (scroll frame timing).
+  `perf` (scroll frame timing, composited layers at rest).
   - The last two run after the functional tests, in the `budget-*` and then `perf-*` projects, so they measure
     the site rather than other tests' CPU. `perf-*` runs one device at a time.
   - Raising a budget needs a reason in the PR; lower it when a PR wins bytes back.
