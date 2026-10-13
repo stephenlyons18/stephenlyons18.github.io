@@ -96,10 +96,16 @@ test('no idle layer bloat: content waiting to reveal is not pre-promoted', async
     for (const path of PAGES) {
         await page.goto(path);
         await page.waitForLoadState('networkidle');
-        await page.waitForTimeout(800);
+        // At rest: after the entrances and any drip pour (≤ 2.6 s) have finished.
+        await page.waitForTimeout(3000);
         layers = [];
         await cdp.send('LayerTree.enable'); // per page: it doesn't survive a navigation
-        await page.evaluate(() => window.scrollBy(0, 1));
+        // A paint-only nudge to get a layer-tree update (a scroll would move cards into the touch
+        // focus band and start a pour, which isn't rest).
+        await page.evaluate(() => {
+            document.body.style.color = 'rgb(1, 2, 3)';
+            requestAnimationFrame(() => (document.body.style.color = ''));
+        });
         await expect.poll(() => layers.length).toBeGreaterThan(0);
         await cdp.send('LayerTree.disable');
         const drawn = layers.filter((l) => l.drawsContent).length;

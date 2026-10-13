@@ -3,7 +3,7 @@
  *
  * 8 rows tall, mostly 6 wide, with 2-pixel stems and bars and rounded (missing) corners, so the letters
  * read as inflated blocks rather than a thin terminal font. Each pixel renders as two monospace cells
- * (`██`) — see generator.ts. Uppercase only; the generator upper-cases input. Unknown characters fall
+ * (2 × 2 half-block units in piece.ts). Uppercase only; the renderer upper-cases input. Unknown characters fall
  * back to a blank of the space width.
  */
 export const GLYPH_HEIGHT = 8;
@@ -22,7 +22,7 @@ const RAW: Record<string, string> = {
     K: `##..## ##.##. ####.. ###... ####.. ##.##. ##..## ##..##`,
     L: `##.... ##.... ##.... ##.... ##.... ##.... ###### ######`,
     M: `##...## ###.### ####### ##.#.## ##...## ##...## ##...## ##...##`,
-    N: `##..## ###.## ###### ###### ##.### ##..## ##..## ##..##`,
+    N: `##..## ###.## ###.## ###### ###### ##.### ##.### ##..##`,
     O: `.####. ###### ##..## ##..## ##..## ##..## ###### .####.`,
     P: `#####. ###### ##..## ##..## ###### #####. ##.... ##....`,
     Q: `.####. ###### ##..## ##..## ##..## ##.### ###### .#####`,
