@@ -92,17 +92,21 @@ slots only; the wall and text stay.
 
 ## Site-wide pieces (all build-time, zero JS)
 
-- **Wall** (`AnsiWall.astro`, `renderWallTile`): a running-bond brick wall of `▓`/`░`/`▒` behind every page
-  at 7% opacity. It **scrolls with the content**, like paint on a real wall. The cells are drawn as a seamless
-  80 × 30-cell SVG tile, where each shade glyph becomes its 2 × 2 dither. The tile is served as three CSS masks
-  (`/art/wall.css`, generated at build) over theme-coloured layers, so there are no glyphs in the DOM. It replaces the matrix rain, which ran a rAF loop forever. The `matrix`
-  terminal command still plays the rain once, as an easter egg.
+- **Wall** (`AnsiWall.astro`, `wallPixels`): a running-bond brick wall of `▓`/`░`/`▒` behind every page
+  at 7% strength. It **scrolls with the content**, like paint on a real wall. The cells are drawn as a seamless
+  80 × 30-cell tile, where each shade glyph becomes its 2 × 2 dither, baked per theme into a ~2 KB PNG
+  (`/art/wall-<theme>.png`) and tiled with `image-rendering: pixelated`. There are no glyphs in the DOM and no
+  masks: a tiled bitmap is nearly free to raster, and the old theme-coloured masks cost most of a phone's raster
+  time while scrolling (R22). It replaced the matrix rain, which ran a rAF loop forever. The `matrix` terminal
+  command still plays the rain once, as an easter egg.
 - **Drips** (`AnsiDrips.astro`, `renderDripStrip`): a 1-cell stem ending in a **teardrop** of quadrant blocks
   (`▗█▖` / `▟█▙` / `▜█▛`). It is 2-4-4-6-6-4 half-cell pixels wide: a gentle taper from the stem, then a
   rounded bottom. **Title drips don't get the teardrop** (user direction, 2026-10-12): they stay thin 1-cell
   runs fading `█` → `▓` → `▒` → `░`, as in the original pieces. Strips only.
   - **Like spray paint running down a wall** (user direction, 2026-10-12): paint runs out of the edge, catches,
-    runs again and creeps to a stop. It never detaches, falls or splats.
+    runs again and creeps to a stop. It never detaches, falls or splats. The "catch" is a slow-down, never a
+    stop: the easing (`--drip-ease`) is sampled from a speed curve that swells and eases without ever hitting
+    zero or jumping, because a dead stop followed by a lurch reads as stutter (R22).
   - **The whole strip animates together, never drip by drip.** Drips are dealt into 4 runs (`.drip-run`).
     On hover/focus every run slides out at its own pace (a beat later and a little slower than the last), so
     the strip pours without moving in step. Each run is one compositor layer: CSS transitions, no JS.
