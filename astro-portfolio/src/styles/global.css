@@ -359,6 +359,113 @@
     opacity: 0.6;
 }
 
+/* ---------- Wall pieces (WallPiece.astro, R27) ---------- */
+/* Painted on the wall, not on the page: behind every element (z -1, after the wall in the DOM, so
+   above it), never interactive, quieter than the titles. One transform list for every state. */
+.section,
+.page-header {
+    position: relative;
+}
+.wall-piece {
+    position: absolute;
+    z-index: -1;
+    pointer-events: none;
+    height: var(--h);
+    aspect-ratio: var(--ratio);
+    opacity: 0.55;
+    --ty: 0%;
+    transform: translateY(var(--ty)) rotate(var(--tilt)) scale(1);
+}
+.wall-piece svg {
+    display: block;
+    width: 100%;
+    height: 100%;
+}
+.wall-piece--gap-left,
+.wall-piece--gap-right {
+    top: calc(var(--h) / -2);
+}
+.wall-piece--inside {
+    top: 0.75rem;
+}
+@media (max-width: 768px) {
+    .wall-piece--gap-left,
+    .wall-piece--gap-right {
+        top: calc(var(--h-m) / -2);
+    }
+    .wall-piece--inside {
+        top: 0.25rem;
+    }
+}
+.wall-piece--gap-left,
+.wall-piece--side-left {
+    left: max(5%, (100% - var(--max-w)) / 2);
+}
+.wall-piece--gap-right,
+.wall-piece--side-right {
+    right: max(5%, (100% - var(--max-w)) / 2);
+}
+.wall-piece--side-left,
+.wall-piece--side-right,
+.wall-piece--gutter-left,
+.wall-piece--gutter-right {
+    top: var(--top);
+    --ty: -50%;
+}
+/* Gutters: centred in the margin outside the container. */
+.wall-piece--gutter-left {
+    left: calc((100% - var(--max-w)) / 4);
+    translate: -50% 0;
+}
+.wall-piece--gutter-right {
+    right: calc((100% - var(--max-w)) / 4);
+    translate: 50% 0;
+}
+.wall-piece--side-left,
+.wall-piece--side-right,
+.wall-piece--gutter-left,
+.wall-piece--gutter-right {
+    display: none;
+}
+@media (min-width: 1280px) {
+    .wall-piece--side-left,
+    .wall-piece--side-right {
+        display: block;
+    }
+}
+/* Only where the margin outside the container fits a piece. */
+@media (min-width: 1560px) {
+    .wall-piece--gutter-left,
+    .wall-piece--gutter-right {
+        display: block;
+    }
+}
+@media (max-width: 768px) {
+    .wall-piece {
+        height: var(--h-m);
+    }
+}
+/* Sprayed on once when first seen (site.ts): a few stepped coats, like a can going over it. */
+.wall-piece.is-waiting {
+    opacity: 0;
+}
+.wall-piece.is-sprayed {
+    animation: spray-on 0.9s steps(6, end) both;
+}
+@keyframes spray-on {
+    from {
+        opacity: 0;
+        transform: translateY(var(--ty)) rotate(var(--tilt)) scale(0.94);
+    }
+}
+html[data-reduce-motion] .wall-piece {
+    opacity: 0.55;
+    animation: none;
+}
+html[data-a11y-wall] .wall-piece {
+    display: none;
+}
+
 /* ---------- Reset & Base ---------- */
 /* The handful of Tailwind Preflight rules this site relied on (Tailwind itself was unused and is
    gone): form controls inherit typography, headings take their size from classes, media is block. */

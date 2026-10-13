@@ -3,7 +3,7 @@
  *
  * 8 rows tall, mostly 6 wide, with 2-pixel stems and bars and rounded (missing) corners, so the letters
  * read as inflated blocks rather than a thin terminal font. Each pixel renders as two monospace cells
- * (2 × 2 half-block units in piece.ts). Uppercase only; the renderer upper-cases input. Unknown characters fall
+ * (2 × 2 half-block units in piece.ts). Uppercase, plus the odd lowercase glyph leet words need (r); other letters are upper-cased. Unknown characters fall
  * back to a blank of the space width.
  */
 export const GLYPH_HEIGHT = 8;
@@ -31,11 +31,12 @@ const RAW: Record<string, string> = {
     T: `###### ###### ..##.. ..##.. ..##.. ..##.. ..##.. ..##..`,
     U: `##..## ##..## ##..## ##..## ##..## ##..## ###### .####.`,
     V: `##..## ##..## ##..## ##..## ##..## .####. .####. ..##..`,
-    W: `##...## ##...## ##...## ##.#.## ####### ####### ###.### ##...##`,
+    W: `##...## ##...## ##.#.## ##.#.## ##.#.## ####### ###.### ##...##`,
     X: `##..## ##..## .####. ..##.. ..##.. .####. ##..## ##..##`,
     Y: `##..## ##..## ##..## .####. ..##.. ..##.. ..##.. ..##..`,
     Z: `###### ###### ...##. ..##.. .##... ##.... ###### ######`,
-    '0': `.####. ###### ##..## ##..## ##..## ##..## ###### .####.`,
+    // Slashed, so leet words (r00t, LY0NS) don't read as O.
+    '0': `.####. ###### ##.### ##.### ###.## ###.## ###### .####.`,
     '1': `.##. ###. .##. .##. .##. .##. #### ####`,
     '2': `.####. ###### ##..## ...##. ..##.. .##... ###### ######`,
     '3': `#####. ###### ....## .####. .####. ....## ###### #####.`,
@@ -52,6 +53,8 @@ const RAW: Record<string, string> = {
     "'": `## ## .# .. .. .. .. ..`,
     '+': `...... ...... ..##.. ###### ###### ..##.. ...... ......`,
     '/': `....## ....## ...##. ..##.. ..##.. .##... ##.... ##....`,
+    // Lowercase where leet spelling needs it (r00t); everything else is upper-cased.
+    r: `...... ...... ##.##. ###### ###... ##.... ##.... ##....`,
     ' ': `... ... ... ... ... ... ... ...`,
 };
 
@@ -69,5 +72,5 @@ export const GLYPHS: Record<string, Glyph> = Object.fromEntries(
 );
 
 export function glyphFor(ch: string): Glyph {
-    return GLYPHS[ch.toUpperCase()] ?? GLYPHS[' ']!;
+    return GLYPHS[ch] ?? GLYPHS[ch.toUpperCase()] ?? GLYPHS[' ']!;
 }
