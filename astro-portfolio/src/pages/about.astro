@@ -14,7 +14,10 @@ import { jobs } from '../data/experience';
     <section class="page-header" aria-label="Page header">
         <div class="container reveal">
             <span class="section-label">About Me</span>
-            <AnsiTitle text="About" label="About Stephen Lyons" as="h1" style="wild" seed={3} />
+            <!-- Grab-and-fling with a mouse (fx.ts), like the home title; touch keeps scrolling. -->
+            <div class="drag-art" data-drag="fine">
+                <AnsiTitle text="About" label="About Stephen Lyons" as="h1" style="wild" seed={3} />
+            </div>
             <p class="page-desc">
                 Cybersecurity Engineer building secure, resilient systems at enterprise scale.
             </p>

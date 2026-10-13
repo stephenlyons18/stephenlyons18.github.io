@@ -12,7 +12,10 @@ import AnsiDivider from '../components/AnsiDivider.astro';
     <section class="page-header" aria-label="Page header">
         <div class="container reveal">
             <span class="section-label">Get In Touch</span>
-            <AnsiTitle text="Contact" as="h1" style="wild" seed={7} />
+            <!-- Grab-and-fling with a mouse (fx.ts), like the home title; touch keeps scrolling. -->
+            <div class="drag-art" data-drag="fine">
+                <AnsiTitle text="Contact" as="h1" style="wild" seed={7} />
+            </div>
             <p class="page-desc">
                 Have a question, opportunity, or want to collaborate? Let's connect.
             </p>
