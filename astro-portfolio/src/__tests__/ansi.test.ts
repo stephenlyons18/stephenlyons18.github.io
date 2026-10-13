@@ -157,12 +157,29 @@ describe('pieceToSvg', () => {
         expect(new Set(classes).size).toBe(classes.length);
         expect(classes).toContain('p-ol');
     });
-    test('rects cover exactly the painted units', () => {
-        const svg = pieceToSvg(p, { colors: { 'p-ol': '#fff' } });
-        let area = 0;
-        for (const m of svg.matchAll(/M(\d+) (\d+)h(\d+)v(\d+)/g)) area += +m[3]! * +m[4]!;
-        expect(area).toBe(count(p, 'p-ol'));
-        expect(svg).not.toContain('class=');
+    test('painted in order, the paths reproduce every opaque unit exactly', () => {
+        for (const piece of [p, renderPiece('Stephen Lyons', { style: 'wild' })]) {
+            const svg = pieceToSvg(piece);
+            const got = new Array<string>(piece.w * piece.h).fill('');
+            for (const [, c, d] of svg.matchAll(/<path class="(p-[a-z0-9]+)" d="([^"]*)"/g)) {
+                if (c === 'p-os') continue; // mist dots, not cells
+                let x = 0;
+                let y = 0;
+                for (const [, op, a, b, w, h] of d!.matchAll(
+                    /([Mm])(-?[\d.]+) (-?[\d.]+)h([\d.]+)v([\d.]+)h-[\d.]+z/g,
+                )) {
+                    [x, y] = op === 'M' ? [+a!, +b!] : [x + +a!, y + +b!];
+                    for (let yy = y; yy < y + +h!; yy++)
+                        for (let xx = x; xx < x + +w!; xx++) got[yy * piece.w + xx] = c!;
+                }
+            }
+            for (let i = 0; i < got.length; i++) {
+                const want = PIECE_CLASSES[piece.cells[i]!]!;
+                if (['p-os', 'p-d1', 'p-d2', ''].includes(want)) continue;
+                expect(got[i], `unit ${i % piece.w},${Math.floor(i / piece.w)}`).toBe(want);
+            }
+        }
+        expect(pieceToSvg(p, { colors: { 'p-ol': '#fff' } })).not.toContain('class=');
     });
 });
 

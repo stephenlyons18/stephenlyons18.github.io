@@ -535,35 +535,87 @@ export interface PieceSvgOptions {
  */
 const OS = C['p-os'];
 
+/**
+ * Paint order for pieceToSvg, back to front. Opaque classes painted later may be covered by an earlier
+ * class's path (they paint over it anyway), so thin rings like the outline collapse into one solid
+ * silhouette and the SVG stays small. Translucent ones (drip fades, mist) are never covered.
+ */
+const ORDER: PieceClass[] = [
+    'p-x2',
+    'p-x1',
+    'p-ol',
+    'p-ik',
+    'p-f0',
+    'p-f1',
+    'p-f2',
+    'p-f3',
+    'p-f4',
+    'p-f5',
+    'p-f6',
+    'p-f7',
+    'p-f8',
+    'p-f9',
+    'p-cu',
+    'p-sh',
+    'p-dr',
+    'p-sp',
+    'p-d1',
+    'p-d2',
+    'p-os',
+];
+const TRANSLUCENT = new Set<PieceClass>(['p-d1', 'p-d2', 'p-os']);
+
 export function pieceToSvg(p: Piece, opts: PieceSvgOptions = {}): string {
-    const used = new Uint8Array(p.w * p.h);
-    const d: Record<number, string[]> = {};
-    for (let y = 0; y < p.h; y++) {
-        let x = 0;
-        while (x < p.w) {
-            const v = p.cells[y * p.w + x]!;
-            if (!v || used[y * p.w + x]) {
-                x++;
-                continue;
+    const rank = new Int8Array(PIECE_CLASSES.length).fill(-1);
+    ORDER.forEach((c, i) => (rank[C[c]] = i));
+    // Rects per class as [x, y, w, h]; serialised with relative moves (after `z` the pen is back at
+    // the rect's start, so the next rect is a short `m dx dy`).
+    const d: Record<number, [number, number, number, number][]> = {};
+    for (const cls of ORDER) {
+        const v = C[cls];
+        const r = rank[v]!;
+        // must: this class's own cells. may: opaque cells painted later, which hide whatever is under.
+        const must = (i: number) => p.cells[i] === v;
+        const may = (i: number) => {
+            const c = p.cells[i]!;
+            return (
+                c === v ||
+                (v !== OS && c !== 0 && rank[c]! > r && !TRANSLUCENT.has(PIECE_CLASSES[c]!))
+            );
+        };
+        const used = new Uint8Array(p.w * p.h);
+        for (let y = 0; y < p.h; y++) {
+            let x = 0;
+            while (x < p.w) {
+                const i0 = y * p.w + x;
+                if (!must(i0) || used[i0]) {
+                    x++;
+                    continue;
+                }
+                // Extend left and right over may-cells, so the run is as long as it can be.
+                let a = x;
+                while (a > 0 && may(y * p.w + a - 1) && !used[y * p.w + a - 1]) a--;
+                let b = x + 1;
+                while (b < p.w && may(y * p.w + b) && !used[y * p.w + b]) b++;
+                const n = b - a;
+                // Grow the run down while the next row can take the same span.
+                let rows = 1;
+                const fits = (yy: number) => {
+                    for (let k = a; k < b; k++)
+                        if (!may(yy * p.w + k) || used[yy * p.w + k]) return false;
+                    return true;
+                };
+                while (y + rows < p.h && fits(y + rows)) rows++;
+                for (let rr = 0; rr < rows; rr++)
+                    used.fill(1, (y + rr) * p.w + a, (y + rr) * p.w + b);
+                if (v === OS)
+                    // Overspray is mist, not pixels: a small dot in each unit (the `·` of ANSI art).
+                    for (let rr = 0; rr < rows; rr++)
+                        for (let k = 0; k < n; k++)
+                            (d[v] ??= []).push([a + k + 0.35, y + rr + 0.35, 0.3, 0.3]);
+                else (d[v] ??= []).push([a, y, n, rows]);
+                x = b;
             }
-            let n = 1;
-            while (x + n < p.w && p.cells[y * p.w + x + n] === v && !used[y * p.w + x + n]) n++;
-            // Grow the run downward while the row below has the same run (and nothing wider of it).
-            let rows = 1;
-            const same = (yy: number) => {
-                for (let k = 0; k < n; k++)
-                    if (p.cells[yy * p.w + x + k] !== v || used[yy * p.w + x + k]) return false;
-                return true;
-            };
-            while (y + rows < p.h && same(y + rows)) rows++;
-            for (let r = 0; r < rows; r++) used.fill(1, (y + r) * p.w + x, (y + r) * p.w + x + n);
-            if (v === OS)
-                // Overspray is mist, not pixels: a small dot in each unit (the `·` of ANSI art).
-                for (let r = 0; r < rows; r++)
-                    for (let k = 0; k < n; k++)
-                        (d[v] ??= []).push(`M${x + k + 0.35} ${y + r + 0.35}h.3v.3h-.3z`);
-            else (d[v] ??= []).push(`M${x} ${y}h${n}v${rows}h-${n}z`);
-            x += n;
         }
     }
     const attrs = Object.entries({
@@ -574,9 +626,16 @@ export function pieceToSvg(p: Piece, opts: PieceSvgOptions = {}): string {
     })
         .map(([k, v]) => `${k}="${v}"`)
         .join(' ');
-    const paths = Object.entries(d)
-        .map(([v, parts]) => {
-            const cls = PIECE_CLASSES[+v]!;
+    const paths = ORDER.filter((c) => d[C[c]])
+        .map((cls) => {
+            let px = 0;
+            let py = 0;
+            const num = (n: number) => String(+n.toFixed(2)).replace(/^(-?)0\./, '$1.');
+            const parts = d[C[cls]]!.map(([x, y, w, h], i) => {
+                const m = i ? `m${num(x - px)} ${num(y - py)}` : `M${num(x)} ${num(y)}`;
+                [px, py] = [x, y];
+                return `${m}h${num(w)}v${num(h)}h-${num(w)}z`;
+            });
             const paint = opts.colors
                 ? opts.colors[cls]
                     ? `fill="${opts.colors[cls]}"`
