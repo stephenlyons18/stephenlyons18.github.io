@@ -1,5 +1,6 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
+import WallPiece from '../components/WallPiece.astro';
 import AnsiTitle from '../components/AnsiTitle.astro';
 import AnsiDivider from '../components/AnsiDivider.astro';
 ---
@@ -10,6 +11,15 @@ import AnsiDivider from '../components/AnsiDivider.astro';
     description="Get in touch with Stephen Lyons — Cybersecurity Engineer. Contact for collaboration, consulting, or opportunities."
 >
     <section class="page-header" aria-label="Page header">
+        <WallPiece
+            text="PWN"
+            spot="side-right"
+            style="wild"
+            seed={31}
+            h="7.5rem"
+            tilt={-4}
+            top="40%"
+        />
         <div class="container reveal">
             <span class="section-label">Get In Touch</span>
             <!-- Grab-and-fling with a mouse (fx.ts), like the home title; touch keeps scrolling. -->
@@ -24,6 +34,24 @@ import AnsiDivider from '../components/AnsiDivider.astro';
     </section>
 
     <section class="section" style="padding-top:0;" aria-label="Contact information and form">
+        <WallPiece
+            text="SL"
+            spot="gutter-left"
+            style="bubble"
+            seed={32}
+            h="6.5rem"
+            tilt={-5}
+            top="25%"
+        />
+        <WallPiece
+            text="SUD0"
+            spot="gutter-right"
+            style="wild"
+            seed={33}
+            h="6rem"
+            tilt={4}
+            top="65%"
+        />
         <div class="container">
             <div class="grid-2" style="align-items:start;">
                 <!-- Contact Form -->

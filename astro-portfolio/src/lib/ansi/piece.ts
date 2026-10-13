@@ -16,7 +16,7 @@
  * (`p-f0`…`p-f9` fill bands, `p-ik` ink, `p-ol` outline, …), so CSS theme tokens recolour every
  * piece. Rules: docs/ART_DIRECTION.md.
  */
-import { GLYPH_HEIGHT, glyphFor } from './font';
+import { GLYPHS, GLYPH_HEIGHT, glyphFor } from './font';
 
 export type PieceStyle = 'wild' | 'bubble';
 
@@ -326,7 +326,8 @@ export function renderPiece(text: string, opts: PieceOptions = {}): Piece {
     const style = opts.style ?? 'wild';
     const o: Required<PieceOptions> = { ...DEFAULTS[style], ...opts, style };
     const rand = rng(hash(`v2:${style}:${text}`) ^ o.seed);
-    const chars = [...text.toUpperCase()];
+    // Upper-case, except letters the font draws in lowercase (the r of r00t).
+    const chars = [...text].map((c) => (c !== c.toUpperCase() && GLYPHS[c] ? c : c.toUpperCase()));
     const firstIdx = chars.findIndex((c) => c !== ' ');
     const lastIdx = chars.findLastIndex((c) => c !== ' ');
 

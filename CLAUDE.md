@@ -176,7 +176,8 @@ pnpm preview        # serve dist/
 - **Build-time art** lives in `src/lib/` (pure TS, unit-tested). It is rendered by Astro components into
   static, `aria-hidden` art with a real text equivalent, so art costs zero runtime JS. Title pieces
   (`src/lib/ansi/piece.ts`) are inline SVG on a half-block grid, drips and dividers are text cells, and the
-  wall is a baked PNG tile.
+  wall is a baked PNG tile. Wall pieces (`WallPiece.astro`) reuse the piece renderer in the whitespace;
+  `wall.spec` fails if one overlaps any visible text or control, so check it when you move content.
 - **SEO and AI search** come from data, so they can't drift:
   - `src/data/site.ts` (`SITE`, `ROUTES`) drives canonical URLs and Open Graph/Twitter tags in `BaseLayout`
     (every page passes `kind`), plus JSON-LD (`src/lib/seo.ts`: WebSite + Person + a page type).
