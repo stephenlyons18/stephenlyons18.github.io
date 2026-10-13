@@ -68,7 +68,7 @@ test('plain headings: art hidden, a real visible heading in its place, no overfl
     for (const path of PAGES) {
         await page.goto(path);
         const title = page.locator('.ansi-title:not(.ansi-title--deco)').first();
-        await expect(title.locator('pre').first()).toBeHidden();
+        await expect(title.locator('svg').first()).toBeHidden();
         const heading = title.locator('.ansi-title__text');
         await expect(heading).toBeVisible();
         expect((await heading.boundingBox())!.height).toBeGreaterThan(16);

@@ -3,8 +3,6 @@ import { jobs } from '../data/experience';
 import projects from '../data/projects';
 import { ROUTES, SITE } from '../data/site';
 import { skills } from '../data/skills';
-import { renderAnsi } from '../lib/ansi/generator';
-import { artToSvg } from '../lib/ansi/svg';
 import { ldJson, llmsFullTxt, llmsTxt, pageLd, robotsTxt, sitemapXml } from '../lib/seo';
 
 const page = { path: '/projects/', title: 'Projects — Stephen Lyons', description: 'x' };
@@ -79,26 +77,4 @@ test('robots.txt allows everyone, names AI crawlers, points at the sitemap', () 
     for (const bot of ['GPTBot', 'ClaudeBot', 'PerplexityBot', 'Google-Extended'])
         expect(r).toContain(`User-agent: ${bot}\nAllow: /`);
     expect(r).toContain(`Sitemap: ${SITE.url}/sitemap.xml`);
-});
-
-describe('artToSvg', () => {
-    const one = (ch: string, c = 'x') =>
-        artToSvg({ lines: [[{ c, t: ch }]], cols: 1, rows: 1 }, { colors: { x: '#fff' } });
-    test('glyphs become the quadrants they light', () => {
-        expect(one('█').match(/<rect/g)).toHaveLength(1);
-        expect(one('█')).toContain('width="6" height="10"');
-        expect(one('▄')).toContain('y="5" width="6" height="5"');
-        expect(one('▗')).toContain('x="3" y="5" width="3" height="5"');
-        expect(one('▟').match(/<rect/g)).toHaveLength(2); // top-right + whole bottom half
-        expect(one('▒')).toContain('fill-opacity="0.5"');
-    });
-    test('unknown glyphs and uncoloured classes draw nothing', () => {
-        expect(one('Z')).toBe('<g></g>');
-        expect(one('█', 'nope')).toBe('<g></g>');
-    });
-    test('renders a real title', () => {
-        const art = renderAnsi('SL', { style: 'bubble' });
-        const svg = artToSvg(art, { colors: { 'a-ol': '#fff' } });
-        expect(svg.match(/<rect/g)!.length).toBeGreaterThan(20);
-    });
 });

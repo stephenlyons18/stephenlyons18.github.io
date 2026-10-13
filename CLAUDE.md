@@ -174,13 +174,15 @@ pnpm preview        # serve dist/
   → node radius; `connections` must be **bidirectional**, which tests enforce), and job history. Pages, the
   terminal and the graph all read from these, so never hand-copy content into a second place.
 - **Build-time art** lives in `src/lib/` (pure TS, unit-tested). It is rendered by Astro components into
-  static, `aria-hidden` text with a real text equivalent, so art costs zero runtime JS.
+  static, `aria-hidden` art with a real text equivalent, so art costs zero runtime JS. Title pieces
+  (`src/lib/ansi/piece.ts`) are inline SVG on a half-block grid, drips and dividers are text cells, and the
+  wall is a baked PNG tile.
 - **SEO and AI search** come from data, so they can't drift:
   - `src/data/site.ts` (`SITE`, `ROUTES`) drives canonical URLs and Open Graph/Twitter tags in `BaseLayout`
     (every page passes `kind`), plus JSON-LD (`src/lib/seo.ts`: WebSite + Person + a page type).
   - Endpoints in `src/pages/` build `sitemap.xml`, `robots.txt` (AI crawlers welcome), `llms.txt` and
     `llms-full.txt` (llmstxt.org).
-  - `og.png` is the ANSI title rendered to SVG rects (`src/lib/ansi/svg.ts`) and rasterised by sharp.
+  - `og.png` is the hero piece (`src/lib/ansi/piece.ts` → `pieceToSvg` with fixed colours) rasterised by sharp.
   - A new page needs a `ROUTES` entry; `seo.spec` checks the meta, JSON-LD, sitemap and one `<h1>` with no
     skipped heading levels.
 - `scripts/postbuild.mjs` rewrites absolute URLs in `dist/*.html` to relative ones, and links pages by their

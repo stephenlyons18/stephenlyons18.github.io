@@ -1,6 +1,6 @@
 /**
  * Build-time ANSI textures: the brick wall behind every page and the paint drips (dividers, cards).
- * Same contract as generator.ts: pure and deterministic.
+ * Same contract as piece.ts: pure and deterministic.
  */
 
 function rng(seed: number): () => number {
@@ -115,7 +115,7 @@ export function wallPixels(colors: WallColors, cols = 80, rows = 30, seed = 9): 
  * A paint drip, 3 cells wide and centred on its middle cell: a 1-cell stem, then a teardrop built
  * from quadrant blocks. In half-cell pixels the drop is 2-4-4-6-6-4 wide: it tapers in gently from
  * the stem and swells to a rounded bottom, so it reads as a hanging drop of paint, not a ball.
- * (Strips only: dividers and cards. Title drips stay thin `█▓▒░` runs, see generator.ts.)
+ * (Strips only: dividers and cards. Title drips stay thin 1-unit runs, see piece.ts.)
  *
  *      █      stem (× stem)
  *     ▗█▖     neck

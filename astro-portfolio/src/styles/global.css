@@ -65,8 +65,16 @@
     --ui-2: var(--spray-aqua);
     --ui-3: var(--spray-forest);
     --accent: var(--spray-magenta);
-    --title-top: var(--spray-cyan);
+    /* Title pieces (piece.ts, R25): a five-stop fill borrowed from the reference burners (ice →
+       cyan → royal blue → violet → magenta, no yellow), lime accent cuts, a dark ink line, a white
+       outline and deep indigo 3D. */
+    --title-top: #9ff0ff;
+    --title-hi: var(--spray-cyan);
+    --title-mid: #2f6bff;
+    --title-lo: #8a3ffc;
     --title-bottom: var(--spray-magenta);
+    --title-cut: #9dff6a;
+    --title-ink: #060914;
     --title-outline: var(--white);
     --title-x1: #7b3fe4;
     --title-x2: #3b2385;
@@ -166,8 +174,12 @@
     --ui: var(--spray-aqua);
     --ui-2: var(--spray-sky);
     --ui-3: var(--spray-forest);
-    --title-top: var(--spray-aqua);
-    --title-bottom: var(--spray-cyan);
+    --title-top: #c4fff3;
+    --title-hi: var(--spray-aqua);
+    --title-mid: var(--spray-cyan);
+    --title-lo: #2f6bff;
+    --title-bottom: #3b2385;
+    --title-cut: var(--spray-magenta);
     --title-outline: var(--spray-magenta);
     --title-x1: #2f5bd0;
     --title-x2: #1b2f73;
@@ -177,8 +189,12 @@
     --ui: var(--ansi-steel);
     --ui-2: var(--ansi-blue);
     --ui-3: #8fb7ff;
-    --title-top: #c9d3f2;
-    --title-bottom: var(--ansi-blue);
+    --title-top: #eef2ff;
+    --title-hi: #c9d3f2;
+    --title-mid: var(--ansi-steel);
+    --title-lo: var(--ansi-blue);
+    --title-bottom: #3346b8;
+    --title-cut: #8fb7ff;
     --title-outline: var(--ansi-steel);
     --title-x1: #3346b8;
     --title-x2: #1d2766;
@@ -188,8 +204,12 @@
     --ui: var(--spray-orange);
     --ui-2: var(--spray-yellow);
     --ui-3: var(--spray-aqua);
-    --title-top: var(--spray-yellow);
-    --title-bottom: var(--spray-magenta);
+    --title-top: #ffe9a8;
+    --title-hi: var(--spray-yellow);
+    --title-mid: var(--spray-orange);
+    --title-lo: var(--spray-magenta);
+    --title-bottom: #8a2a5c;
+    --title-cut: var(--spray-aqua);
     --title-outline: var(--white);
     --title-x1: var(--spray-orange);
     --title-x2: #8a2a5c;
@@ -201,8 +221,12 @@
     --ui-2: #00bfff;
     --ui-3: #00ff41;
     --accent: #00ff41;
-    --title-top: #b6ffc8;
-    --title-bottom: #00ff41;
+    --title-top: #e6ffe9;
+    --title-hi: #b6ffc8;
+    --title-mid: #00ff41;
+    --title-lo: #00a82b;
+    --title-bottom: #005c17;
+    --title-cut: #00bfff;
     --title-outline: #e6edf3;
     --title-x1: #00a82b;
     --title-x2: #005c17;
@@ -237,48 +261,102 @@
 .ansi-title__stack {
     display: none;
 }
+/* Terminal banner and other text art (a-f0…a-f7): the same five-stop ramp as the pieces. */
 .a-f0 {
     color: var(--title-top);
 }
 .a-f1 {
-    color: color-mix(in oklab, var(--title-top) 86%, var(--title-bottom));
+    color: color-mix(in oklab, var(--title-top) 40%, var(--title-hi));
 }
 .a-f2 {
-    color: color-mix(in oklab, var(--title-top) 71%, var(--title-bottom));
+    color: color-mix(in oklab, var(--title-hi) 70%, var(--title-mid));
 }
 .a-f3 {
-    color: color-mix(in oklab, var(--title-top) 57%, var(--title-bottom));
+    color: var(--title-mid);
 }
 .a-f4 {
-    color: color-mix(in oklab, var(--title-top) 43%, var(--title-bottom));
+    color: color-mix(in oklab, var(--title-mid) 40%, var(--title-lo));
 }
 .a-f5 {
-    color: color-mix(in oklab, var(--title-top) 29%, var(--title-bottom));
+    color: var(--title-lo);
 }
 .a-f6 {
-    color: color-mix(in oklab, var(--title-top) 14%, var(--title-bottom));
+    color: color-mix(in oklab, var(--title-lo) 40%, var(--title-bottom));
 }
 .a-f7,
 .a-dr {
     color: var(--title-bottom);
 }
-.a-ol {
-    color: var(--title-outline);
+
+/* Pieces (piece.ts → inline SVG, one path per class; AnsiTitle.astro). A unit is one cell wide and
+   half a cell tall. The SVG scales to its container, never past --ansi-max per cell (0.6 × that per
+   unit). Static: nothing here animates. */
+.ansi-svg {
+    display: block;
+    width: min(100%, calc(var(--w) * var(--ansi-max, 13px) * 0.6));
+    height: auto;
+    overflow: visible;
 }
-.a-x1 {
-    color: var(--title-x1);
+.p-f0 {
+    fill: var(--title-top);
 }
-.a-x2 {
-    color: var(--title-x2);
+.p-f1 {
+    fill: color-mix(in oklab, var(--title-top) 50%, var(--title-hi));
 }
-.a-gl {
-    color: #fff;
-    background: var(--title-top);
+.p-f2 {
+    fill: var(--title-hi);
 }
-.a-os {
-    color: var(--title-spray);
-    opacity: 0.55;
-    -webkit-text-stroke: 0; /* the seam-closing stroke would bloat dots into blocks */
+.p-f3 {
+    fill: color-mix(in oklab, var(--title-hi) 50%, var(--title-mid));
+}
+.p-f4 {
+    fill: var(--title-mid);
+}
+.p-f5 {
+    fill: color-mix(in oklab, var(--title-mid) 50%, var(--title-lo));
+}
+.p-f6 {
+    fill: var(--title-lo);
+}
+.p-f7 {
+    fill: color-mix(in oklab, var(--title-lo) 50%, var(--title-bottom));
+}
+.p-f8,
+.p-dr {
+    fill: var(--title-bottom);
+}
+.p-f9 {
+    fill: color-mix(in oklab, var(--title-bottom) 80%, var(--title-ink));
+}
+.p-d1 {
+    fill: color-mix(in oklab, var(--title-bottom) 60%, transparent);
+}
+.p-d2 {
+    fill: color-mix(in oklab, var(--title-bottom) 30%, transparent);
+}
+.p-ik {
+    fill: var(--title-ink);
+}
+.p-ol {
+    fill: var(--title-outline);
+}
+/* Piece 3D: deeper than the UI's --title-x2 shadows, so it reads as depth behind the outline. */
+.p-x1 {
+    fill: var(--title-x2);
+}
+.p-x2 {
+    fill: color-mix(in oklab, var(--title-x2) 55%, var(--title-ink));
+}
+.p-sh,
+.p-sp {
+    fill: #fff;
+}
+.p-cu {
+    fill: var(--title-cut);
+}
+.p-os {
+    fill: var(--title-spray);
+    opacity: 0.6;
 }
 
 /* ---------- Reset & Base ---------- */
@@ -2694,7 +2772,7 @@ html:has(dialog.lightbox[open]) {
 
 /* Plain headings: hide the art, show the real heading — still pixel type, still the burner
    gradient and a two-step block extrusion, so the page keeps its look. */
-html[data-a11y-plain] .ansi-title:not(.ansi-title--deco) > :is(pre, .ansi-title__stack) {
+html[data-a11y-plain] .ansi-title:not(.ansi-title--deco) > :is(pre, svg, .ansi-title__stack) {
     display: none !important;
 }
 html[data-a11y-plain] .ansi-title__text {
