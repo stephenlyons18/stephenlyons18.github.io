@@ -1,17 +1,21 @@
 ---
 /**
- * The brick wall behind every page: three theme-coloured layers masked by a seamless ANSI tile
- * (bricks ▓, mortar ░, chips ▒ — see src/lib/ansi/wall.ts). It covers the whole document and
- * scrolls with it, like paint on a real wall. Static: no JS, no glyphs in the DOM.
+ * The brick wall behind every page: one seamless ANSI tile (bricks ▓, mortar ░, chips ▒, see
+ * src/lib/ansi/wall.ts), baked per theme into a ~2 KB PNG and tiled as a plain background. It
+ * covers the whole document and scrolls with it, like paint on a real wall. Static: no JS, no glyphs
+ * in the DOM, nothing to re-rasterise but a bitmap.
  */
+import { WALL_THEMES } from '../lib/ansi/wall';
+
+// Inline (not in global.css) so Vite leaves the generated /art/ URLs alone. Only the active theme's
+// tile is ever fetched.
+const tiles = Object.keys(WALL_THEMES)
+    .map(
+        (t) =>
+            `${t === 'wildstyle' ? ':root' : `[data-theme='${t}']`}{--wall-tile:url(/art/wall-${t}.png)}`,
+    )
+    .join('');
 ---
 
-<div class="ansi-wall" aria-hidden="true">
-    <div class="w-b"></div>
-    <div class="w-m"></div>
-    <div class="w-c"></div>
-</div>
-<link rel="stylesheet" href="/art/wall.css" media="print" onload="this.media='all'" />
-<noscript>
-    <link rel="stylesheet" href="/art/wall.css" />
-</noscript>
+<style is:inline set:html={tiles}></style>
+<div class="ansi-wall" aria-hidden="true"></div>

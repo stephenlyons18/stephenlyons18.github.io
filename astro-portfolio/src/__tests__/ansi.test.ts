@@ -10,10 +10,12 @@ import {
     DRIP_RUNS,
     dripRows,
     renderDripStrip,
-    renderWallTile,
-    svgDataUrl,
+    WALL_ALPHA,
+    WALL_THEMES,
     wallCells,
+    wallPixels,
 } from '../lib/ansi/wall';
+import { readFileSync } from 'node:fs';
 import { dripsToHtml } from '../lib/ansi/html';
 
 const TITLES = [
@@ -115,42 +117,71 @@ describe('balanceLines', () => {
 });
 
 describe('wall tile', () => {
+    const tile = wallPixels(WALL_THEMES['wildstyle']!);
+
     test('is seamless: the brick period divides the tile', () => {
-        const t = renderWallTile();
-        expect(t.cols % BRICK).toBe(0);
-        expect(t.rows % (COURSE * 2)).toBe(0);
+        expect(80 % BRICK).toBe(0);
+        expect(30 % (COURSE * 2)).toBe(0);
+        expect([tile.width, tile.height]).toEqual([80 * CELL_W, 30 * CELL_H]);
+        expect(tile.data.length).toBe(tile.width * tile.height * 4);
     });
 
-    test('one standalone SVG mask per colour layer, deterministic', () => {
-        const a = renderWallTile();
-        expect(Object.keys(a.layers).sort()).toEqual(['w-b', 'w-c', 'w-m']);
-        for (const svg of Object.values(a.layers)) {
-            expect(svg).toMatch(/^<svg xmlns="http:\/\/www\.w3\.org\/2000\/svg"/);
-            expect(svg).toContain(`viewBox="0 0 ${a.cols * CELL_W} ${a.rows * CELL_H}"`);
-        }
-        expect(renderWallTile()).toEqual(a);
-        expect(renderWallTile(80, 30, 2)).not.toEqual(a);
+    test('deterministic, and the seed changes it', () => {
+        expect(wallPixels(WALL_THEMES['wildstyle']!)).toEqual(tile);
+        expect(wallPixels(WALL_THEMES['wildstyle']!, 80, 30, 2).data).not.toEqual(tile.data);
     });
 
-    test('mask rects match the wall cells (every lit cell drawn once, inside the tile)', () => {
+    test('each cell lights its glyph’s dither, in its layer colour at the wall strength', () => {
         const cells = wallCells();
-        const { layers } = renderWallTile();
-        for (const cls of ['w-b', 'w-m', 'w-c']) {
-            const want = cells.flat().filter((c) => c.c === cls).length;
-            let got = 0;
-            for (const m of layers[cls]!.matchAll(
-                /<rect x="(\d+)" y="(\d+)" width="(\d+)" height="10"/g,
-            )) {
-                got += Number(m[3]) / CELL_W;
-                expect(Number(m[1]) + Number(m[3])).toBeLessThanOrEqual(80 * CELL_W);
-            }
-            expect(got).toBe(want);
+        const dots: Record<string, number> = { '░': 1, '▒': 2, '▓': 3 };
+        const lit = (cx: number, cy: number) => {
+            let n = 0;
+            for (let y = cy * CELL_H; y < (cy + 1) * CELL_H; y++)
+                for (let x = cx * CELL_W; x < (cx + 1) * CELL_W; x++)
+                    if (tile.data[(y * tile.width + x) * 4 + 3]) n++;
+            return n;
+        };
+        for (const [cy, cx] of [
+            [0, 0],
+            [2, 9],
+            [7, 33],
+            [29, 79],
+        ] as const) {
+            const c = cells[cy]![cx]!;
+            expect(lit(cx, cy)).toBe(c.c ? (dots[c.ch]! * CELL_W * CELL_H) / 4 : 0);
         }
+        const firstBrick = tile.data.slice(0, 4);
+        expect([...firstBrick]).toEqual([0x3c, 0xc4, 0xff, Math.round(WALL_ALPHA.b * 255)]);
     });
 
-    test('data URL escapes everything a CSS url() / data URI chokes on', () => {
-        const u = svgDataUrl('<svg a="#x">100%</svg>');
-        expect(u).toBe(`url("data:image/svg+xml,%3Csvg a='%23x'%3E100%25%3C/svg%3E")`);
+    test('WALL_THEMES matches the theme tokens in global.css (b = --ui, m = --ui-3, c = --ui-2)', () => {
+        const css = readFileSync(new URL('../styles/global.css', import.meta.url), 'utf8');
+        const tokens = (sel: string) =>
+            Object.fromEntries(
+                [
+                    ...css
+                        .slice(css.indexOf(sel))
+                        .split('}')[0]!
+                        .matchAll(/(--[\w-]+):\s*([^;]+);/g),
+                ].map((m) => [m[1]!, m[2]!.trim()]),
+            );
+        const root = tokens(':root {');
+        const hex = (v: string, theme: Record<string, string>): string => {
+            const ref = /^var\((--[\w-]+)\)$/.exec(v);
+            return ref ? hex(theme[ref[1]!] ?? root[ref[1]!]!, theme) : v.toLowerCase();
+        };
+        for (const [name, want] of Object.entries(WALL_THEMES)) {
+            const theme =
+                name === 'wildstyle' ? root : { ...root, ...tokens(`[data-theme='${name}'] {`) };
+            expect(
+                {
+                    b: hex(theme['--ui']!, theme),
+                    m: hex(theme['--ui-3']!, theme),
+                    c: hex(theme['--ui-2']!, theme),
+                },
+                name,
+            ).toEqual(want);
+        }
     });
 });
 

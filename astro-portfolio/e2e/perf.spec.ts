@@ -80,3 +80,30 @@ test('card hover-tilt stays smooth (frame p95)', async ({ page, isMobile }) => {
     test.info().annotations.push({ type: 'frames', description: `tilt: p95 ${p95.toFixed(1)}ms` });
     expect(p95, 'tilt frame p95 (ms)').toBeLessThan(process.env.CI ? 100 : 34);
 });
+
+test('no idle layer bloat: content waiting to reveal is not pre-promoted', async ({
+    page,
+    context,
+}) => {
+    // Every composited layer is GPU tile memory; on a DPR-3 phone a dozen card-sized layers blew the
+    // tile budget and stuttered scrolling (R22). At rest a page needs the document, the header and
+    // the scroll UI, plus the odd overlap squash.
+    const cdp = await context.newCDPSession(page);
+    let layers: { drawsContent: boolean }[] = [];
+    cdp.on('LayerTree.layerTreeDidChange', (e) => {
+        if (e.layers) layers = e.layers;
+    });
+    for (const path of PAGES) {
+        await page.goto(path);
+        await page.waitForLoadState('networkidle');
+        await page.waitForTimeout(800);
+        layers = [];
+        await cdp.send('LayerTree.enable'); // per page: it doesn't survive a navigation
+        await page.evaluate(() => window.scrollBy(0, 1));
+        await expect.poll(() => layers.length).toBeGreaterThan(0);
+        await cdp.send('LayerTree.disable');
+        const drawn = layers.filter((l) => l.drawsContent).length;
+        test.info().annotations.push({ type: 'layers', description: `${path}: ${drawn}` });
+        expect(drawn, `${path} composited layers at rest`).toBeLessThanOrEqual(12);
+    }
+});

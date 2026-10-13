@@ -349,10 +349,12 @@ body {
         var(--bg-primary);
 }
 
-/* ANSI brick wall (AnsiWall.astro): three layers (bricks, mortar, chips) masked by a seamless
-   80 × 30-cell tile from /art/wall.css. It spans the whole document and scrolls with it. The tile
-   keeps the old cell size: a 0.6-aspect cell of max(12px, 100vw / 96) font. Opacity keeps it a
-   texture, never a pattern you read. */
+/* ANSI brick wall (AnsiWall.astro): one seamless 80 × 30-cell tile, baked per theme into a PNG
+   (/art/wall-<theme>.png, colour and 7% strength included) and tiled down the whole document, so it
+   scrolls with the content. A tiled bitmap is nearly free to raster; the old theme-coloured masks
+   were re-drawn for every tile that scrolled in and cost most of the raster time on phones (R22).
+   The tile keeps the old cell size: a 0.6-aspect cell of max(12px, 100vw / 96) font. --wall-tile
+   (the active theme's PNG) is set in AnsiWall.astro. */
 body {
     position: relative;
 }
@@ -361,28 +363,11 @@ body {
     position: absolute;
     inset: 0;
     z-index: -1;
-    overflow: clip;
     pointer-events: none;
-    opacity: 0.07;
     contain: strict;
-}
-.ansi-wall > div {
-    position: absolute;
-    inset: 0;
-    mask-repeat: repeat;
-    mask-size: calc(var(--wall-fs) * 0.6 * 80) calc(var(--wall-fs) * 30);
-    /* Nothing paints until /art/wall.css supplies the masks (no flash of solid colour). */
-    mask-image: linear-gradient(transparent, transparent);
-}
-.ansi-wall .w-b {
-    background: var(--ui);
-}
-.ansi-wall .w-m {
-    background: var(--ui-3);
-    opacity: 0.6;
-}
-.ansi-wall .w-c {
-    background: var(--ui-2);
+    background: var(--wall-tile) 0 0 / calc(var(--wall-fs) * 0.6 * 80) calc(var(--wall-fs) * 30)
+        repeat;
+    image-rendering: pixelated;
 }
 
 /* Paint drips (AnsiDrips.astro): a sprayed bar (dividers) or a card's bottom edge, with teardrop
@@ -393,8 +378,40 @@ body {
 .drips {
     container-type: inline-size;
     pointer-events: none;
-    /* Viscous paint: it runs, catches, runs again, then creeps to a stop. */
-    --drip-ease: linear(0, 0.34 14%, 0.42 24%, 0.45 33%, 0.66 47%, 0.71 58%, 0.88 74%, 0.96 88%, 1);
+    /* Viscous paint: it runs, catches, runs again, then creeps to a stop. Sampled from a speed
+       curve that swells and eases but never stops or jumps (R22): the old one went flat and then
+       lurched, which read as stutter. */
+    --drip-ease: linear(
+        0,
+        0.059,
+        0.14,
+        0.227,
+        0.318,
+        0.405,
+        0.485,
+        0.544,
+        0.585,
+        0.615,
+        0.635,
+        0.653,
+        0.674,
+        0.703,
+        0.739,
+        0.78,
+        0.826,
+        0.866,
+        0.901,
+        0.929,
+        0.949,
+        0.962,
+        0.97,
+        0.976,
+        0.981,
+        0.987,
+        0.993,
+        0.997,
+        1
+    );
 }
 .drips .ansi {
     --ansi-max: 9px;
@@ -632,11 +649,12 @@ ol {
 
 /* JS-enhanced path: hide until observed */
 /* Only the not-yet-revealed state declares a transform: a revealed element must not, or it would
-   out-specify (and silently cancel) card hover lifts and fx.ts tilts. */
+   out-specify (and silently cancel) card hover lifts and fx.ts tilts. No will-change here: it kept
+   every waiting element on its own layer, ~15–20 Mpx of extra GPU tiles on a phone, and the tile
+   budget overflowing is what stuttered (R22). The entrance animation promotes each one briefly. */
 body.js-reveal-ready .reveal:not(.revealed) {
     opacity: 0;
     transform: translateY(24px);
-    will-change: transform, opacity;
 }
 body.js-reveal-ready .reveal.revealed {
     /* backwards (not both): once the entrance finishes, no transform is held, so hover lifts work. */
@@ -655,7 +673,6 @@ body.js-reveal-ready .reveal.revealed {
         animation: none;
         opacity: 1;
         transform: none;
-        will-change: auto;
     }
 }
 

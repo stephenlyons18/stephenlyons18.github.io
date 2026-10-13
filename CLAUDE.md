@@ -152,6 +152,15 @@ pnpm preview        # serve dist/
     - One transform function list per element across all its states (mixed lists interpolate on the main
       thread).
     - Many small moving things move as a few grouped layers (drip runs), never one animation each.
+    - Every composited layer is GPU tile memory (×9 on a DPR-3 phone). No `will-change` on content that's
+      waiting (e.g. unrevealed `.reveal`); the entrance animation promotes it briefly. `perf.spec` caps
+      layers at rest.
+    - Big repeating textures are baked bitmaps tiled as a background (the wall PNGs), never CSS masks or
+      SVG patterns, which re-rasterise for every tile that scrolls in.
+    - Heavy JS work (the skill graph's 1200-tick settle) is time-sliced so it never lands as one long task
+      mid-scroll.
+    - Easing curves never stop dead and then lurch: a slow-down reads as motion, and a stop-start reads as
+      stutter.
     - No forced reflow in pointer handlers, and no style writes on every scroll frame (flip a class on change).
     - No `backdrop-filter` or full-screen fixed overlays.
     - Scroll-linked UI uses CSS scroll-driven animations. Write `animation-timeline` in its own rule: the CSS
