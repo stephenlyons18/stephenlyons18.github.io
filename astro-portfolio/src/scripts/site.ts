@@ -19,13 +19,11 @@ interface HeroLine {
 }
 
 function initActiveNav(): void {
-    // Astro routes don't have .html — match by pathname
-    const path = window.location.pathname.replace(/\/$/, '') || '/';
+    // Compare resolved paths (hrefs are relative after postbuild: "../about/"), slash-insensitive.
+    const norm = (p: string) => p.replace(/(index)?\.html$/, '').replace(/\/$/, '') || '/';
+    const here = norm(window.location.pathname);
     document.querySelectorAll<HTMLAnchorElement>('.nav-links a').forEach((a) => {
-        const href = a.getAttribute('href') || '';
-        const norm = href.replace(/\/$/, '') || '/';
-        if (norm === path) a.classList.add('active');
-        else a.classList.remove('active');
+        a.classList.toggle('active', norm(a.pathname) === here);
     });
 }
 

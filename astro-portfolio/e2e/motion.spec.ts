@@ -41,10 +41,7 @@ test('same-site navigation runs a page view transition (and none under reduced m
         });
     });
     await page.goto('/');
-    await page
-        .locator('.nav-links a[href$="about/index.html"], .nav-links a[href="/about"]')
-        .first()
-        .click();
+    await page.locator('.nav-links a', { hasText: 'About' }).first().click();
     await page.waitForURL(/about/);
     expect(await page.evaluate(() => sessionStorage.getItem('vt'))).toBe('true');
     // The header is its own transition group, so it stays put while the page changes.

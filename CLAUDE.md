@@ -174,8 +174,9 @@ pnpm preview        # serve dist/
   - `og.png` is the ANSI title rendered to SVG rects (`src/lib/ansi/svg.ts`) and rasterised by sharp.
   - A new page needs a `ROUTES` entry; `seo.spec` checks the meta, JSON-LD, sitemap and one `<h1>` with no
     skipped heading levels.
-- `scripts/postbuild.mjs` rewrites absolute URLs in `dist/*.html` to relative ones so `dist/` also works over
-  `file://`. New top-level routes must be added to its `DIR_ROUTES`.
+- `scripts/postbuild.mjs` rewrites absolute URLs in `dist/*.html` to relative ones, and links pages by their
+  **directory URL** (`../about/`), so the address bar never shows `index.html`. It finds routes on disk; a new page
+  needs only its `ROUTES` entry (nav, terminal `cd`, sitemap and llms.txt read it).
 - **`.nojekyll` must reach the `build` branch**, or GitHub Pages strips `_astro/` (all CSS/JS). `deploy.yml`
   enforces it; never remove that check or `include-hidden-files: true`.
 

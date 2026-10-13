@@ -5,6 +5,7 @@
 import projects from '../data/projects';
 import { jobs } from '../data/experience';
 import { CATEGORY_META, skills, type SkillCategory } from '../data/skills';
+import { ROUTES } from '../data/site';
 
 declare global {
     interface Window {
@@ -56,12 +57,10 @@ const WELCOME_MSG = [
     '',
 ];
 
+/** cd/goto targets, from the one route list (clean directory URLs: /about/, never index.html). */
 const PAGES: Record<string, string> = {
-    home: '/',
+    ...Object.fromEntries(ROUTES.map((r) => [r.name.toLowerCase(), r.path])),
     index: '/',
-    about: '/about',
-    projects: '/projects',
-    contact: '/contact',
 };
 
 let history: string[] = [];
@@ -492,7 +491,7 @@ function cmdProjects(_args: string[], outputEl: HTMLElement, onDone?: () => void
         appendHTML(
             outputEl,
             `  <span style="color:var(--ui);font-weight:600;">&gt;</span> ` +
-                `<a href="/projects#${encodeURIComponent(p.id)}" ` +
+                `<a href="/projects/#${encodeURIComponent(p.id)}" ` +
                 `style="color:var(--ui);text-decoration:underline;text-decoration-color:var(--ui-dim);" ` +
                 `title="View on projects page">${escapeHTML(p.title)}</a>`,
         );
