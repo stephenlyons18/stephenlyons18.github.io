@@ -35,7 +35,7 @@ Stephen Lyons' cybersecurity portfolio: a working in-browser terminal painted on
 Press **Ctrl+K** / **⌘K** (or the `>_` button) on any page; the homepage hero terminal is live too.
 
 `help` · `whoami` · `ls pages` · `cd <page>` · `skills` · `projects` · `experience` · `education` · `contact` ·
-`theme <wildstyle|bubble|ansi|green>` · `matrix` · `clear` · `exit` · and `sudo`, if you must. Tab completes and
+`theme <wildstyle|bubble|ansi|sunset|green>` · `matrix` · `clear` · `exit` · and `sudo`, if you must. Tab completes and
 ↑/↓ walks history.
 
 ## Develop

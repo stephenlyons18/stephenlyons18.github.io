@@ -18,11 +18,10 @@
 brew install act
 ```
 
-### Linux (script)
-```bash
-curl -s https://raw.githubusercontent.com/nektos/act/master/install.sh | sudo bash
-```
-Or download a release binary from [github.com/nektos/act/releases](https://github.com/nektos/act/releases) and place it on your `$PATH`.
+### Linux
+Download a release binary from [github.com/nektos/act/releases](https://github.com/nektos/act/releases), check it
+against the release's `checksums.txt`, and put it on your `$PATH` (or in `bin/`, which is git-ignored). Don't pipe an
+install script from a branch tip into `sudo bash`.
 
 ### Verify
 ```bash
@@ -57,7 +56,7 @@ Workflows that push code (Prettier) or read private repos require a `GITHUB_TOKE
 
 Create a **`.secrets`** file in the repo root (never commit this file):
 ```
-GITHUB_TOKEN=ghp_yourPersonalAccessTokenHere
+GITHUB_TOKEN=<a fine-grained token, this repo only, read-only unless you test a push>
 ```
 
 Add to `.gitignore`:
@@ -79,10 +78,12 @@ act --secret-file .secrets
 act -l
 ```
 
-### Run the full deploy workflow (dry-run)
+### Run the deploy workflow (dry run only)
 ```bash
-act push --secret-file .secrets
+act push -n          # -n / --dryrun: plan the jobs without running any step
 ```
+> **Never run `act push` for real with a token in `.secrets`:** `deploy.yml` pushes `dist/` to the live `build`
+> branch (and force-pushes it on rollback). Test the build steps with `pnpm build` instead.
 
 ### Run a specific workflow by filename
 ```bash
@@ -93,6 +94,13 @@ act -W .github/workflows/prettier.yml --secret-file .secrets
 ```bash
 act -W .github/workflows/prettier.yml -j prettier --secret-file .secrets
 ```
+
+### Run CI (the release gate for PRs into `main`)
+```bash
+act pull_request -W .github/workflows/ci.yml
+```
+Needs no secrets. It's slow in a container (Chromium + 3 device projects), so locally `pnpm test && pnpm build && pnpm e2e`
+from `astro-portfolio/` is the faster check.
 
 ### Trigger a `workflow_dispatch` event
 ```bash
@@ -113,7 +121,7 @@ act workflow_dispatch -W .github/workflows/prettier.yml --secret-file .secrets
 ```
 
 ### `trufflehog.yml`
-The `trufflesecurity/trufflehog@main` action requires Docker-in-Docker capability. Run with the **Large** image or use the `--privileged` flag:
+The `trufflesecurity/trufflehog` action (SHA-pinned in the workflow) requires Docker-in-Docker capability. Run with the **Large** image or use the `--privileged` flag:
 
 ```bash
 act workflow_dispatch -W .github/workflows/trufflehog.yml \

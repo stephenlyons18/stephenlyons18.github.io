@@ -8,8 +8,8 @@ vanilla-TS bundles (site interactivity + a working in-browser **terminal**). Dep
 `build` branch. The look is **ANSI/ASCII art crossed with NY/SF/LA graffiti** (wildstyle, bubble letters,
 pixel drips, 3D block shading) layered over a terminal that still really works.
 
-All site code lives in `astro-portfolio/`. `old-html/` is the frozen pre-Astro site, kept for reference. Never
-edit it and never port new work into it.
+All site code lives in `astro-portfolio/`. The pre-Astro site is archived on the `archive/old-html` branch (never
+merged, never edited; don't port work into it).
 
 One developer (**stephenlyons18**), any number of agents. There are no lock files, no "players" and no
 hand-offs. The board and PRs are the coordination layer.
@@ -30,8 +30,11 @@ hand-offs. The board and PRs are the coordination layer.
 
 - `main`: release. A push to `main` builds and deploys to the `build` branch (GitHub Pages serves `build`).
 - `dev`: integration. Default base for normal work.
-- `revamp`: the current **epic branch** (art-direction overhaul, cut from `dev`). While it exists, work-item
-  branches are cut from `revamp` and PR into `revamp`. When the epic is done, `revamp` PRs into `dev`.
+- `epic/<name>`: an **epic branch**, cut from `dev` for a group of related items. The current one is
+  **`epic/polish`** (R18–R27). While it exists, work-item branches are cut from it and PR into it. When the epic is
+  done, it PRs into `dev` as one grouped PR (that's where the user signs off), and the branch is deleted after merge.
+  With no epic open, items branch from and PR into `dev`.
+- Archive and media branches are never merged: `archive/old-html` (the pre-Astro site), `pr-media` (PR screenshots).
 - Work-item branches: `<feat|fix|chore|docs|perf|test>/R<n>-<slug>`, one per board item (or a tight cluster).
 
 ## Tracking work: the board, PRs, and (security-only) issues
@@ -46,7 +49,7 @@ The repo is **public**, so development is not tracked in public issues. Instead:
 - **Repo issues are only for security findings**: Dependabot / code scanning / secret scanning / `pnpm audit` /
   anything with a vulnerability angle. Label `security`, then `tools/board.sh add-issue <#>`. Fixing PRs say `Fixes #N`.
   Closing keywords only fire on the default branch (`main`), so **close the issue by hand** (`gh issue close
-  <#> -c "Fixed in #PR"`) when the fixing PR merges into `revamp`/`dev`.
+  <#> -c "Fixed in #PR"`) when the fixing PR merges into the epic branch or `dev`.
 - Dependabot PRs land on the board by themselves. Supersede them with a real upgrade PR and close them with a comment.
 
 | Column      | Means                                                                              |
@@ -64,22 +67,24 @@ GraphQL query per call, so don't loop it. If gh hits a rate limit, keep coding a
 `gh api rate_limit` resets.
 
 **Session start:** `tools/board.sh list`, then take the item the user names (otherwise the top **Ready** P0).
-`tools/board.sh show R<n>` and read the whole body. Then `git switch -c <type>/R<n>-<slug> origin/revamp` (or
-`origin/dev` once the epic has merged), `git push -u origin HEAD`, and `tools/board.sh state R<n> "In progress"
+`tools/board.sh show R<n>` and read the whole body. Then `git switch -c <type>/R<n>-<slug> origin/epic/polish` (or
+`origin/dev` when no epic is open), `git push -u origin HEAD`, and `tools/board.sh state R<n> "In progress"
 "<plan>"`.
 
 **During:** found more work? `tools/board.sh new Backlog …`. Don't grow the branch silently. Keep the State
 line true when you stop mid-item.
 
-**Finishing:** meet *Done means* (bottom), push, then `gh pr create --base revamp` with the board id in the
+**Finishing:** meet *Done means* (bottom), push, then `gh pr create --base epic/polish` (or `dev`) with the board id in the
 title, the spec, and a **Verified by running / Inferred** report with screenshots or videos attached (never
 committed). Then `tools/board.sh link R<n> <pr#>`. Once the bar is met locally, merge your own PR:
 `gh pr merge <#> --merge --delete-branch`, then `tools/board.sh move '#<pr>' Done`. **Exception:** visual /
-art-direction PRs wait for the user's sign-off on the screenshots unless the user said to go ahead.
+art-direction PRs wait for the user's sign-off on the screenshots unless the user said to go ahead. Inside an
+epic, item PRs (screenshots attached) merge into the epic branch so the grouped PR shows the whole change, and the
+**grouped epic → `dev` PR** is the one that waits for the sign-off.
 
 **CI runs only on PRs into `main`** (the release gate), and deploy builds once per merge to `main`. PRs into
-`dev`/`revamp` trigger no Actions, which saves the user's minutes. Your local run of the full bar *is* the check
-for them, so paste its results into the PR's report. Never add `dev`/`revamp`/push triggers back to a workflow
+`dev` or an epic branch trigger no Actions, which saves the user's minutes. Your local run of the full bar *is* the check
+for them, so paste its results into the PR's report. Never add `dev`/epic/push triggers back to a workflow
 that builds or tests.
 
 ## Toolchain
@@ -241,14 +246,13 @@ Commits end with only the `Co-Authored-By:` line. Grep a PR body for `claude.ai/
 
 ## Internet and docs
 
-Astro 7, Vite 8, Tailwind 4, React 19.3, Motion, Vitest 5 and Playwright 1.64 all move fast and may post-date
+Astro 7, Vite 8, React 19.3, Motion, Vitest 5 and Playwright 1.64 all move fast and may post-date
 your training data. **Before using an unfamiliar API or config key, fetch the docs or run a 10-second
 experiment.** Don't assert library behaviour from memory. Prefer the specific sub-page:
 
 | Tech                              | Docs                                                                    |
 | --------------------------------- | ----------------------------------------------------------------------- |
 | Astro (components, assets, islands) | https://docs.astro.build/en/reference/directives-reference/ · https://docs.astro.build/en/guides/images/ |
-| Tailwind CSS v4                   | https://tailwindcss.com/docs                                            |
 | d3-force                          | https://d3js.org/d3-force/simulation                                    |
 | React 19                          | https://react.dev/reference/react                                       |
 | Motion                            | https://motion.dev/docs/react-quick-start                               |
@@ -273,6 +277,6 @@ leave the item in Backlog with `needs decision` in its State line, and say so.
 
 **Done means:** `pnpm test`, `pnpm build`, `pnpm e2e` and `pnpm format:check` are green; screenshots or video at
 all three viewports for anything visual; `pnpm audit --audit-level high` reviewed; `README.md`/this file updated
-if a command, convention or page changed; a PR into `revamp` (or `dev`) naming its board id with a report that
+if a command, convention or page changed; a PR into the epic branch (or `dev`) naming its board id with a report that
 separates **what you verified by running** from **what you inferred**; the board card linked and moved; any
 fixed security issue closed by hand.
