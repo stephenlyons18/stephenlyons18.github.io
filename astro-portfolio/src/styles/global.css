@@ -978,6 +978,11 @@ body.js-reveal-ready .reveal.revealed {
     position: relative;
     z-index: 2;
 }
+/* The subheader piece (R24) tucks up under the name: its 3D and drips overlap the name's
+   bottom margin, like a second piece sprayed below the first. */
+.hero-sub {
+    margin-top: clamp(-2.25rem, -3vw, -0.5rem);
+}
 
 .hero-terminal {
     background: var(--bg-secondary);
@@ -1103,7 +1108,7 @@ body.js-reveal-ready .reveal.revealed {
 }
 
 .hero-cta {
-    margin-top: 2rem;
+    margin: 1.75rem 0 2.5rem;
     display: flex;
     flex-wrap: wrap;
     gap: 1rem;
@@ -2799,6 +2804,9 @@ html[data-a11y-plain] .ansi-title__text {
 html[data-a11y-plain] h2.ansi-title__text,
 html[data-a11y-plain] h3.ansi-title__text {
     font-size: clamp(1rem, 3.2vw, 1.75rem);
+}
+html[data-a11y-plain] p.ansi-title__text {
+    font-size: clamp(0.85rem, 2.4vw, 1.25rem);
 }
 
 /* Readable font: the pixel faces become the platform's UI sans (art keeps its cells). */

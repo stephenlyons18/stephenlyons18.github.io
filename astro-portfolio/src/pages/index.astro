@@ -16,16 +16,38 @@ import { featuredProjects } from '../data/projects';
     <section class="hero" aria-label="Introduction">
         <div class="container">
             <div class="hero-content reveal">
-                <!-- Grab-and-fling with a mouse (fx.ts); touch keeps scrolling the page. -->
+                <!-- Grab-and-fling with a mouse (fx.ts); touch keeps scrolling the page. The name and
+                     the subheader are one piece of art and move together. -->
                 <div class="drag-art" data-drag="fine">
                     <AnsiTitle
                         text="Stephen Lyons"
-                        label="Stephen Lyons — Cybersecurity Engineer"
                         as="h1"
                         style="wild"
                         maxFont={12}
                         class="hero-piece"
                     />
+                    <AnsiTitle
+                        text="Cyber Security Engineer"
+                        as="p"
+                        style="wild"
+                        seed={4}
+                        maxFont={7}
+                        minFont={3}
+                        lines={2}
+                        opts={{ blades: 0.25, sparkles: 1, dripMax: 6 }}
+                        class="hero-sub"
+                    />
+                </div>
+                <div class="hero-cta">
+                    <a href="/projects" class="btn btn--filled">
+                        View Projects →
+                    </a>
+                    <a href="/about" class="btn">
+                        About Me
+                    </a>
+                    <a href="/contact" class="btn">
+                        Get In Touch
+                    </a>
                 </div>
                 <div class="hero-terminal" role="img" aria-label="Animated terminal introduction">
                     <div class="hero-terminal__bar">
@@ -41,17 +63,6 @@ import { featuredProjects } from '../data/projects';
                         role="group"
                         aria-label="Terminal output"
                     ></div>
-                </div>
-                <div class="hero-cta">
-                    <a href="/projects" class="btn btn--filled">
-                        View Projects →
-                    </a>
-                    <a href="/about" class="btn">
-                        About Me
-                    </a>
-                    <a href="/contact" class="btn">
-                        Get In Touch
-                    </a>
                 </div>
             </div>
         </div>

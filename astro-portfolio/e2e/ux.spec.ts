@@ -132,3 +132,16 @@ test('keyboard-only hints show only where there is a keyboard', async ({ page, i
     await page.locator('.card [data-open-terminal]').click();
     await expect(page.locator('.terminal-overlay')).toHaveClass(/active/);
 });
+
+// ── Hero ─────────────────────────────────────────────────────────────────────
+test('hero: name and subheader have real text, and the terminal sits below the buttons', async ({
+    page,
+}) => {
+    await page.goto('/');
+    await expect(page.locator('h1')).toHaveText('Stephen Lyons');
+    await expect(page.locator('.hero-sub .ansi-title__text')).toHaveText('Cyber Security Engineer');
+    await expect(page.locator('.hero-sub svg').first()).toHaveAttribute('aria-hidden', 'true');
+    const cta = (await page.locator('.hero-cta').boundingBox())!;
+    const term = (await page.locator('.hero-terminal').boundingBox())!;
+    expect(term.y).toBeGreaterThan(cta.y + cta.height);
+});
