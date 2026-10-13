@@ -4,7 +4,7 @@
       "command": "npx",
       "args": [
         "-y",
-        "ascii-motion-mcp",
+        "ascii-motion-mcp@2.2.0",
         "--live",
         "--project-dir",
         "${workspaceFolder}"

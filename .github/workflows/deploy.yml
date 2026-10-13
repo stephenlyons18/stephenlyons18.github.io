@@ -53,6 +53,13 @@ jobs:
         run: pnpm install --frozen-lockfile
         working-directory: astro-portfolio
 
+      # Astro's optimised-image cache: unchanged images aren't re-encoded by sharp on every deploy.
+      - name: Cache optimised images
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: astro-portfolio/node_modules/.astro
+          key: astro-assets-${{ runner.os }}-${{ hashFiles('astro-portfolio/src/assets/**') }}
+
       - name: Build site
         # Runs: esbuild → astro build → postbuild.mjs (path relativisation)
         run: pnpm build
