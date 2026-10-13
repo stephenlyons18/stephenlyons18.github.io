@@ -1391,9 +1391,8 @@ html:has(dialog.lightbox[open]) {
     animation: lightbox-in 0.18s var(--ease);
 }
 .lightbox::backdrop {
-    background: rgba(7, 11, 18, 0.88);
-    backdrop-filter: blur(6px);
-    -webkit-backdrop-filter: blur(6px);
+    /* Solid, no blur (CLAUDE.md: no backdrop-filter). */
+    background: rgba(7, 11, 18, 0.92);
 }
 @keyframes lightbox-in {
     from {
@@ -2128,9 +2127,9 @@ html:has(dialog.lightbox[open]) {
     display: flex;
     align-items: center;
     justify-content: center;
-    background: rgba(0, 0, 0, 0.7);
-    backdrop-filter: blur(8px);
-    -webkit-backdrop-filter: blur(8px);
+    /* A solid dim, no backdrop blur: blurring the whole page under a fixed overlay costs a full
+       re-composite every frame (CLAUDE.md, smooth hover and scroll). */
+    background: rgba(4, 7, 12, 0.86);
     opacity: 0;
     visibility: hidden;
     transition:
@@ -2147,8 +2146,18 @@ html:has(dialog.lightbox[open]) {
         visibility 0s;
 }
 
-.terminal-panel {
+/* The window and the paint running off it move together (the panel clips its own content). */
+.terminal-wrap {
+    position: relative;
     width: min(900px, 92vw);
+    transform: translateY(20px) scale(0.97);
+    transition: transform 0.3s var(--ease);
+}
+.terminal-overlay.active .terminal-wrap {
+    transform: translateY(0) scale(1);
+}
+.terminal-panel {
+    width: 100%;
     max-height: 80vh;
     background: var(--bg-secondary);
     border: 1px solid var(--ui-dim);
@@ -2159,11 +2168,31 @@ html:has(dialog.lightbox[open]) {
     display: flex;
     flex-direction: column;
     overflow: hidden;
-    transform: translateY(20px) scale(0.97);
-    transition: transform 0.3s var(--ease);
 }
-.terminal-overlay.active .terminal-panel {
-    transform: translateY(0) scale(1);
+/* Drips off the window's bottom edge (terminal.ts termDrips): tucked and hidden while closed; on
+   open they pour once, a beat after the window lands, and hang there until it closes. Same runs
+   and easing as card drips; under reduced motion they simply appear. */
+.term-drips {
+    position: absolute;
+    left: 1.25rem;
+    right: 1.25rem;
+    top: 100%;
+    overflow-x: clip;
+    --drip-color: var(--ui-dim);
+}
+.term-drips .ansi {
+    font-size: 7px;
+}
+.term-drips .drip-run {
+    visibility: hidden;
+    transform: translateY(-100%);
+}
+.terminal-overlay.active .term-drips .drip-run {
+    visibility: visible;
+    transform: none;
+    transition:
+        transform var(--drip-t) var(--drip-ease) calc(var(--drip-d) + 0.25s),
+        visibility 0s 0.25s;
 }
 
 .terminal-bar {
@@ -2419,9 +2448,12 @@ html:has(dialog.lightbox[open]) {
         left: -1.5rem;
     }
 
-    .terminal-panel {
-        max-height: 90vh;
+    .terminal-wrap {
         width: 96vw;
+    }
+    .terminal-panel {
+        /* Leaves room under the window for its drips. */
+        max-height: 84vh;
         border-radius: var(--radius);
     }
     .terminal-body {

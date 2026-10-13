@@ -122,6 +122,9 @@ slots only; the wall and text stay.
     - Fixed 7px cells and 1–4-cell stems. Grids with drip cards get a wider row gap so the drips stay inside
       it (e2e checks this).
     - Under reduced motion they simply appear on hover.
+  - **Terminal drips** (`terminal.ts` `termDrips`, user direction 2026-10-13): the same 7px strip runs off the
+    terminal window's bottom edge when it opens, a beat after the window lands, and hangs there until it
+    closes. They're below the frame, never over the terminal's text.
   - **Touch: focus follows the scroll, not the finger** (user direction, 2026-10-13). Phones have no hover,
     so the card or divider crossing the middle 30% of the screen gets its hover state (`.is-focus`: lift, skin,
     drips pouring) as it arrives and lets go as it leaves (`fx.ts`, one IntersectionObserver). Taps don't

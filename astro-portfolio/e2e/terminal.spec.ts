@@ -55,3 +55,36 @@ test('skills and experience commands are generated from the data files', async (
         timeout: 15_000,
     });
 });
+
+test('paint runs off the terminal window once it opens, never over its text', async ({ page }) => {
+    await page.goto('/');
+    await page.locator('.nav-terminal-btn').click();
+    await expect(page.locator(overlay)).toHaveClass(/active/);
+    const drips = page.locator('.term-drips');
+    await expect(drips).toHaveAttribute('aria-hidden', 'true');
+    // Every run pours out to full length…
+    await expect
+        .poll(
+            () =>
+                drips.evaluate((el) =>
+                    [...el.querySelectorAll('.drip-run')].every(
+                        (r) =>
+                            getComputedStyle(r).visibility === 'visible' &&
+                            Math.abs(new DOMMatrixReadOnly(getComputedStyle(r).transform).m42) <
+                                0.5,
+                    ),
+                ),
+            { timeout: 5000 },
+        )
+        .toBe(true);
+    // …below the window frame, not over the terminal.
+    const panel = (await page.locator('.terminal-panel').boundingBox())!;
+    const strip = (await drips.boundingBox())!;
+    expect(strip.y).toBeGreaterThanOrEqual(panel.y + panel.height - 1);
+    await page.locator('#terminal-input').press('Escape');
+    await expect
+        .poll(() =>
+            drips.evaluate((el) => getComputedStyle(el.querySelector('.drip-run')!).visibility),
+        )
+        .toBe('hidden');
+});
