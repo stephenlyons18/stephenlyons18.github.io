@@ -111,7 +111,8 @@ slots only; the wall and text stay.
     On hover/focus every run slides out at its own pace (a beat later and a little slower than the last), so
     the strip pours without moving in step. Each run is one compositor layer: CSS transitions, no JS.
   - **Divider** (`AnsiDivider.astro`): drips under a sprayed `▄` bar, **always visible**, about halfway out.
-    Stems are 2–6 cells. Hover (or a tap on touch) runs them all out to full length; they creep back slowly
+    Stems are 2–6 cells. Hover (on touch: the divider crossing the middle of the screen) runs them all out to
+    full length; they creep back slowly
     after. Dividers below the fold start tucked in the bar and run out on first view. Used under page headers
     and between home sections.
   - **Card drips** (`.card-drips`): **only while the card is hovered or focused** (user direction,
@@ -121,6 +122,10 @@ slots only; the wall and text stay.
     - Fixed 7px cells and 1–4-cell stems. Grids with drip cards get a wider row gap so the drips stay inside
       it (e2e checks this).
     - Under reduced motion they simply appear on hover.
+  - **Touch: focus follows the scroll, not the finger** (user direction, 2026-10-13). Phones have no hover,
+    so the card or divider crossing the middle 30% of the screen gets its hover state (`.is-focus`: lift, skin,
+    drips pouring) as it arrives and lets go as it leaves (`fx.ts`, one IntersectionObserver). Taps don't
+    trigger it.
 - **Headers** (`AnsiTitle.astro`): lean wildstyle for page titles, bubble for the 404 and the "SL" avatar.
   With the a11y menu's **Plain headings**, the art hides and its real heading shows instead: Press Start 2P,
   the same burner gradient and a two-step block extrusion (`drop-shadow` in `--title-x1`/`--title-x2`).

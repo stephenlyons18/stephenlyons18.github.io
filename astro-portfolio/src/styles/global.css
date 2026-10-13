@@ -453,8 +453,9 @@ body {
     white-space: pre;
 }
 
-/* Section divider: drips always hang under the bar (about halfway out). Hover, or a tap on touch
-   (fx.ts .is-poked), runs every drip out to full length; they creep back slowly afterwards. fx.ts
+/* Section divider: drips always hang under the bar (about halfway out). Hover, or on touch the
+   divider scrolling through the middle of the screen (fx.ts .is-focus), runs every drip out to full
+   length; they creep back slowly afterwards. fx.ts
    tucks drips below the fold into the bar until they scroll into view (.is-tucked). */
 .ansi-divider {
     margin: 2.5rem 0;
@@ -471,7 +472,7 @@ body {
     transition: none;
 }
 .ansi-divider:hover .drip-run,
-.ansi-divider.is-poked .drip-run {
+.ansi-divider.is-focus .drip-run {
     transform: none;
     transition: transform var(--drip-t) var(--drip-ease) var(--drip-d);
 }
@@ -501,7 +502,7 @@ body {
 .card:hover .card-drips .drip-run,
 .card:focus-within .card-drips .drip-run,
 .card-link:focus-visible .card-drips .drip-run,
-.card.is-poked .card-drips .drip-run {
+.card.is-focus .card-drips .drip-run {
     visibility: visible;
     transform: none;
     transition:
@@ -1076,10 +1077,17 @@ body.js-reveal-ready .reveal.revealed {
     opacity: 0;
     transition: opacity 0.25s var(--ease);
 }
-.card:hover {
+.card:hover,
+.card.is-focus {
     --lift: -2px;
 }
+/* Touch (fx.ts .is-focus): the card in the middle of the screen lifts a touch further and its skin
+   fades in, so focus reads at arm's length. */
+.card.is-focus {
+    --lift: -3px;
+}
 .card:hover::after,
+.card.is-focus::after,
 .card-link:focus-visible .card::after {
     opacity: 1;
 }

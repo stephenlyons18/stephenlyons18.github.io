@@ -143,7 +143,7 @@ pnpm preview        # serve dist/
   `public/scripts/` (generated, git-ignored).
   - Only `site.js` is in the page (`<script is:inline defer>`).
   - It loads `terminal.js` on idle or first use.
-  - It loads `fx.js` (Motion's `motion/mini` + `spring`: card tilt, draggable art, drip taps on touch) on idle,
+  - It loads `fx.js` (Motion's `motion/mini` + `spring`: card tilt, draggable art, touch focus) on idle,
     only on pages with something to animate and never under reduced motion. Animation code goes in `fx.ts`
     or CSS, compositor-only (transform/opacity), and stops under `data-reduce-motion`.
   - **Smooth hover and scroll are rules, not luck** (perf traces in R17):
@@ -203,7 +203,8 @@ Workflow rules: pin third-party actions to a **SHA with a version comment**; set
 ## Non-negotiables
 
 - **Mobile-first, every device smooth.** Design at 320–430px first. Touch targets ≥ 44px. Every hover has a
-  tap/focus equivalent. Keyboard-only hints (Ctrl+K) are wrapped in `.only-kbd` with an `.only-touch` wording
+  tap/focus equivalent; on touch, cards and dividers take their hover state from scroll focus (the middle of
+  the screen, `fx.ts` `.is-focus`), not from taps. Keyboard-only hints (Ctrl+K) are wrapped in `.only-kbd` with an `.only-touch` wording
   beside them; touch screens hide the native scrollbar because the pixel scrubber replaces it. No horizontal scroll at any width (e2e checks this). Canvas work degrades on small
   screens.
 - **Art enhances, never obstructs.** ANSI/graffiti art never sits behind body copy, never blocks navigation or
