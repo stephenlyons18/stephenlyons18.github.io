@@ -81,7 +81,7 @@ import AnsiDivider from '../components/AnsiDivider.astro';
                             style="font-size:0.75rem;color:var(--text-muted);margin-top:0.75rem;"
                         >
                             Submitting opens your email client with the message pre-filled. Or write
-                            directly to
+                            directly to{' '}
                             <a href="mailto:stephen.lyons18@gmail.com">stephen.lyons18@gmail.com</a>
                             .
                         </p>
@@ -232,14 +232,17 @@ import AnsiDivider from '../components/AnsiDivider.astro';
                             Prefer the terminal?
                         </h3>
                         <p class="card__desc">
-                            Press{' '}
-                            <kbd style="background:var(--bg-elevated);border:1px solid var(--border);padding:0.15rem 0.5rem;border-radius:3px;font-family:var(--font-display);font-size:0.8rem;">
-                                Ctrl+K
-                            </kbd>{' '}
-                            to open the interactive terminal and type{' '}
+                            <span class="only-kbd">
+                                Press <kbd class="kbd">Ctrl+K</kbd> (or the button below)
+                            </span>
+                            <span class="only-touch">Tap the button below</span> to open the
+                            interactive terminal and type{' '}
                             <code style="color:var(--ui);">contact</code> to see my info, or try{' '}
                             <code style="color:var(--ui);">whoami</code> for a quick bio.
                         </p>
+                        <button type="button" class="btn" data-open-terminal>
+                            &gt;_ Open terminal
+                        </button>
                     </div>
                 </div>
             </div>

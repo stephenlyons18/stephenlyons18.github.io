@@ -32,7 +32,7 @@ test('header nav reaches every page', async ({ page, isMobile }) => {
         ['About', /\/about\//],
         ['Projects', /\/projects\//],
         ['Contact', /\/contact\//],
-        ['Home', /\/(index\.html)?$/],
+        ['Home', /\/$/],
     ] as const) {
         if (isMobile) {
             await page.locator('.nav-toggle').click();
@@ -111,4 +111,24 @@ test('no rAF loop runs while the page is idle (no background animation)', async 
             }),
     );
     expect(callbacks, 'rAF callbacks scheduled in 1s of idle').toBeLessThanOrEqual(2);
+});
+
+// ── Touch vs keyboard ────────────────────────────────────────────────────────
+test('keyboard-only hints show only where there is a keyboard', async ({ page, isMobile }) => {
+    await page.goto('/contact/');
+    const ctrlK = page.getByText('Ctrl+K', { exact: true }).first();
+    if (isMobile) {
+        await expect(ctrlK).toBeHidden();
+        await expect(page.getByText('Tap the button below')).toBeVisible();
+        // The pixel scrubber is the scrollbar on touch; the native one is hidden.
+        expect(
+            await page.evaluate(() => getComputedStyle(document.documentElement).scrollbarWidth),
+        ).toBe('none');
+    } else {
+        await expect(ctrlK).toBeVisible();
+        await expect(page.locator('.a11y-btn')).toContainText('Accessibility'); // label shown above 1100px
+    }
+    // Either way, the terminal is one button away.
+    await page.locator('.card [data-open-terminal]').click();
+    await expect(page.locator('.terminal-overlay')).toHaveClass(/active/);
 });

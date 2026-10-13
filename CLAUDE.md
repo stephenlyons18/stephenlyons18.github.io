@@ -194,7 +194,8 @@ Workflow rules: pin third-party actions to a **SHA with a version comment**; set
 ## Non-negotiables
 
 - **Mobile-first, every device smooth.** Design at 320–430px first. Touch targets ≥ 44px. Every hover has a
-  tap/focus equivalent. No horizontal scroll at any width (e2e checks this). Canvas work degrades on small
+  tap/focus equivalent. Keyboard-only hints (Ctrl+K) are wrapped in `.only-kbd` with an `.only-touch` wording
+  beside them; touch screens hide the native scrollbar because the pixel scrubber replaces it. No horizontal scroll at any width (e2e checks this). Canvas work degrades on small
   screens.
 - **Art enhances, never obstructs.** ANSI/graffiti art never sits behind body copy, never blocks navigation or
   focus, never moves under the pointer, and is `aria-hidden` with a real text equivalent (an `sr-only` heading
