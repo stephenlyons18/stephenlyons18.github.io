@@ -142,10 +142,11 @@ pnpm preview        # serve dist/
 
 - `src/layouts/BaseLayout.astro` wraps every page (`fixedFooter`, `fullFooter`, `showHeader`,
   `showScrollProgress` props; the last also gives touch screens the right-edge scrub grip). Pages: `index`, `about`, `projects`, `contact`, `404`.
-- `src/scripts/site.ts`, `terminal.ts` and `fx.ts` are bundled by **esbuild** (not Astro) into IIFEs at
+- `src/scripts/site.ts`, `terminal.ts`, `fx.ts` and `wall.ts` are bundled by **esbuild** (not Astro) into IIFEs at
   `public/scripts/` (generated, git-ignored).
   - Only `site.js` is in the page (`<script is:inline defer>`).
   - It loads `terminal.js` on idle or first use.
+  - It loads `wall.js` (random wall pieces, R32) on idle, unless the wall is hidden.
   - It loads `fx.js` (Motion's `motion/mini` + `spring`: card tilt, draggable art, touch focus) on idle,
     only on pages with something to animate and never under reduced motion. Animation code goes in `fx.ts`
     or CSS, compositor-only (transform/opacity), and stops under `data-reduce-motion`.
@@ -178,9 +179,11 @@ pnpm preview        # serve dist/
   terminal and the graph all read from these, so never hand-copy content into a second place.
 - **Build-time art** lives in `src/lib/` (pure TS, unit-tested). It is rendered by Astro components into
   static, `aria-hidden` art with a real text equivalent, so art costs zero runtime JS. Title pieces
-  (`src/lib/ansi/piece.ts`) are inline SVG on a half-block grid, drips and dividers are text cells, and the
-  wall is a baked PNG tile. Wall pieces (`WallPiece.astro`) reuse the piece renderer in the whitespace;
-  `wall.spec` fails if one overlaps any visible text or control, so check it when you move content.
+  (`src/lib/ansi/piece.ts`, `bubble.ts`) are inline SVG on a half-block grid, drips and dividers are text
+  cells, and the wall is a baked PNG tile. Wall pieces (R32) are random per visit: drawn at build time
+  into a pool (`wallPool.ts` → `/art/wall-pieces.json`), then `src/scripts/wall.ts` picks, colours and
+  places them on idle, only in free wall. Never run the renderer in the browser (long tasks on phones).
+  `wall.spec` fails if one overlaps any visible text or control, at any size.
 - **SEO and AI search** come from data, so they can't drift:
   - `src/data/site.ts` (`SITE`, `ROUTES`) drives canonical URLs and Open Graph/Twitter tags in `BaseLayout`
     (every page passes `kind`), plus JSON-LD (`src/lib/seo.ts`: WebSite + Person + a page type).

@@ -1,6 +1,5 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
-import WallPiece from '../components/WallPiece.astro';
 import AnsiTitle from '../components/AnsiTitle.astro';
 import AnsiDivider from '../components/AnsiDivider.astro';
 import AnsiDrips from '../components/AnsiDrips.astro';
@@ -15,15 +14,6 @@ import { featuredProjects } from '../data/projects';
 >
     <!-- Hero Section -->
     <section class="hero" aria-label="Introduction">
-        <WallPiece
-            text="PWN3D"
-            spot="side-right"
-            style="bubble"
-            seed={1}
-            h="9rem"
-            tilt={-4}
-            top="74%"
-        />
         <div class="container">
             <div class="hero-content">
                 <!-- The name and the subheader are two pieces with their own entrance and their own
@@ -85,25 +75,6 @@ import { featuredProjects } from '../data/projects';
 
     <!-- Featured Projects -->
     <section class="section" aria-label="Featured projects">
-        <WallPiece
-            text="H4CK"
-            spot="gap-right"
-            style="wild"
-            seed={2}
-            h="4.5rem"
-            hMobile="3rem"
-            tilt={3}
-            inside
-        />
-        <WallPiece
-            text="CV3"
-            spot="gutter-left"
-            style="wild"
-            seed={6}
-            h="7rem"
-            tilt={-5}
-            top="45%"
-        />
         <div class="container">
             <div class="reveal">
                 <span class="section-label">Featured Work</span>
@@ -139,25 +110,6 @@ import { featuredProjects } from '../data/projects';
 
     <!-- Capabilities Overview -->
     <section class="section" aria-label="Capabilities">
-        <WallPiece text="r00t" spot="gap-left" style="wild" seed={3} h="5.5rem" tilt={-3} />
-        <WallPiece
-            text="SUD0"
-            spot="gutter-right"
-            style="bubble"
-            seed={7}
-            h="6.5rem"
-            tilt={4}
-            top="35%"
-        />
-        <WallPiece
-            text="PWN"
-            spot="gutter-left"
-            style="wild"
-            seed={10}
-            h="6.5rem"
-            tilt={-4}
-            top="78%"
-        />
         <div class="container">
             <div class="reveal">
                 <span class="section-label">What I Do</span>
@@ -311,17 +263,6 @@ import { featuredProjects } from '../data/projects';
 
     <!-- CTA Section -->
     <section class="section" aria-label="Call to action">
-        <WallPiece text="1337" spot="gap-right" style="wild" seed={4} h="5rem" tilt={4} />
-        <WallPiece text="SL" spot="side-left" style="wild" seed={8} h="8rem" tilt={-6} top="58%" />
-        <WallPiece
-            text="0DAY"
-            spot="side-right"
-            style="bubble"
-            seed={9}
-            h="6.5rem"
-            tilt={5}
-            top="62%"
-        />
         <div class="container" style="text-align:center;">
             <div class="reveal">
                 <span class="section-label">Let's Connect</span>

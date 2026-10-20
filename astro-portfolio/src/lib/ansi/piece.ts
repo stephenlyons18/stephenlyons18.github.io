@@ -666,7 +666,10 @@ export function pieceToSvg(p: Piece, opts: PieceSvgOptions = {}): string {
         .map((cls) => {
             let px = 0;
             let py = 0;
-            const num = (n: number) => String(+n.toFixed(2)).replace(/^(-?)0\./, '$1.');
+            // Almost every coordinate is a whole unit: skip the rounding for those (it was most of
+            // the cost of drawing a piece, which matters when wall.ts draws them in the browser).
+            const num = (n: number) =>
+                Number.isInteger(n) ? String(n) : String(+n.toFixed(2)).replace(/^(-?)0\./, '$1.');
             const parts = d[C[cls]]!.map(([x, y, w, h], i) => {
                 const m = i ? `m${num(x - px)} ${num(y - py)}` : `M${num(x)} ${num(y)}`;
                 [px, py] = [x, y];

@@ -1,35 +1,35 @@
 {
     "pages": {
         "/": {
-            "js": 66,
+            "js": 72,
             "css": 50,
             "font": 30,
             "img": 10,
-            "html": 200
+            "html": 160
         },
         "/about/": {
-            "js": 336,
+            "js": 342,
             "css": 50,
             "font": 30,
             "img": 10,
-            "html": 76
+            "html": 62
         },
         "/projects/": {
-            "js": 66,
+            "js": 72,
             "css": 50,
             "font": 30,
             "img": 100,
-            "html": 88
+            "html": 75
         },
         "/contact/": {
-            "js": 66,
+            "js": 72,
             "css": 50,
             "font": 30,
             "img": 10,
-            "html": 56
+            "html": 48
         },
         "/404.html": {
-            "js": 66,
+            "js": 72,
             "css": 50,
             "font": 30,
             "img": 10,

@@ -78,7 +78,7 @@ avatar stays bubble.
 - **Fills:** `█` solid; shading ramp `█ ▓ ▒ ░` (dark→light or core→fade). Half-pixel edges `▀ ▄ ▌ ▐`.
 - **Pixels are 2 cells wide** (`██`) so a pixel is close to square in a monospace cell (≈0.6em × 1.2em ÷ 2).
 - **Drips** hang only from the bottom edge of fills: 1–4 cells, `▓` → `▒` → `░`, seeded so every build is
-  identical (no `Math.random` at runtime).
+  identical (no `Math.random` at runtime; the wall pieces' per-visit seed, R32, is the one exception).
 - **Extrusion** goes down-right, 1–2 cells, in the theme's shading ramp (`--ansi-blue` → `--ansi-steel`).
 - **Outline (bubble)**: a 1-pixel dilation of the letter mask in ink or white, shared across letters so they
   merge into one silhouette.
@@ -180,19 +180,30 @@ avatar stays bubble.
   would drop below a legible unit size; only the last line keeps the arrow.
   With the a11y menu's **Plain headings**, the art hides and its real heading shows instead: Press Start 2P,
   the same burner gradient and a two-step block extrusion (`drop-shadow` in `--title-x1`/`--title-x2`).
-- **Wall pieces** (`WallPiece.astro`, user direction 2026-10-13): original bubble and wildstyle pieces painted
-  on the brick wall in the page's whitespace, so the walls aren't blank. Leet words: PWN, PWN3D, H4CK, CV3, LY0NS,
-  SL, r00t, 0DAY, SUD0, 1337 (the font has a slashed `0` and a lowercase `r` for them).
-  - **Where:** only empty wall, never behind copy, cards, forms or the terminal (e2e `wall.spec` checks every
-    piece against every visible text line and control). Spots: straddling the gap between two sections
-    (`gap-*`, or `inside` the section's top padding), beside a hero/header/CTA when the layout is wide
-    (`side-*`, ≥ 1280px), or centred in the margin outside the container (`gutter-*`, ≥ 1560px). Phones get
-    the gap pieces only, smaller.
-  - **Look:** the same piece renderer as titles, without overspray, one sparkle, a slight tilt, 55% strength,
-    `z-index: -1` (above the wall, below everything else), never interactive, `aria-hidden`.
-  - **Motion:** each piece sprays on **once**, when it is first rendered or scrolled into view: six stepped
-    coats fading in with a slight scale (`spray-on`, transform/opacity only). It never repeats or moves after.
-    Reduced motion: simply there. **Hide wall texture** hides them with the wall.
+- **Wall pieces** (`wall.ts`, R32; user direction 2026-10-20 replacing R27's fixed spots): original leet
+  pieces painted on the brick wall, **different on every visit**. Words: PWN, PWN3D, H4CK, CV3, LY0NS, SL,
+  r00t, 0DAY, SUD0, 1337 (slashed `0`, lowercase `r`).
+  - **Random, on purpose:** each page load draws a seed, and from it each piece's word, style (bubble or
+    wildstyle), colour variant, size and tilt. It is the one place art is random at runtime; titles never
+    are. The wall changes only on a new load or a new theme (which re-rolls it), never on a heading-style
+    switch. A layout change keeps the same pieces and moves only one that content now covers. A width
+    change places the same pieces again.
+  - **Colour:** always the current theme's, in one of six variants: as is, upside down, cool (the UI's
+    blues and greens), dark-ink outline, accent outline, or the ramp rotated one stop.
+  - **Where:** only free wall. Every text line, control, card, art title, divider and image is measured
+    once and kept 20px clear (an occupancy grid with a summed-area table). Pieces keep 28px apart, sit
+    inside one section each so they move with it, and never push the page sideways. e2e `wall.spec`
+    checks every page at every size.
+  - **Depth:** small pieces are further back (dimmer, painted first); big ones nearer (up to 62%
+    strength). All of them sit behind content (`z-index: -1`), are never interactive, and are
+    `aria-hidden`. Wildstyle pieces bring their backdrop cloud.
+  - **Cost:** the pieces are drawn at build time (every word in both styles, `wallPool.ts` →
+    `/art/wall-pieces.json`, ~17 KB gzipped, fetched once and cached across pages). `wall.js` (~5 KB) only
+    picks, colours and places them on idle, after fonts settle: measuring is one idle slice, tries run while
+    a slice has time, and one piece is added per slice. Rendering them in the browser instead cost
+    100–170 ms tasks on a throttled phone. No rAF, nothing per frame.
+  - **Motion:** each piece sprays on **once**, when first seen (six stepped coats, transform/opacity).
+    Reduced motion: simply there. **Hide wall texture**: not even loaded.
 - **Components**: buttons and cards carry the art's hard down-right offset shadow (`--title-x2`); section
   labels start with a `▓▒░` ramp; the timeline is a sprayed sky→forest stripe with square pixel markers; the
   terminal banner uses the title gradient.

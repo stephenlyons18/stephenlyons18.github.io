@@ -440,9 +440,10 @@ html[data-title-style='wild'] .ansi-title__set[data-set='wild'] {
     opacity: 0.55;
 }
 
-/* ---------- Wall pieces (WallPiece.astro, R27) ---------- */
-/* Painted on the wall, not on the page: behind every element (z -1, after the wall in the DOM, so
-   above it), never interactive, quieter than the titles. One transform list for every state. */
+/* ---------- Wall pieces (wall.ts, R32) ---------- */
+/* Painted on the wall at random each visit: placed by wall.ts in free wall inside a section, behind
+   every element (z -1), never interactive. Depth: --o is lower for small (far) pieces. One transform
+   list for every state. */
 .section,
 .page-header {
     position: relative;
@@ -451,82 +452,16 @@ html[data-title-style='wild'] .ansi-title__set[data-set='wild'] {
     position: absolute;
     z-index: -1;
     pointer-events: none;
-    height: var(--h);
-    aspect-ratio: var(--ratio);
-    opacity: 0.55;
-    --ty: 0%;
-    transform: translateY(var(--ty)) rotate(var(--tilt)) scale(1);
+    opacity: var(--o, 0.5);
+    transform: rotate(var(--tilt)) scale(1);
+    contain: layout paint style;
 }
 .wall-piece svg {
     display: block;
     width: 100%;
     height: 100%;
 }
-.wall-piece--gap-left,
-.wall-piece--gap-right {
-    top: calc(var(--h) / -2);
-}
-.wall-piece--inside {
-    top: 0.75rem;
-}
-@media (max-width: 768px) {
-    .wall-piece--gap-left,
-    .wall-piece--gap-right {
-        top: calc(var(--h-m) / -2);
-    }
-    .wall-piece--inside {
-        top: 0.25rem;
-    }
-}
-.wall-piece--gap-left,
-.wall-piece--side-left {
-    left: max(5%, (100% - var(--max-w)) / 2);
-}
-.wall-piece--gap-right,
-.wall-piece--side-right {
-    right: max(5%, (100% - var(--max-w)) / 2);
-}
-.wall-piece--side-left,
-.wall-piece--side-right,
-.wall-piece--gutter-left,
-.wall-piece--gutter-right {
-    top: var(--top);
-    --ty: -50%;
-}
-/* Gutters: centred in the margin outside the container. */
-.wall-piece--gutter-left {
-    left: calc((100% - var(--max-w)) / 4);
-    translate: -50% 0;
-}
-.wall-piece--gutter-right {
-    right: calc((100% - var(--max-w)) / 4);
-    translate: 50% 0;
-}
-.wall-piece--side-left,
-.wall-piece--side-right,
-.wall-piece--gutter-left,
-.wall-piece--gutter-right {
-    display: none;
-}
-@media (min-width: 1280px) {
-    .wall-piece--side-left,
-    .wall-piece--side-right {
-        display: block;
-    }
-}
-/* Only where the margin outside the container fits a piece. */
-@media (min-width: 1560px) {
-    .wall-piece--gutter-left,
-    .wall-piece--gutter-right {
-        display: block;
-    }
-}
-@media (max-width: 768px) {
-    .wall-piece {
-        height: var(--h-m);
-    }
-}
-/* Sprayed on once when first seen (site.ts): a few stepped coats, like a can going over it. */
+/* Sprayed on once when first seen: a few stepped coats, like a can going over it. */
 .wall-piece.is-waiting {
     opacity: 0;
 }
@@ -536,15 +471,64 @@ html[data-title-style='wild'] .ansi-title__set[data-set='wild'] {
 @keyframes spray-on {
     from {
         opacity: 0;
-        transform: translateY(var(--ty)) rotate(var(--tilt)) scale(0.94);
+        transform: rotate(var(--tilt)) scale(0.94);
     }
 }
 html[data-reduce-motion] .wall-piece {
-    opacity: 0.55;
+    opacity: var(--o, 0.5);
     animation: none;
 }
 html[data-a11y-wall] .wall-piece {
     display: none;
+}
+/* Colour variants, all from the current theme (a new theme re-rolls the wall). The --wp-* copies are
+   taken on <html>, so a piece can swap the theme's stops without referring to itself. */
+:root {
+    --wp-top: var(--title-top);
+    --wp-hi: var(--title-hi);
+    --wp-mid: var(--title-mid);
+    --wp-lo: var(--title-lo);
+    --wp-bottom: var(--title-bottom);
+    --wp-btop: var(--bubble-top);
+    --wp-bbottom: var(--bubble-bottom);
+}
+/* 1: the ramp upside down. */
+.wp-v1 {
+    --title-top: var(--wp-bottom);
+    --title-hi: var(--wp-lo);
+    --title-lo: var(--wp-hi);
+    --title-bottom: var(--wp-top);
+    --bubble-top: var(--wp-bbottom);
+    --bubble-bottom: var(--wp-btop);
+}
+/* 2: cool, in the UI's own blues and greens. */
+.wp-v2 {
+    --title-hi: var(--ui-2);
+    --title-mid: var(--ui);
+    --title-lo: var(--wp-mid);
+    --title-bottom: var(--wp-lo);
+    --bubble-top: var(--ui-2);
+    --bubble-bottom: var(--ui);
+}
+/* 3: a dark ink outline instead of white (a throw-up look). */
+.wp-v3 {
+    --title-outline: var(--title-ink);
+}
+/* 4: the accent as outline, a narrower ramp. */
+.wp-v4 {
+    --title-outline: var(--accent);
+    --bubble-top: var(--wp-hi);
+    --bubble-bottom: var(--wp-mid);
+}
+/* 5: the ramp rotated one stop. */
+.wp-v5 {
+    --title-top: var(--wp-hi);
+    --title-hi: var(--wp-mid);
+    --title-mid: var(--wp-lo);
+    --title-lo: var(--wp-bottom);
+    --title-bottom: var(--wp-top);
+    --bubble-top: var(--wp-bbottom);
+    --bubble-bottom: var(--wp-hi);
 }
 
 /* ---------- Reset & Base ---------- */
