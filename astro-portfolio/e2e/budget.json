@@ -5,35 +5,35 @@
             "css": 50,
             "font": 30,
             "img": 10,
-            "html": 135
+            "html": 200
         },
         "/about/": {
             "js": 336,
             "css": 50,
             "font": 30,
             "img": 10,
-            "html": 65
+            "html": 76
         },
         "/projects/": {
             "js": 66,
             "css": 50,
             "font": 30,
             "img": 100,
-            "html": 75
+            "html": 88
         },
         "/contact/": {
             "js": 66,
             "css": 50,
             "font": 30,
             "img": 10,
-            "html": 42
+            "html": 56
         },
         "/404.html": {
             "js": 66,
             "css": 50,
             "font": 30,
             "img": 10,
-            "html": 20
+            "html": 28
         }
     },
     "noFramework": [
