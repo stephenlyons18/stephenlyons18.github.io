@@ -90,10 +90,19 @@ test('divider drips hang halfway out, and all run out together on hover (or in f
     expect(rest.visible).toBe(true);
     expect(rest.y).toBeLessThan(-rest.h * 0.3);
     expect(rest.y).toBeGreaterThan(-rest.h * 0.6);
-    const box = (await divider.boundingBox())!;
-    // Touch: no tap needed; the divider pours as it crosses the middle of the screen.
+    // Touch: no tap needed; the divider pours as it crosses the middle of the screen. Mouse: hover a
+    // point on the bar that is the divider's (a hovered card's drips above can cover its middle).
     if (isMobile) await divider.evaluate((el) => el.scrollIntoView({ block: 'center' }));
-    else await page.mouse.move(box.x + box.width / 2, box.y + 3);
+    else {
+        const at = await divider.evaluate((el) => {
+            const r = el.getBoundingClientRect();
+            for (let x = r.left + 8; x < r.right; x += 16)
+                if (document.elementFromPoint(x, r.top + 3)?.closest('.ansi-divider') === el)
+                    return { x, y: r.top + 3 };
+            return { x: r.left + r.width / 2, y: r.top + 3 };
+        });
+        await page.mouse.move(at.x, at.y);
+    }
     // Every run is moving out at once (no per-drip pokes).
     await expect
         .poll(

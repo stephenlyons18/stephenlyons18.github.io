@@ -58,7 +58,7 @@ export default defineConfig({
         })),
     ],
     webServer: {
-        command: 'pnpm preview --port 4321',
+        command: 'pnpm preview --port 4321 --ignore-lock',
         url: 'http://localhost:4321',
         reuseExistingServer: !process.env.CI,
     },
