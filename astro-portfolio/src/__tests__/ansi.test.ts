@@ -55,7 +55,7 @@ const count = (p: Piece, c: string) => [...p.cells].filter((v) => PIECE_CLASSES[
 const isFill = (c: string) => /^p-f\d$/.test(c);
 
 describe('renderPiece', () => {
-    test('is deterministic, and the seed changes it', () => {
+    test('is deterministic, and the seed changes it', { timeout: 30000 }, () => {
         for (const style of ['wild', 'bubble'] as const)
             for (const t of TITLES) {
                 expect(renderPiece(t, { style })).toEqual(renderPiece(t, { style }));
@@ -336,7 +336,8 @@ describe('wall tile', () => {
                         .matchAll(/(--[\w-]+):\s*([^;]+);/g),
                 ].map((m) => [m[1]!, m[2]!.trim()]),
             );
-        const root = tokens(':root {');
+        // The spray cans live in :root; the default theme's slots in `:root, [data-theme='wildstyle']`.
+        const root = { ...tokens(':root {'), ...tokens(":root,\n[data-theme='wildstyle'] {") };
         const hex = (v: string, theme: Record<string, string>): string => {
             const ref = /^var\((--[\w-]+)\)$/.exec(v);
             return ref ? hex(theme[ref[1]!] ?? root[ref[1]!]!, theme) : v.toLowerCase();

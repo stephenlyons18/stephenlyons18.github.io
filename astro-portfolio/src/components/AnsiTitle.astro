@@ -3,6 +3,12 @@
  * ANSI graffiti title (src/lib/ansi/piece.ts), drawn at build time as an inline SVG of half-block
  * cells: zero runtime JS.
  *
+ * Every title is drawn in both styles (R30): bubble (the default) and wildstyle, as two sets.
+ * `html[data-title-style]` (the a11y menu or the terminal's `style`, applied before first paint)
+ * shows one by CSS, so switching never re-renders anything; the hidden set is display:none and costs
+ * no layout or paint, only its bytes. Colours come from theme tokens, so a theme change recolours
+ * both. A decorative piece (the avatar) can pin one style.
+ *
  * The art is aria-hidden; a real heading carries the text for screen readers, search, copy/paste and
  * the a11y menu's Plain headings. The art scales to its container. For multi-word text, stacked
  * variants (2 lines, or up to `lines`) take over by container query whenever the one-line piece
@@ -25,6 +31,7 @@ interface Props {
     decorative?: boolean;
     /** Element for the accessible text: a heading level, or `p` for a tagline. */
     as?: 'h1' | 'h2' | 'h3' | 'p';
+    /** Pin one style (decorative pieces); by default both are drawn and the user's choice shows. */
     style?: PieceStyle;
     seed?: number;
     /** Largest cell size (px): one unit is 0.6 × this wide. */
@@ -33,8 +40,9 @@ interface Props {
     minFont?: number;
     /** Most lines a stacked variant may use (2 or 3). */
     lines?: number;
-    /** Any other piece options (blades, arrow, drips…). */
+    /** Options for the bubble piece, and for the wildstyle piece (blades, arrow, drips…). */
     opts?: PieceOptions;
+    wildOpts?: PieceOptions;
     class?: string;
 }
 
@@ -43,12 +51,13 @@ const {
     label,
     decorative = false,
     as: Tag = 'h2',
-    style = 'bubble',
+    style: pinned,
     seed = 0,
     maxFont = 13,
     minFont = 6,
     lines = 2,
     opts = {},
+    wildOpts = {},
     class: className,
 } = Astro.props;
 
@@ -61,35 +70,44 @@ const svg = (p: Piece, cls: string, width?: string) =>
             style: `--w:${p.w}${width ? `;width:${width}` : ''}`,
         },
     });
-
-const one = renderPiece(text, { style, seed, ...opts });
-// Stacked variants, 2…lines lines; each line is its own piece, sized relative to the widest.
-const stacks = Array.from({ length: Math.max(0, lines - 1) }, (_, i) => balanceLines(text, i + 2))
-    .filter(
-        (parts, i, all) => parts.length === i + 2 && (i === 0 || all[i - 1]!.length < parts.length),
-    )
-    .map((parts) => {
-        // Only the last line keeps the arrow: it points on, out of the whole title.
-        const pieces = parts.map((t, i) =>
-            renderPiece(t, {
-                style,
-                seed: seed + i + 1,
-                ...opts,
-                ...(i < parts.length - 1 ? { arrow: false } : {}),
-            }),
-        );
-        return { pieces, w: Math.max(...pieces.map((p) => p.w)) };
-    });
 const id = `ansi-${Math.abs([...text].reduce((h, c) => (h * 31 + c.charCodeAt(0)) | 0, seed))}`;
-// Container widths (px) below which each variant would render cells smaller than minFont.
-const variants = [{ w: one.w }, ...stacks];
-const breaks = variants.map((v) => Math.ceil(v.w * 0.6 * minFont));
-const queries = stacks
-    .map((_, i) => {
-        const hide = i === 0 ? '.ansi-title__one' : `.ansi-title__stack--${i + 1}`;
-        return `@container (max-width: ${breaks[i]}px) { #${id} ${hide} { display: none } #${id} .ansi-title__stack--${i + 2} { display: block } }`;
-    })
-    .join(' ');
+
+const sets = (pinned ? [pinned] : (['bubble', 'wild'] as const)).map((style) => {
+    const o = { style, seed, ...(style === 'wild' ? wildOpts : opts) };
+    const one = renderPiece(text, o);
+    // Stacked variants, 2…lines lines; each line is its own piece, sized relative to the widest.
+    const stacks = Array.from({ length: Math.max(0, lines - 1) }, (_, i) =>
+        balanceLines(text, i + 2),
+    )
+        .filter(
+            (parts, i, all) =>
+                parts.length === i + 2 && (i === 0 || all[i - 1]!.length < parts.length),
+        )
+        .map((parts) => {
+            // Only the last line keeps the arrow: it points on, out of the whole title.
+            // Wildstyle's stacked (phone) lines skip the mist: bytes, not look, at that size.
+            const pieces = parts.map((t, i) =>
+                renderPiece(t, {
+                    ...o,
+                    ...(style === 'wild' && { overspray: 0 }),
+                    seed: seed + i + 1,
+                    ...(i < parts.length - 1 ? { arrow: false } : {}),
+                }),
+            );
+            return { pieces, w: Math.max(...pieces.map((p) => p.w)) };
+        });
+    // Container widths (px) below which each variant would render cells smaller than minFont.
+    const breaks = [one.w, ...stacks.map((s) => s.w)].map((w) => Math.ceil(w * 0.6 * minFont));
+    const sel = `#${id} [data-set='${style}']`;
+    const queries = stacks
+        .map((_, i) => {
+            const hide = i === 0 ? '.ansi-title__one' : `.ansi-title__stack--${i + 2}`;
+            return `@container (max-width: ${breaks[i]}px) { ${sel} ${hide} { display: none } ${sel} .ansi-title__stack--${i + 2} { display: block } }`;
+        })
+        .join(' ');
+    return { style, one, stacks, queries };
+});
+const queries = sets.map((s) => s.queries).join(' ');
 ---
 
 <div
@@ -101,17 +119,25 @@ const queries = stacks
         /* Screen-reader text; the a11y menu's "plain headings" makes it the visible title. */
         !decorative && <Tag class="sr-only ansi-title__text">{label ?? text}</Tag>
     }
-    <Fragment set:html={svg(one, 'ansi-title__one')} />
-    {stacks.map((s, i) => (
-        <div class={`ansi-title__stack ansi-title__stack--${i + 2}`} aria-hidden="true">
-            {s.pieces.map((p) => (
-                <Fragment
-                    set:html={svg(
-                        p,
-                        '',
-                        `min(${((100 * p.w) / s.w).toFixed(2)}%, calc(${p.w} * var(--ansi-max) * 0.6))`,
-                    )}
-                />
+    {sets.map((s) => (
+        <div
+            class:list={['ansi-title__set', pinned && 'ansi-title__set--pinned']}
+            data-set={s.style}
+            aria-hidden="true"
+        >
+            <Fragment set:html={svg(s.one, 'ansi-title__one')} />
+            {s.stacks.map((st, i) => (
+                <div class={`ansi-title__stack ansi-title__stack--${i + 2}`}>
+                    {st.pieces.map((p) => (
+                        <Fragment
+                            set:html={svg(
+                                p,
+                                '',
+                                `min(${((100 * p.w) / st.w).toFixed(2)}%, calc(${p.w} * var(--ansi-max) * 0.6))`,
+                            )}
+                        />
+                    ))}
+                </div>
             ))}
         </div>
     ))}

@@ -1,9 +1,28 @@
 ---
 import { ROUTES } from '../data/site';
+import { THEMES, TITLE_STYLES } from '../data/themes';
+import { pieceToSvg, renderPiece } from '../lib/ansi/piece';
 
 // Routes are directory URLs ("/about/"); compare without the trailing slash.
 const trim = (p: string) => p.replace(/(index)?\.html$/, '').replace(/\/$/, '') || '/';
 const isActive = (href: string) => trim(Astro.url.pathname) === trim(href);
+
+// The menu's preview: a tiny "SL" in each style, coloured by the same tokens as the titles, so it
+// shows exactly what the headings will look like (CSS picks the style; a hovered theme recolours it).
+const mini = (style: 'bubble' | 'wild') =>
+    pieceToSvg(
+        renderPiece('SL', {
+            style,
+            seed: 2,
+            sparkles: 0,
+            overspray: 0,
+            cloud: 0,
+            arrow: false,
+            blades: 0,
+            drips: 0.2,
+        }),
+        { attrs: { class: 'a11y-preview__piece', 'aria-hidden': 'true', focusable: 'false' } },
+    );
 ---
 
 <header class="site-header" role="banner">
@@ -62,6 +81,36 @@ const isActive = (href: string) => trim(Astro.url.pathname) === trim(href);
     <p class="a11y-menu__title" id="a11y-menu-title">
         Accessibility
     </p>
+    <!-- Headings (R30): letter style and colour theme. Both apply at once (data-title-style and
+         data-theme on <html>), are saved, and match the terminal's `style` and `theme`. -->
+    <div class="a11y-preview" data-a11y-preview aria-hidden="true">
+        <span class="a11y-preview__swatch"></span>
+        <span class="a11y-preview__art" set:html={mini('bubble') + mini('wild')} />
+        <span class="a11y-preview__name" data-a11y-preview-name></span>
+    </div>
+    <fieldset class="a11y-group">
+        <legend class="a11y-group__label">Heading style</legend>
+        <div class="a11y-seg">
+            {TITLE_STYLES.map((t) => (
+                <label class="a11y-seg__opt">
+                    <input type="radio" name="a11y-title-style" value={t.id} data-title-style-opt />
+                    <span>{t.label}</span>
+                </label>
+            ))}
+        </div>
+    </fieldset>
+    <fieldset class="a11y-group">
+        <legend class="a11y-group__label">Colours</legend>
+        <div class="a11y-themes">
+            {THEMES.map((t) => (
+                <label class="a11y-theme" title={t.desc}>
+                    <input type="radio" name="a11y-theme" value={t.id} data-theme-opt />
+                    <span class="a11y-theme__swatch" data-theme={t.id} aria-hidden="true" />
+                    <span class="a11y-theme__label">{t.label}</span>
+                </label>
+            ))}
+        </div>
+    </fieldset>
     <ul class="a11y-menu__list">
         {[
             ['plain', 'Plain headings', 'Swap graffiti titles for plain text'],

@@ -63,6 +63,16 @@ Themes (terminal `theme <name>`, persisted, applied before first paint): **`wild
 (orange/yellow), **`green`** (the original phosphor). A theme swaps the `--ui*`, `--accent` and `--title-*`
 slots only; the wall and text stay.
 
+**Heading style and colours are the user's (R30, user direction 2026-10-20).** The Accessibility menu
+has a **Heading style** pair (Bubble, the default, or Wildstyle) and a **Colours** picker of the five themes,
+shown by label so they never share a name with a style: Burner (`wildstyle`), Mint (`bubble`), DEFCON
+(`ansi`), Sunset, Phosphor (`green`). The terminal's `style` and `theme` set the same things and take ids,
+labels or aliases (`src/data/themes.ts`). Every art title (hero, subheader, page titles, 404) is drawn in
+both styles at build time; `<html data-title-style>` shows one by CSS, so a switch never re-renders. A small
+preview box in the menu (a gradient of the title ramp plus a mini "SL" in the chosen style) is painted from
+the live tokens, and a hovered or focused colour previews there before it is picked. The decorative "SL"
+avatar stays bubble.
+
 ## Glyph rules
 
 - **Fills:** `█` solid; shading ramp `█ ▓ ▒ ░` (dark→light or core→fade). Half-pixel edges `▀ ▄ ▌ ▐`.

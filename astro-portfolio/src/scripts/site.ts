@@ -2,6 +2,8 @@
    Site Interactivity (TypeScript port of main.js)
    ============================================================ */
 
+import { DEFAULT_THEME, THEME_KEY, TITLE_STYLE_KEY } from '../data/themes';
+
 declare global {
     interface Window {
         openTerminal?: () => void;
@@ -562,7 +564,9 @@ function initA11yMenu(): void {
             apply(s.dataset['a11y']!, s.checked);
             save();
         });
+    const headings = initHeadingPicker(menu);
     menu.querySelector('[data-a11y-reset]')?.addEventListener('click', () => {
+        headings.reset();
         for (const s of switches) apply(s.dataset['a11y']!, false);
         try {
             localStorage.removeItem(A11Y_KEY);
@@ -579,6 +583,72 @@ function initA11yMenu(): void {
         sync();
     });
     sync();
+}
+
+// ── Heading style + colours (Header.astro, R30) ─────────────────────────────
+// Two radio groups that set <html data-title-style> and <html data-theme>, the same attributes and
+// localStorage keys as the terminal's `style` and `theme` (src/data/themes.ts). CSS does the rest:
+// both title styles are already in the page, and every colour is a token, so nothing re-renders.
+// The preview box is drawn from the same tokens; hovering or focusing a colour previews it there.
+function initHeadingPicker(menu: HTMLElement): { reset: () => void } {
+    const root = document.documentElement;
+    const styles = [...menu.querySelectorAll<HTMLInputElement>('[data-title-style-opt]')];
+    const themes = [...menu.querySelectorAll<HTMLInputElement>('[data-theme-opt]')];
+    const preview = menu.querySelector<HTMLElement>('[data-a11y-preview]');
+    const name = menu.querySelector<HTMLElement>('[data-a11y-preview-name]');
+    const store = (key: string, value: string | null) => {
+        try {
+            if (value) localStorage.setItem(key, value);
+            else localStorage.removeItem(key);
+        } catch {
+            /* private mode: the choice still applies to this page */
+        }
+    };
+    const label = (input: HTMLInputElement | undefined) =>
+        input?.closest('label')?.textContent?.trim() ?? '';
+    const sync = () => {
+        const style = root.getAttribute('data-title-style') || 'bubble';
+        const theme = root.getAttribute('data-theme') || DEFAULT_THEME;
+        for (const r of styles) r.checked = r.value === style;
+        for (const r of themes) r.checked = r.value === theme;
+        if (name)
+            name.textContent = `${label(themes.find((r) => r.checked))} · ${label(styles.find((r) => r.checked))}`;
+    };
+    const setStyle = (v: string) => {
+        if (v === 'wild') root.setAttribute('data-title-style', 'wild');
+        else root.removeAttribute('data-title-style');
+        store(TITLE_STYLE_KEY, v === 'wild' ? 'wild' : null);
+    };
+    const setTheme = (v: string) => {
+        if (v === DEFAULT_THEME) root.removeAttribute('data-theme');
+        else root.setAttribute('data-theme', v);
+        store(THEME_KEY, v);
+    };
+    for (const r of styles) r.addEventListener('change', () => r.checked && setStyle(r.value));
+    for (const r of themes) {
+        r.addEventListener('change', () => r.checked && setTheme(r.value));
+        // Preview a colour before picking it: the box takes that theme's tokens.
+        const tile = r.closest('label')!;
+        const show = () => preview?.setAttribute('data-theme', r.value);
+        const hide = () => preview?.removeAttribute('data-theme');
+        tile.addEventListener('pointerenter', show);
+        tile.addEventListener('pointerleave', hide);
+        r.addEventListener('focus', show);
+        r.addEventListener('blur', hide);
+    }
+    // The terminal can change either one while the menu exists: keep the radios true.
+    new MutationObserver(sync).observe(root, {
+        attributes: true,
+        attributeFilter: ['data-theme', 'data-title-style'],
+    });
+    sync();
+    return {
+        reset: () => {
+            setStyle('bubble');
+            setTheme(DEFAULT_THEME);
+            store(THEME_KEY, null);
+        },
+    };
 }
 
 function init(): void {
