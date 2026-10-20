@@ -80,6 +80,9 @@ test('divider drips hang halfway out, and all run out together on hover (or in f
 }) => {
     await page.goto('/'); // its divider sits mid-page, so it can be out of the touch focus band
     await expect.poll(() => fxLoaded(page), { timeout: 5000 }).toBe(true);
+    // The hero terminal grows as it types its intro, pushing the divider down under a still
+    // mouse; measure once it has finished (its prompt appears).
+    await expect(page.locator('.hero-terminal__input')).toBeAttached({ timeout: 15000 });
     const divider = page.locator('.ansi-divider').first();
     // At rest = seen, but below the touch focus band (the middle 30% of the screen).
     await divider.evaluate((el) =>
