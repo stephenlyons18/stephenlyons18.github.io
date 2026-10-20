@@ -1,6 +1,6 @@
 /**
  * /og.png — the 1200 × 630 social preview, drawn at build time from the same ANSI art as the site
- * (default "wildstyle" palette) and rasterised by sharp. Pure rects, so no font is needed.
+ * (the default theme's bubble look) and rasterised by sharp. Pure rects, so no font is needed.
  */
 import type { APIRoute } from 'astro';
 import sharp from 'sharp';
@@ -21,43 +21,29 @@ const mix = (a: string, b: string, t: number) => {
         .join('')}`;
 };
 
-// The default (wildstyle) theme's piece colours, as global.css resolves them (no CSS in sharp).
-const [TOP, HI, MID, LO, BOTTOM, INK] = [
-    '#9ff0ff',
-    '#22c7ff',
-    '#2f6bff',
-    '#8a3ffc',
-    '#ff3d9a',
-    '#060914',
-];
-const X2 = '#3b2385';
+// The default theme's bubble colours (R28: the hero's look), as global.css resolves them (no CSS in
+// sharp): eight rows cyan → magenta, white outline, violet 3D, drips fading out over the wall.
+const [TOP, BOTTOM, BG] = ['#22c7ff', '#ff3d9a', '#070b12'];
 const COLORS: Partial<Record<PieceClass, string>> = {
-    'p-f0': TOP,
-    'p-f1': mix(TOP, HI, 0.5),
-    'p-f2': HI,
-    'p-f3': mix(HI, MID, 0.5),
-    'p-f4': MID,
-    'p-f5': mix(MID, LO, 0.5),
-    'p-f6': LO,
-    'p-f7': mix(LO, BOTTOM, 0.5),
-    'p-f8': BOTTOM,
-    'p-f9': mix(BOTTOM, INK, 0.2),
+    ...Object.fromEntries(
+        Array.from({ length: 8 }, (_, i) => [`p-f${i}` as PieceClass, mix(TOP, BOTTOM, i / 7)]),
+    ),
+    'p-f8': mix(BOTTOM, BG, 0.25),
     'p-dr': BOTTOM,
-    'p-d1': 'rgba(255,61,154,0.6)',
-    'p-d2': 'rgba(255,61,154,0.3)',
-    'p-ik': INK,
+    'p-d1': mix(BOTTOM, BG, 0.25),
+    'p-d2': mix(BOTTOM, BG, 0.5),
+    'p-d3': mix(BOTTOM, BG, 0.75),
+    'p-ik': '#060914',
     'p-ol': '#eef6ff',
-    'p-x1': X2,
-    'p-x2': mix(X2, INK, 0.45),
+    'p-x1': '#7b3fe4',
+    'p-x2': mix('#3b2385', BG, 0.25),
     'p-sh': '#ffffff',
-    'p-sp': '#ffffff',
-    'p-cu': '#9dff6a',
-    'p-os': 'rgba(185,156,255,0.6)',
+    'p-os': mix('#b99cff', BG, 0.45),
 };
 
 /** A piece placed at (x, y), scaled to `width` px. Returns its SVG and drawn height. */
 const place = (p: Piece, x: number, y: number, width: number) => {
-    const h = (width / p.w) * p.h;
+    const h = (width / (p.w * (p.aspect ?? 1))) * p.h;
     const svg = pieceToSvg(p, {
         colors: COLORS,
         attrs: { x: String(x), y: String(y), width: String(width), height: h.toFixed(1) },
@@ -66,19 +52,12 @@ const place = (p: Piece, x: number, y: number, width: number) => {
 };
 
 export const GET: APIRoute = async () => {
-    const title = renderPiece('Stephen Lyons', { style: 'wild', seed: 3 });
-    const sub = renderPiece('Cyber Security Engineer', {
-        style: 'wild',
-        seed: 4,
-        blades: 0,
-        arrow: false,
-        sparkles: 0,
-        drips: 0.12,
-    });
+    const title = renderPiece('Stephen Lyons', { style: 'bubble' });
+    const sub = renderPiece('Cyber Security Engineer', { style: 'bubble', seed: 4, drips: 0.15 });
     const tw = 1080;
     const sw = 900;
-    const th = (tw / title.w) * title.h;
-    const sh = (sw / sub.w) * sub.h;
+    const th = (tw / (title.w * (title.aspect ?? 1))) * title.h;
+    const sh = (sw / (sub.w * (sub.aspect ?? 1))) * sub.h;
     const top = (H - th - sh - 30) / 2;
     const t = place(title, 60, top, tw);
     const s = place(sub, 60, top + th + 30, sw);

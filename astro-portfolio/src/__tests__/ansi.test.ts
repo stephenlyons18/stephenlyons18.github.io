@@ -1,5 +1,7 @@
 import { describe, expect, test } from 'vitest';
 import { GLYPHS, GLYPH_HEIGHT } from '../lib/ansi/font';
+import { renderBubble } from '../lib/ansi/bubble';
+import { hash } from '../lib/ansi/grid';
 import {
     PIECE_CLASSES,
     balanceLines,
@@ -63,8 +65,8 @@ describe('renderPiece', () => {
             }
     });
 
-    test('every fill unit is wrapped: ink touches fill, outline wraps ink, nothing fill touches the wall', () => {
-        for (const style of ['wild', 'bubble'] as const)
+    test('wildstyle: every fill unit is wrapped: ink touches fill, outline wraps ink, nothing fill touches the wall', () => {
+        for (const style of ['wild'] as const)
             for (const t of TITLES) {
                 const p = renderPiece(t, { style, drips: 0, sparkles: 0, overspray: 0 });
                 for (let y = 0; y < p.h; y++)
@@ -85,8 +87,14 @@ describe('renderPiece', () => {
             }
     });
 
-    test('counters stay dark: the O, A, 4… holes are ink, never fill or outline', () => {
-        const p = renderPiece('O', { style: 'bubble', drips: 0, sparkles: 0, overspray: 0 });
+    test('wildstyle counters stay dark: the O, A, 4… holes are ink, never fill or outline', () => {
+        const p = renderPiece('O', {
+            style: 'wild',
+            drips: 0,
+            sparkles: 0,
+            overspray: 0,
+            shine: false,
+        });
         const mid = Math.floor(p.h / 2) - 2;
         const row = Array.from({ length: p.w }, (_, x) => cls(p, x, mid));
         // Across the middle of an O: outline, ink, fill, ink (the counter), fill, ink, outline.
@@ -135,12 +143,67 @@ describe('renderPiece', () => {
             expect(pieceToText(p).split('\n').length).toBe(p.h / 2);
         }
         // ≤ 140u keeps one-word page titles at ≥ 2.2px per unit (≈36px-tall letters) at 320px.
-        for (const t of ['About', 'Projects', 'Contact', '404'])
-            expect(renderPiece(t).w, t).toBeLessThanOrEqual(140);
+        for (const style of ['wild', 'bubble'] as const)
+            for (const t of ['About', 'Projects', 'Contact', '404'])
+                expect(renderPiece(t, { style }).w, `${style} ${t}`).toBeLessThanOrEqual(140);
     });
 
     test('text view uses only half and full blocks', () => {
         expect(pieceToText(renderPiece('SL', { style: 'bubble' }))).toMatch(/^[ ▀▄█\n]*$/);
+    });
+});
+
+describe('bubble pieces (the original title look, R28)', () => {
+    const at = (p: Piece, y: number) => Array.from({ length: p.w }, (_, x) => cls(p, x, y));
+    const runs = (row: string[]) =>
+        row.filter((c, i) => c !== row[i - 1]).map((c) => (isFill(c) ? 'f' : c));
+
+    test('locked: the titles render exactly as reviewed (a change here is a visible change)', () => {
+        // Checked unit for unit against the R6/R7 generator (overlap 0, no seams: identical apart
+        // from a front letter's outline now covering the next letter at a lean/bounce junction).
+        const want: Record<string, [number, number, number]> = {
+            'Stephen Lyons': [175, 34, 2019228348],
+            About: [74, 36, 3160936062],
+            Projects: [115, 34, 105108163],
+            Contact: [100, 36, 2849827036],
+            '404': [46, 36, 2912872422],
+        };
+        for (const [t, [w, h, sum]] of Object.entries(want)) {
+            const p = renderPiece(t, { style: 'bubble' });
+            expect([p.w, p.h, hash(String.fromCharCode(...p.cells))], t).toEqual([w, h, sum]);
+        }
+    });
+
+    test('each letter lies over the next: its outline, a dark seam, then the letter behind', () => {
+        const p = renderBubble('HH', { drips: 0, overspray: 0 });
+        // A row through the crossbar: front H's fill → its outline → seam → back H's fill.
+        const rows = Array.from({ length: p.h }, (_, y) => runs(at(p, y)).join(' '));
+        expect(rows.some((r) => r.includes('f p-ol p-ik f'))).toBe(true);
+        expect(rows.some((r) => r.includes('f p-ik p-ol f'))).toBe(false);
+    });
+
+    test('words never overlap across a space; counters are bare wall, not outline', () => {
+        expect(count(renderBubble('H H', { drips: 0, overspray: 0 }), 'p-ik')).toBe(0);
+        const o = renderBubble('O', { drips: 0, overspray: 0 });
+        const mid = runs(at(o, Math.floor(o.h / 2) - 2)).filter((c) => !c.startsWith('p-x'));
+        expect(mid.slice(0, 5)).toEqual(['p-ol', 'f', '', 'f', 'p-ol']);
+    });
+
+    test('drawn on the original 0.6em × 0.5em cells: units stretch to the drawn ratio', () => {
+        const p = renderPiece('SL', { style: 'bubble' });
+        expect(p.aspect).toBe(1.2);
+        const svg = pieceToSvg(p, { attrs: { style: '--w:9' } });
+        expect(svg).toContain('data-piece="bubble"');
+        expect(svg).toContain('preserveAspectRatio="none"');
+        expect(svg).toContain(`style="--w:9;aspect-ratio:${+(p.w * 1.2).toFixed(2)}/${p.h}"`);
+    });
+
+    test('headings keep the original 0; leet wall words can slash it', () => {
+        const plain = pieceToText(renderBubble('0', { drips: 0, overspray: 0 }));
+        const slashed = pieceToText(
+            renderBubble('0', { drips: 0, overspray: 0, slashedZero: true }),
+        );
+        expect(plain).not.toBe(slashed);
     });
 });
 
@@ -175,7 +238,7 @@ describe('pieceToSvg', () => {
             }
             for (let i = 0; i < got.length; i++) {
                 const want = PIECE_CLASSES[piece.cells[i]!]!;
-                if (['p-os', 'p-d1', 'p-d2', ''].includes(want)) continue;
+                if (['p-os', 'p-d1', 'p-d2', 'p-d3', ''].includes(want)) continue;
                 expect(got[i], `unit ${i % piece.w},${Math.floor(i / piece.w)}`).toBe(want);
             }
         }

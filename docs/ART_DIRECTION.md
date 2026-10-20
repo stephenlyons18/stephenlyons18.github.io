@@ -80,8 +80,16 @@ slots only; the wall and text stay.
   behind. Then 3D extrusion (down-right, 3–4 units), thin 1-unit drips, 4-point sparkles and fine overspray.
   - **Wildstyle**: chamfered leading corners, a lean, tapered blades off top-right or bottom-left corners, an
     arrow off the last letter, a bevel shine under each top edge and a lime cut on every other letter.
-  - **Bubble**: every corner rounded, inner corners filleted (never inside a counter), a gloss bar and dot on
-    each letter, wider letter spacing so the white outline separates every letter.
+  - **Bubble** (user direction, 2026-10-20: "the heading as it looks on stephenlyons.dev is the bubble style",
+    `bubble.ts`): the original R6/R7 generator's look, kept exactly. Font pixels are 2 cells wide and 1 tall,
+    with a lean of 1 pixel per 4 rows, a 0–1 pixel bounce, a 1-pixel white outline (4-neighbour, so corners
+    notch round), 2-pixel violet 3D, one white glint per letter, thin pink drips and lavender mist, on a 2-stop
+    ramp (`--bubble-top` → `--bubble-bottom`, per theme). Its random draws are made in the original's order,
+    so drips land where they always did. Units are drawn 0.6em × 0.5em, as the original text cells were.
+    **Overlap** (bubble convention, references STKES / HONK / PIMO): letters are painted last → first, so each
+    letter lies over the one after it, the first letter of a word in front. Each letter tucks 1 cell under the
+    one before. A 1-unit dark seam runs where a front letter meets the letter behind, so the back letter's
+    outline visibly passes under. Words never overlap across a space. Counters and slots stay bare wall.
   - Pieces are drawn as an **inline SVG of those cells** (`pieceToSvg`: one `<path>` per colour class,
     `crispEdges`), not as text: the art font's blocks are 1.32em tall on a 1em row, so half blocks can't land
     on the grid as glyphs. Same cells, exact halves, no seams, and about 20 paths instead of thousands of spans.
@@ -146,8 +154,8 @@ slots only; the wall and text stay.
     so the card or divider crossing the middle 30% of the screen gets its hover state (`.is-focus`: lift, skin,
     drips pouring) as it arrives and lets go as it leaves (`fx.ts`, one IntersectionObserver). Taps don't
     trigger it.
-- **Headers** (`AnsiTitle.astro`, `piece.ts`): wildstyle for the hero and page titles, bubble for the 404 and
-  the "SL" avatar. Long titles stack into 2 (or up to `lines`) balanced lines by container query when one line
+- **Headers** (`AnsiTitle.astro`, `piece.ts`): bubble (the original look) for the hero, its subheader, the
+  page titles, the 404 and the "SL" avatar. Long titles stack into 2 (or up to `lines`) balanced lines by container query when one line
   would drop below a legible unit size; only the last line keeps the arrow.
   With the a11y menu's **Plain headings**, the art hides and its real heading shows instead: Press Start 2P,
   the same burner gradient and a two-step block extrusion (`drop-shadow` in `--title-x1`/`--title-x2`).

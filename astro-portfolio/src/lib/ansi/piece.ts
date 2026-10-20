@@ -1,12 +1,12 @@
 /**
- * ANSI graffiti pieces, v2 (R25): pure, deterministic, build-time only.
+ * ANSI graffiti pieces, v2 (R25): pure and deterministic. Wildstyle is drawn here; bubble pieces
+ * (R28, the original generator's look) come from bubble.ts through the same renderPiece().
  *
  * Everything happens on a half-block grid: one unit (u) is one monospace cell wide and half a cell
  * tall (an ANSI ▀/▄ half), so units are square and a font pixel is 2 × 2 u. That resolution is what
  * lets every letter carry a thin, complete outline:
  *
- *   text ─▶ font pixels at 2× ─▶ style moves (bubble: rounded corners; wild: chamfers, lean,
- *        blades, an arrow) ─▶ per letter, back to front: fill → 1u dark ink line (counters and slots
+ *   text ─▶ font pixels at 2× ─▶ wildstyle moves (chamfers, lean, blades, an arrow) ─▶ per letter, back to front: fill → 1u dark ink line (counters and slots
  *        go dark, so letters stay readable) → 1u white outline that wraps the letter
  *        ─▶ 3D extrusion behind the whole piece ─▶ thin drips, sparkles, overspray
  *        ─▶ a grid of class ids (pieceToSvg draws it as one path per class)
@@ -16,9 +16,23 @@
  * (`p-f0`…`p-f9` fill bands, `p-ik` ink, `p-ol` outline, …), so CSS theme tokens recolour every
  * piece. Rules: docs/ART_DIRECTION.md.
  */
+import { renderBubble } from './bubble';
 import { GLYPHS, GLYPH_HEIGHT, glyphFor } from './font';
+import {
+    BANDS,
+    C,
+    FILL0,
+    PIECE_CLASSES,
+    hash,
+    isFill,
+    rng,
+    trim,
+    type Piece,
+    type PieceClass,
+    type PieceStyle,
+} from './grid';
 
-export type PieceStyle = 'wild' | 'bubble';
+export { PIECE_CLASSES, type Piece, type PieceClass, type PieceStyle } from './grid';
 
 export interface PieceOptions {
     style?: PieceStyle;
@@ -43,100 +57,28 @@ export interface PieceOptions {
     depth?: number;
     /** Overspray density in the halo around the piece (0–1). */
     overspray?: number;
-    /** Highlight strokes: bubble gloss on letter tops; wild "cuts" (diagonal accent stripes). */
+    /** Highlight strokes: a bevel shine and "cuts" (diagonal accent stripes). */
     shine?: boolean;
+    /** Bubble only: slashed zeros (leet wall words) instead of the original's plain 0. */
+    slashedZero?: boolean;
 }
 
-/** Class names, by id. 0 is empty. Order is paint-agnostic; it only names the grid values. */
-export const PIECE_CLASSES = [
-    '',
-    'p-f0',
-    'p-f1',
-    'p-f2',
-    'p-f3',
-    'p-f4',
-    'p-f5',
-    'p-f6',
-    'p-f7',
-    'p-f8',
-    'p-f9',
-    'p-ik', // ink line + counters
-    'p-ol', // outline
-    'p-x1', // 3D near
-    'p-x2', // 3D far
-    'p-sh', // shine (bubble gloss, wild glint)
-    'p-cu', // wild accent cut
-    'p-dr', // drip
-    'p-d1', // drip fade
-    'p-d2', // drip tip
-    'p-sp', // sparkle
-    'p-os', // overspray
-] as const;
-export type PieceClass = (typeof PIECE_CLASSES)[number];
-const C = Object.fromEntries(PIECE_CLASSES.map((c, i) => [c, i])) as Record<PieceClass, number>;
-const FILL0 = C['p-f0'];
-const BANDS = 10;
-const isFill = (v: number) => v >= FILL0 && v < FILL0 + BANDS;
-
-export interface Piece {
-    /** Width and height in units. */
-    w: number;
-    h: number;
-    /** Row-major class ids (PIECE_CLASSES), w × h. */
-    cells: Uint8Array;
-}
-
-const DEFAULTS: Record<PieceStyle, Required<PieceOptions>> = {
-    wild: {
-        style: 'wild',
-        seed: 0,
-        gap: 1,
-        lean: 6,
-        bounce: 2,
-        blades: 0.35,
-        arrow: true,
-        drips: 0.22,
-        dripMax: 9,
-        sparkles: 3,
-        depth: 4,
-        overspray: 0.06,
-        shine: true,
-    },
-    bubble: {
-        style: 'bubble',
-        seed: 0,
-        gap: 3,
-        lean: 0,
-        bounce: 1,
-        blades: 0,
-        arrow: false,
-        drips: 0.18,
-        dripMax: 8,
-        sparkles: 2,
-        depth: 3,
-        overspray: 0.04,
-        shine: true,
-    },
+const DEFAULTS: Required<PieceOptions> = {
+    style: 'wild',
+    seed: 0,
+    gap: 1,
+    lean: 6,
+    bounce: 2,
+    blades: 0.35,
+    arrow: true,
+    drips: 0.22,
+    dripMax: 9,
+    sparkles: 3,
+    depth: 4,
+    overspray: 0.06,
+    shine: true,
+    slashedZero: true,
 };
-
-// ─── Deterministic randomness ────────────────────────────────────────────────
-
-function hash(s: string): number {
-    let h = 2166136261;
-    for (let i = 0; i < s.length; i++) h = Math.imul(h ^ s.charCodeAt(i), 16777619);
-    return h >>> 0;
-}
-/** mulberry32: tiny, fast, good enough for art. */
-function rng(seed: number): () => number {
-    let a = seed >>> 0;
-    return () => {
-        a = (a + 0x6d2b79f5) >>> 0;
-        let t = a;
-        t = Math.imul(t ^ (t >>> 15), t | 1);
-        t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
-        return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
-    };
-}
 
 // ─── Small bitmap helpers (a Mask is a w × h grid of 0/1) ───────────────────
 
@@ -209,27 +151,6 @@ function cutCorners(m: Mask, corners: ('tl' | 'tr' | 'bl' | 'br')[]): Mask {
     return r;
 }
 
-/**
- * Fill concave corners (the inside of an L): a cell with fill on two orthogonal sides and between.
- * Never inside a counter: a small one (the 4's) would fill up and the letter would close.
- */
-function fillet(m: Mask): Mask {
-    const r: Mask = { ...m, d: m.d.slice() };
-    const counters = holes(m);
-    for (let y = 0; y < m.h; y++)
-        for (let x = 0; x < m.w; x++) {
-            if (at(m, x, y) || at(counters, x, y)) continue;
-            for (const [dx, dy] of [
-                [1, 1],
-                [1, -1],
-                [-1, 1],
-                [-1, -1],
-            ] as const)
-                if (at(m, x + dx, y) && at(m, x, y + dy) && at(m, x + dx, y + dy)) set(r, x, y);
-        }
-    return r;
-}
-
 // ─── Letters ─────────────────────────────────────────────────────────────────
 
 /** Padding around each letter's local grid: room for a blade (≤ 7u), its ink and outline. */
@@ -268,11 +189,7 @@ function buildLetter(
                     set(m, PAD + x * 2 + dx, PAD + y * 2 + dy);
     if (ch === ' ') return { fill: m, gw };
 
-    if (o.style === 'bubble') {
-        // Inflated: every outer corner rounded off and inner corners filleted, so the letter reads
-        // as blown up like a balloon. One pass: a second one eats stair-stepped diagonals (the 4).
-        m = fillet(cutCorners(m, ['tl', 'tr', 'bl', 'br']));
-    } else {
+    {
         // Wildstyle: sharp, angular cuts on the leading corners only (top-left and bottom-right),
         // which with the lean makes every letter look like it's moving. One pass: a deeper cut turns
         // P, R and B into A at phone size.
@@ -324,7 +241,18 @@ function buildLetter(
 
 export function renderPiece(text: string, opts: PieceOptions = {}): Piece {
     const style = opts.style ?? 'wild';
-    const o: Required<PieceOptions> = { ...DEFAULTS[style], ...opts, style };
+    if (style === 'bubble') {
+        // The original generator's options, where given (its drips are counted in cells).
+        const { seed, drips, dripMax, overspray, slashedZero } = opts;
+        return renderBubble(text, {
+            ...(seed !== undefined && { seed }),
+            ...(drips !== undefined && { drips }),
+            ...(dripMax !== undefined && { dripMax: Math.ceil(dripMax / 2) }),
+            ...(overspray !== undefined && { overspray }),
+            ...(slashedZero !== undefined && { slashedZero }),
+        });
+    }
+    const o: Required<PieceOptions> = { ...DEFAULTS, ...opts, style };
     const rand = rng(hash(`v2:${style}:${text}`) ^ o.seed);
     // Upper-case, except letters the font draws in lowercase (the r of r00t).
     const chars = [...text].map((c) => (c !== c.toUpperCase() && GLYPHS[c] ? c : c.toUpperCase()));
@@ -361,7 +289,7 @@ export function renderPiece(text: string, opts: PieceOptions = {}): Piece {
         const f = l.fill;
         const ink = union(ring(f, N8), holes(f));
         const body = union(f, ink);
-        const ol = ring(body, style === 'bubble' ? N4 : N8);
+        const ol = ring(body, N8);
         const ox = l.ox - minX;
         const oy = l.oy - minY;
         // Fill gradient bands by height in the glyph box (blades/arrow take the nearest band).
@@ -376,18 +304,7 @@ export function renderPiece(text: string, opts: PieceOptions = {}): Piece {
                 else if (at(f, x, y)) put(gx, gy, FILL0 + band(y));
             }
         if (!o.shine) return;
-        if (style === 'bubble') {
-            // Gloss: a short highlight one unit inside the top edge, on the left third of the
-            // letter, plus a dot below its start: light on a balloon.
-            let x0 = -1;
-            for (let x = 0; x < f.w && x0 < 0; x++) if (at(f, x, PAD + 1) && at(f, x, PAD)) x0 = x;
-            if (x0 >= 0) {
-                const len = Math.max(2, Math.floor(l.gw / 3));
-                for (let x = x0 + 1; x < x0 + 1 + len; x++)
-                    if (at(f, x, PAD + 1) && at(f, x, PAD)) put(ox + x, oy + PAD + 1, C['p-sh']);
-                if (at(f, x0 + 1, PAD + 3)) put(ox + x0 + 1, oy + PAD + 3, C['p-sh']);
-            }
-        } else {
+        {
             // Shine: a highlight stroke one unit inside the letter's top edge (a bevel catching the
             // light), on its left half. Cut: on every other letter, a 2u diagonal accent band
             // through the lower half, as in a burner's colour splits.
@@ -499,25 +416,7 @@ export function renderPiece(text: string, opts: PieceOptions = {}): Piece {
     }
 
     // 8. Trim to the painted box.
-    let x0 = W,
-        y0 = H,
-        x1 = -1,
-        y1 = -1;
-    for (let y = 0; y < H; y++)
-        for (let x = 0; x < W; x++)
-            if (get(x, y)) {
-                x0 = Math.min(x0, x);
-                x1 = Math.max(x1, x);
-                y0 = Math.min(y0, y);
-                y1 = Math.max(y1, y);
-            }
-    // Even height, so the piece is a whole number of text rows (two units per cell).
-    if ((y1 - y0 + 1) % 2) y1++;
-    const w = x1 - x0 + 1;
-    const h = y1 - y0 + 1;
-    const out = new Uint8Array(w * h);
-    for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) out[y * w + x] = get(x + x0, y + y0);
-    return { w, h, cells: out };
+    return trim({ w: W, h: H, cells, style: 'wild' });
 }
 
 // ─── Output ──────────────────────────────────────────────────────────────────
@@ -562,9 +461,11 @@ const ORDER: PieceClass[] = [
     'p-sp',
     'p-d1',
     'p-d2',
+    'p-d3',
     'p-os',
 ];
-const TRANSLUCENT = new Set<PieceClass>(['p-d1', 'p-d2', 'p-os']);
+// p-f8 is opaque in wildstyle but a ▓ shade in bubble pieces: never paint another class under it.
+const TRANSLUCENT = new Set<PieceClass>(['p-f8', 'p-d1', 'p-d2', 'p-d3', 'p-os']);
 
 export function pieceToSvg(p: Piece, opts: PieceSvgOptions = {}): string {
     const rank = new Int8Array(PIECE_CLASSES.length).fill(-1);
@@ -619,11 +520,18 @@ export function pieceToSvg(p: Piece, opts: PieceSvgOptions = {}): string {
             }
         }
     }
+    // Non-square units (bubble's 0.6em × 0.5em cells) stretch the unit viewBox to the drawn ratio.
+    const a = p.aspect ?? 1;
+    const ratio = a === 1 ? null : `aspect-ratio:${+(p.w * a).toFixed(2)}/${p.h}`;
+    const style = [opts.attrs?.['style'], ratio].filter(Boolean).join(';');
     const attrs = Object.entries({
         xmlns: 'http://www.w3.org/2000/svg',
         viewBox: `0 0 ${p.w} ${p.h}`,
         'shape-rendering': 'crispEdges',
+        ...(p.style && { 'data-piece': p.style }),
+        ...(ratio && { preserveAspectRatio: 'none' }),
         ...opts.attrs,
+        ...(style && { style }),
     })
         .map(([k, v]) => `${k}="${v}"`)
         .join(' ');
