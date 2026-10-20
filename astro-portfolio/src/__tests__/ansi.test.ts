@@ -94,6 +94,8 @@ describe('renderPiece', () => {
             sparkles: 0,
             overspray: 0,
             shine: false,
+            splits: false,
+            cloud: 0,
         });
         const mid = Math.floor(p.h / 2) - 2;
         const row = Array.from({ length: p.w }, (_, x) => cls(p, x, mid));
@@ -118,7 +120,46 @@ describe('renderPiece', () => {
             for (const c of ['p-ol', 'p-ik', 'p-x1', 'p-sh', 'p-dr'])
                 expect(count(p, c), `${style} ${c}`).toBeGreaterThan(0);
         }
-        expect(count(renderPiece('Projects', { style: 'wild' }), 'p-cu')).toBeGreaterThan(0);
+        expect(
+            count(renderPiece('Projects', { style: 'wild', splits: false }), 'p-cu'),
+        ).toBeGreaterThan(0);
+    });
+
+    test('wildstyle v3: splits, a swoosh, striped 3D and a backdrop cloud', () => {
+        const p = renderPiece('Stephen Lyons', { style: 'wild' });
+        const flat = renderPiece('Stephen Lyons', {
+            style: 'wild',
+            splits: false,
+            swoosh: false,
+            cloud: 0,
+        });
+        // Splits: a second tone (the ramp's foot) below a dark break, on most letters.
+        expect(count(p, 'p-f8')).toBeGreaterThan(count(flat, 'p-f8'));
+        expect(count(p, 'p-ik')).toBeGreaterThan(count(flat, 'p-ik'));
+        // The cloud sits behind: never between a letter's fill and its outline, and it surrounds
+        // the piece (some on every side).
+        expect(count(p, 'p-bg')).toBeGreaterThan(200);
+        const rows = Array.from({ length: p.h }, (_, y) =>
+            Array.from({ length: p.w }, (_, x) => cls(p, x, y)),
+        );
+        const q = Math.floor(p.h / 4);
+        expect(rows.slice(0, q).some((r) => r.includes('p-bg'))).toBe(true);
+        expect(rows.slice(-q).some((r) => r.includes('p-bg'))).toBe(true);
+        for (let y = 0; y < p.h; y++)
+            for (let x = 0; x < p.w; x++)
+                if (isFill(cls(p, x, y)))
+                    for (const [dx, dy] of [
+                        [1, 0],
+                        [-1, 0],
+                        [0, 1],
+                        [0, -1],
+                    ])
+                        expect(cls(p, x + dx!, y + dy!)).not.toBe('p-bg');
+        // Striped 3D: both steps alternate in depth.
+        expect(count(p, 'p-x1')).toBeGreaterThan(0);
+        expect(count(p, 'p-x2')).toBeGreaterThan(0);
+        // The swoosh reaches out left of the first letter.
+        expect(p.w).toBeGreaterThan(flat.w);
     });
 
     test('drips are thin (1u) runs that hang below a fill and fade at the tip', () => {

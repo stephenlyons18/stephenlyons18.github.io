@@ -59,6 +59,13 @@ export interface PieceOptions {
     overspray?: number;
     /** Highlight strokes: a bevel shine and "cuts" (diagonal accent stripes). */
     shine?: boolean;
+    /** Wildstyle v3 (R29): a dark break line across each letter, the fill beyond it running the
+     *  ramp the other way (two-tone splits, as in the reference burners). */
+    splits?: boolean;
+    /** A long tapered swoosh off the first letter's foot, back under the piece. */
+    swoosh?: boolean;
+    /** A backdrop cloud with bubbles behind the piece (units of spread; 0 = none). */
+    cloud?: number;
     /** Bubble only: slashed zeros (leet wall words) instead of the original's plain 0. */
     slashedZero?: boolean;
 }
@@ -66,7 +73,7 @@ export interface PieceOptions {
 const DEFAULTS: Required<PieceOptions> = {
     style: 'wild',
     seed: 0,
-    gap: 1,
+    gap: 0,
     lean: 6,
     bounce: 2,
     blades: 0.35,
@@ -74,9 +81,12 @@ const DEFAULTS: Required<PieceOptions> = {
     drips: 0.22,
     dripMax: 9,
     sparkles: 3,
-    depth: 4,
+    depth: 5,
     overspray: 0.06,
     shine: true,
+    splits: true,
+    swoosh: true,
+    cloud: 5,
     slashedZero: true,
 };
 
@@ -213,6 +223,21 @@ function buildLetter(
                 }
             }
         }
+        if (first && o.swoosh) {
+            // The swoosh: off the foot of the first letter, back and out to the left, tapering
+            // from 3u to a 1u point and dipping as it goes (the long extensions of MUSTER/SHAPER).
+            const row = PAD + LETTER_H - 1;
+            const xs = [...Array(m.w).keys()].filter((x) => at(m, x, row));
+            if (xs.length) {
+                const x0 = Math.min(...xs) + 2;
+                const len = 9;
+                for (let k = 0; k <= len; k++) {
+                    const t = Math.max(1, Math.round(3 * (1 - k / (len + 1))));
+                    const dip = Math.floor((k * k) / 40);
+                    for (let j = 0; j < t; j++) set(m, x0 - k, row - j + dip);
+                }
+            }
+        }
         if (last && o.arrow) {
             // An arrow off the right side at mid-height: a short shaft, then a head.
             let right = 0;
@@ -274,8 +299,10 @@ export function renderPiece(text: string, opts: PieceOptions = {}): Piece {
     const minY = Math.min(...letters.map((l) => l.oy));
     const maxX = Math.max(...letters.map((l) => l.ox + l.fill.w));
     const maxY = Math.max(...letters.map((l) => l.oy + l.fill.h));
-    const W = maxX - minX + o.depth + 2;
-    const H = maxY - minY + o.depth + o.dripMax + 2;
+    // Margin round the letters for the backdrop cloud and its bubbles.
+    const M = o.cloud ? o.cloud + 3 : 0;
+    const W = maxX - minX + o.depth + 2 + 2 * M;
+    const H = maxY - minY + o.depth + o.dripMax + 2 + 2 * M;
     const cells = new Uint8Array(W * H);
     const get = (x: number, y: number) =>
         x >= 0 && y >= 0 && x < W && y < H ? cells[y * W + x]! : 0;
@@ -290,8 +317,8 @@ export function renderPiece(text: string, opts: PieceOptions = {}): Piece {
         const ink = union(ring(f, N8), holes(f));
         const body = union(f, ink);
         const ol = ring(body, N8);
-        const ox = l.ox - minX;
-        const oy = l.oy - minY;
+        const ox = l.ox - minX + M;
+        const oy = l.oy - minY + M;
         // Fill gradient bands by height in the glyph box (blades/arrow take the nearest band).
         const band = (y: number) =>
             Math.min(BANDS - 1, Math.max(0, Math.floor(((y - PAD) / LETTER_H) * BANDS)));
@@ -303,6 +330,26 @@ export function renderPiece(text: string, opts: PieceOptions = {}): Piece {
                 else if (at(ink, x, y)) put(gx, gy, C['p-ik']);
                 else if (at(f, x, y)) put(gx, gy, FILL0 + band(y));
             }
+        if (o.splits) {
+            // A break: a 1u dark line across the letter's lower third (below the H, A and E bars), leaning one way or the
+            // other letter by letter; below it the letter is one solid second tone (the ramp's foot),
+            // so it reads as two segments (SENK, TALE, MUSTER). Only where the letter is at least 3u thick
+            // across the line, so thin strokes and blades never break into crumbs.
+            const slope = li % 2 ? 0.34 : -0.34;
+            let sx = 0;
+            let n = 0;
+            for (let y = PAD; y < PAD + LETTER_H; y++)
+                for (let x = 0; x < f.w; x++) if (at(f, x, y)) ((sx += x), n++);
+            const cxl = sx / Math.max(1, n);
+            const base = PAD + Math.round(LETTER_H * 0.72) + (li % 2);
+            for (let x = 0; x < f.w; x++) {
+                const yl = base + Math.round((x - cxl) * slope);
+                if (!(at(f, x, yl - 1) && at(f, x, yl) && at(f, x, yl + 1))) continue;
+                put(ox + x, oy + yl, C['p-ik']);
+                for (let y = yl + 1; y < f.h && at(f, x, y); y++)
+                    put(ox + x, oy + y, FILL0 + BANDS - 2);
+            }
+        }
         if (!o.shine) return;
         {
             // Shine: a highlight stroke one unit inside the letter's top edge (a bevel catching the
@@ -313,7 +360,13 @@ export function renderPiece(text: string, opts: PieceOptions = {}): Piece {
                 if (x - PAD > l.gw / 2 + 2) break;
                 put(ox + x, oy + PAD + 1, C['p-sh']);
             }
-            if (li % 2 === 0) {
+            // A highlight dot under the bevel, near the letter's top-left (spray shine).
+            for (let x = 0; x < f.w; x++)
+                if (at(f, x, PAD + 3) && at(f, x + 1, PAD + 3) && at(f, x, PAD + 4)) {
+                    put(ox + x + 1, oy + PAD + 3, C['p-sh']);
+                    break;
+                }
+            if (!o.splits && li % 2 === 0) {
                 // The band runs up-right (x + y constant) through the letter's lower middle.
                 let sx = 0;
                 let n = 0;
@@ -340,7 +393,8 @@ export function renderPiece(text: string, opts: PieceOptions = {}): Piece {
         for (let y = 0; y < H; y++)
             for (let x = 0; x < W; x++)
                 if (!get(x, y) && solid(x - k, y - k))
-                    ext.push([x, y, k <= Math.ceil(o.depth / 2) ? C['p-x1'] : C['p-x2']]);
+                    // Striped, two units per band, as in a stepped block 3D (SHAPER).
+                    ext.push([x, y, Math.floor((k - 1) / 2) % 2 ? C['p-x2'] : C['p-x1']]);
     for (const [x, y, v] of ext) if (!get(x, y)) put(x, y, v);
 
     // 5. Drips: thin (1u) runs from letter bottoms, down through ink, outline and 3D, fading at the
@@ -396,6 +450,78 @@ export function renderPiece(text: string, opts: PieceOptions = {}): Piece {
         placed++;
     }
 
+    // 6b. Backdrop cloud: a soft-edged blob a few units round the whole piece, its edge scalloped,
+    //     with bubbles spraying off it, behind everything (MUSTER, SHAPER): depth for the piece.
+    if (o.cloud > 0) {
+        // Distance to the piece, by a two-pass chamfer transform (3 straight, 4 diagonal ≈ 3√2):
+        // linear in the canvas, so it is cheap enough to run in the browser for the wall (R32).
+        const INF = 1 << 14;
+        const dist = new Uint16Array(W * H);
+        for (let i = 0; i < W * H; i++) dist[i] = cells[i] ? 0 : INF;
+        const relax = (i: number, j: number, c: number) => {
+            if (dist[j]! + c < dist[i]!) dist[i] = dist[j]! + c;
+        };
+        for (let y = 0; y < H; y++)
+            for (let x = 0; x < W; x++) {
+                const i = y * W + x;
+                if (x > 0) relax(i, i - 1, 3);
+                if (y > 0) {
+                    relax(i, i - W, 3);
+                    if (x > 0) relax(i, i - W - 1, 4);
+                    if (x < W - 1) relax(i, i - W + 1, 4);
+                }
+            }
+        for (let y = H - 1; y >= 0; y--)
+            for (let x = W - 1; x >= 0; x--) {
+                const i = y * W + x;
+                if (x < W - 1) relax(i, i + 1, 3);
+                if (y < H - 1) {
+                    relax(i, i + W, 3);
+                    if (x < W - 1) relax(i, i + W + 1, 4);
+                    if (x > 0) relax(i, i + W - 1, 4);
+                }
+            }
+        const ph = [rand() * 6.28, rand() * 6.28, rand() * 6.28];
+        const r = (x: number) =>
+            o.cloud *
+            (0.55 +
+                0.25 * Math.sin(x / 5 + ph[0]!) +
+                0.15 * Math.sin(x / 2.3 + ph[1]!) +
+                0.05 * Math.sin(x / 1.1 + ph[2]!));
+        const cloud: number[] = [];
+        for (let y = 0; y < H; y++)
+            for (let x = 0; x < W; x++) {
+                const i = y * W + x;
+                if (!cells[i] && dist[i]! <= 3 * r(x)) cloud.push(i);
+            }
+        for (const i of cloud) cells[i] = C['p-bg'];
+        // Bubbles: small discs just off the cloud's edge.
+        const disc = (cx: number, cy: number, rad: number) => {
+            for (let dy = -rad; dy <= rad; dy++)
+                for (let dx = -rad; dx <= rad; dx++)
+                    if (dx * dx + dy * dy <= rad * rad + rad && !get(cx + dx, cy + dy))
+                        put(cx + dx, cy + dy, C['p-bg']);
+        };
+        let made = 0;
+        for (let t = 0; t < 600 && made < Math.max(4, Math.round(W / 18)); t++) {
+            const x = 2 + Math.floor(rand() * (W - 4));
+            const y = 2 + Math.floor(rand() * (H - 4));
+            const rad = 1 + Math.floor(rand() * 2);
+            let near = false;
+            let far = true;
+            for (let dy = -rad - 3; dy <= rad + 3; dy++)
+                for (let dx = -rad - 3; dx <= rad + 3; dx++) {
+                    const v = get(x + dx, y + dy);
+                    if (v === C['p-bg']) near = true;
+                    if (v && v !== C['p-bg'] && Math.abs(dx) <= rad + 1 && Math.abs(dy) <= rad + 1)
+                        far = false;
+                }
+            if (!near || !far || get(x, y)) continue;
+            disc(x, y, rad);
+            made++;
+        }
+    }
+
     // 7. Overspray: single-unit mist 2–3u out from the piece, never touching it.
     if (o.overspray > 0) {
         const mist: [number, number][] = [];
@@ -441,6 +567,7 @@ const OS = C['p-os'];
  * silhouette and the SVG stays small. Translucent ones (drip fades, mist) are never covered.
  */
 const ORDER: PieceClass[] = [
+    'p-bg',
     'p-x2',
     'p-x1',
     'p-ol',
