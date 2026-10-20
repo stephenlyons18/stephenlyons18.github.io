@@ -48,7 +48,14 @@ const {
     inside = false,
 } = Astro.props;
 // Quieter than titles: no overspray (mist adds bytes, not much look at this size), one sparkle.
-const piece = renderPiece(text, { style, seed, overspray: 0, sparkles: 1, dripMax: 7 });
+const piece = renderPiece(text, {
+    style,
+    seed,
+    overspray: 0,
+    sparkles: 1,
+    dripMax: 7,
+    slashedZero: true,
+});
 const svg = pieceToSvg(piece, { attrs: { focusable: 'false' } });
 ---
 
@@ -56,6 +63,6 @@ const svg = pieceToSvg(piece, { attrs: { focusable: 'false' } });
     class:list={['wall-piece', `wall-piece--${spot}`, inside && 'wall-piece--inside']}
     aria-hidden="true"
     data-wall-piece
-    style={`--h:${h};--h-m:${hMobile};--tilt:${tilt}deg;--top:${top};--ratio:${piece.w}/${piece.h}`}
+    style={`--h:${h};--h-m:${hMobile};--tilt:${tilt}deg;--top:${top};--ratio:${+(piece.w * (piece.aspect ?? 1)).toFixed(2)}/${piece.h}`}
     set:html={svg}
 />

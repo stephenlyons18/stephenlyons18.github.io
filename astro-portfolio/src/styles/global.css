@@ -79,6 +79,9 @@
     --title-x1: #7b3fe4;
     --title-x2: #3b2385;
     --title-spray: var(--spray-lavender);
+    /* Bubble pieces (R28, the original title look): a 2-stop fill, top → bottom. */
+    --bubble-top: var(--spray-cyan);
+    --bubble-bottom: var(--spray-magenta);
 
     /* Derived — always follow the active theme */
     --ui-dim: color-mix(in oklab, var(--ui) 70%, var(--bg-primary));
@@ -184,6 +187,8 @@
     --title-x1: #2f5bd0;
     --title-x2: #1b2f73;
     --title-spray: var(--spray-aqua);
+    --bubble-top: var(--spray-aqua);
+    --bubble-bottom: var(--spray-cyan);
 }
 [data-theme='ansi'] {
     --ui: var(--ansi-steel);
@@ -199,6 +204,8 @@
     --title-x1: #3346b8;
     --title-x2: #1d2766;
     --title-spray: var(--ansi-steel);
+    --bubble-top: #c9d3f2;
+    --bubble-bottom: var(--ansi-blue);
 }
 [data-theme='sunset'] {
     --ui: var(--spray-orange);
@@ -214,6 +221,8 @@
     --title-x1: var(--spray-orange);
     --title-x2: #8a2a5c;
     --title-spray: var(--spray-orange);
+    --bubble-top: var(--spray-yellow);
+    --bubble-bottom: var(--spray-magenta);
 }
 /* The original phosphor look, kept for nostalgia. */
 [data-theme='green'] {
@@ -231,6 +240,8 @@
     --title-x1: #00a82b;
     --title-x2: #005c17;
     --title-spray: #00ff41;
+    --bubble-top: #b6ffc8;
+    --bubble-bottom: #00ff41;
 }
 
 /* ---------- ANSI art (AnsiTitle.astro / src/lib/ansi) ---------- */
@@ -334,6 +345,9 @@
 .p-d2 {
     fill: color-mix(in oklab, var(--title-bottom) 30%, transparent);
 }
+.p-d3 {
+    fill: color-mix(in oklab, var(--title-bottom) 15%, transparent);
+}
 .p-ik {
     fill: var(--title-ink);
 }
@@ -357,6 +371,54 @@
 .p-os {
     fill: var(--title-spray);
     opacity: 0.6;
+}
+
+/* Bubble pieces (bubble.ts, R28): the original title generator's colours. Eight fill rows from
+   --bubble-top to --bubble-bottom, the bottom row a ▓ shade (p-f8), white outline, a dark seam where a
+   letter runs under the one in front, violet 3D (the far step a ▓ shade), drips fading ▓ ▒ ░. */
+[data-piece='bubble'] .p-f0 {
+    fill: var(--bubble-top);
+}
+[data-piece='bubble'] .p-f1 {
+    fill: color-mix(in oklab, var(--bubble-top) 86%, var(--bubble-bottom));
+}
+[data-piece='bubble'] .p-f2 {
+    fill: color-mix(in oklab, var(--bubble-top) 71%, var(--bubble-bottom));
+}
+[data-piece='bubble'] .p-f3 {
+    fill: color-mix(in oklab, var(--bubble-top) 57%, var(--bubble-bottom));
+}
+[data-piece='bubble'] .p-f4 {
+    fill: color-mix(in oklab, var(--bubble-top) 43%, var(--bubble-bottom));
+}
+[data-piece='bubble'] .p-f5 {
+    fill: color-mix(in oklab, var(--bubble-top) 29%, var(--bubble-bottom));
+}
+[data-piece='bubble'] .p-f6 {
+    fill: color-mix(in oklab, var(--bubble-top) 14%, var(--bubble-bottom));
+}
+[data-piece='bubble'] .p-f7,
+[data-piece='bubble'] .p-dr {
+    fill: var(--bubble-bottom);
+}
+[data-piece='bubble'] .p-f8,
+[data-piece='bubble'] .p-d1 {
+    fill: color-mix(in oklab, var(--bubble-bottom) 75%, transparent);
+}
+[data-piece='bubble'] .p-d2 {
+    fill: color-mix(in oklab, var(--bubble-bottom) 50%, transparent);
+}
+[data-piece='bubble'] .p-d3 {
+    fill: color-mix(in oklab, var(--bubble-bottom) 25%, transparent);
+}
+[data-piece='bubble'] .p-x1 {
+    fill: var(--title-x1);
+}
+[data-piece='bubble'] .p-x2 {
+    fill: color-mix(in oklab, var(--title-x2) 75%, transparent);
+}
+[data-piece='bubble'] .p-os {
+    opacity: 0.55;
 }
 
 /* ---------- Wall pieces (WallPiece.astro, R27) ---------- */
