@@ -25,30 +25,30 @@ import { featuredProjects } from '../data/projects';
             top="74%"
         />
         <div class="container">
-            <div class="hero-content reveal">
-                <!-- Grab-and-fling with a mouse (fx.ts); touch keeps scrolling the page. The name and
-                     the subheader are one piece of art and move together. -->
-                <div class="drag-art" data-drag="fine">
-                    <AnsiTitle
-                        text="Stephen Lyons"
-                        as="h1"
-
-                        maxFont={12}
-                        class="hero-piece"
-                    />
-                    <AnsiTitle
-                        text="Cyber Security Engineer"
-                        as="p"
-
-                        seed={4}
-                        maxFont={7}
-                        minFont={3}
-                        lines={2}
-                        opts={{ drips: 0.12, dripMax: 6 }}
-                        class="hero-sub"
-                    />
+            <div class="hero-content">
+                <!-- The name and the subheader are two pieces with their own entrance and their own
+                     grab-and-fling (fx.ts, mouse only; touch keeps scrolling the page). Each entrance
+                     sits on an outer wrapper, so it never fights the drag's transform. -->
+                <div class="hero-name reveal">
+                    <div class="drag-art" data-drag="fine">
+                        <AnsiTitle text="Stephen Lyons" as="h1" maxFont={12} class="hero-piece" />
+                    </div>
                 </div>
-                <div class="hero-cta">
+                <div class="hero-tagline reveal">
+                    <div class="drag-art" data-drag="fine">
+                        <AnsiTitle
+                            text="Cyber Security Engineer"
+                            as="p"
+                            seed={4}
+                            maxFont={7}
+                            minFont={3}
+                            lines={2}
+                            opts={{ drips: 0.12, dripMax: 6 }}
+                            class="hero-sub"
+                        />
+                    </div>
+                </div>
+                <div class="hero-cta reveal">
                     <a href="/projects" class="btn btn--filled">
                         View Projects →
                     </a>
@@ -59,7 +59,11 @@ import { featuredProjects } from '../data/projects';
                         Get In Touch
                     </a>
                 </div>
-                <div class="hero-terminal" role="img" aria-label="Animated terminal introduction">
+                <div
+                    class="hero-terminal reveal"
+                    role="img"
+                    aria-label="Animated terminal introduction"
+                >
                     <div class="hero-terminal__bar">
                         <span class="hero-terminal__dot hero-terminal__dot--red"></span>
                         <span class="hero-terminal__dot hero-terminal__dot--yellow"></span>
