@@ -497,27 +497,24 @@ function initReveal(): void {
     });
 }
 
-// ── Wall pieces (WallPiece.astro): sprayed on once, when first rendered or scrolled into view.
-// Pieces already on screen spray at once; the rest wait (invisible) until they come into view.
-// Under reduced motion nothing waits or animates: they are simply there.
+// ── Wall pieces (wall.ts, R32): random graffiti in the free wall, generated in the browser on idle.
+// Never under "Hide wall texture"; turning it off later loads it then.
+const WALL_SRC = TERMINAL_SRC?.replace(/terminal\.js$/, 'wall.js');
+let wallLoaded = false;
 function initWallPieces(): void {
-    const pieces = [...document.querySelectorAll<HTMLElement>('[data-wall-piece]')];
-    if (!pieces.length || motionOff() || !('IntersectionObserver' in window)) return;
-    const spray = (el: Element) => el.classList.replace('is-waiting', 'is-sprayed');
-    const io = new IntersectionObserver(
-        (entries) => {
-            for (const e of entries) {
-                if (!e.isIntersecting) continue;
-                io.unobserve(e.target);
-                spray(e.target);
-            }
-        },
-        { rootMargin: '0px 0px -8% 0px' },
-    );
-    for (const el of pieces) {
-        el.classList.add('is-waiting');
-        io.observe(el);
-    }
+    if (!WALL_SRC) return;
+    const load = () => {
+        if (wallLoaded || document.documentElement.hasAttribute('data-a11y-wall')) return;
+        wallLoaded = true;
+        const s = document.createElement('script');
+        s.src = WALL_SRC;
+        document.head.appendChild(s);
+    };
+    idle(load);
+    new MutationObserver(load).observe(document.documentElement, {
+        attributes: true,
+        attributeFilter: ['data-a11y-wall'],
+    });
 }
 
 // ── Accessibility menu (Header.astro) ────────────────────────────────────────
