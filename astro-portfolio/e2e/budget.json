@@ -1,39 +1,39 @@
 {
     "pages": {
         "/": {
-            "js": 66,
-            "css": 84,
+            "js": 72,
+            "css": 50,
             "font": 30,
             "img": 10,
-            "html": 80
+            "html": 160
         },
         "/about/": {
-            "js": 336,
-            "css": 84,
+            "js": 342,
+            "css": 50,
             "font": 30,
             "img": 10,
-            "html": 50
+            "html": 62
         },
         "/projects/": {
-            "js": 66,
-            "css": 84,
+            "js": 72,
+            "css": 50,
             "font": 30,
             "img": 100,
-            "html": 72
+            "html": 75
         },
         "/contact/": {
-            "js": 66,
-            "css": 84,
+            "js": 72,
+            "css": 50,
             "font": 30,
             "img": 10,
-            "html": 35
+            "html": 48
         },
         "/404.html": {
-            "js": 66,
-            "css": 84,
+            "js": 72,
+            "css": 50,
             "font": 30,
             "img": 10,
-            "html": 20
+            "html": 28
         }
     },
     "noFramework": [

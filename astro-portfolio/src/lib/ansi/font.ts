@@ -3,7 +3,7 @@
  *
  * 8 rows tall, mostly 6 wide, with 2-pixel stems and bars and rounded (missing) corners, so the letters
  * read as inflated blocks rather than a thin terminal font. Each pixel renders as two monospace cells
- * (`██`) — see generator.ts. Uppercase only; the generator upper-cases input. Unknown characters fall
+ * (2 × 2 half-block units in piece.ts). Uppercase, plus the odd lowercase glyph leet words need (r); other letters are upper-cased. Unknown characters fall
  * back to a blank of the space width.
  */
 export const GLYPH_HEIGHT = 8;
@@ -22,7 +22,7 @@ const RAW: Record<string, string> = {
     K: `##..## ##.##. ####.. ###... ####.. ##.##. ##..## ##..##`,
     L: `##.... ##.... ##.... ##.... ##.... ##.... ###### ######`,
     M: `##...## ###.### ####### ##.#.## ##...## ##...## ##...## ##...##`,
-    N: `##..## ###.## ###### ###### ##.### ##..## ##..## ##..##`,
+    N: `##..## ###.## ###.## ###### ###### ##.### ##.### ##..##`,
     O: `.####. ###### ##..## ##..## ##..## ##..## ###### .####.`,
     P: `#####. ###### ##..## ##..## ###### #####. ##.... ##....`,
     Q: `.####. ###### ##..## ##..## ##..## ##.### ###### .#####`,
@@ -31,11 +31,12 @@ const RAW: Record<string, string> = {
     T: `###### ###### ..##.. ..##.. ..##.. ..##.. ..##.. ..##..`,
     U: `##..## ##..## ##..## ##..## ##..## ##..## ###### .####.`,
     V: `##..## ##..## ##..## ##..## ##..## .####. .####. ..##..`,
-    W: `##...## ##...## ##...## ##.#.## ####### ####### ###.### ##...##`,
+    W: `##...## ##...## ##.#.## ##.#.## ##.#.## ####### ###.### ##...##`,
     X: `##..## ##..## .####. ..##.. ..##.. .####. ##..## ##..##`,
     Y: `##..## ##..## ##..## .####. ..##.. ..##.. ..##.. ..##..`,
     Z: `###### ###### ...##. ..##.. .##... ##.... ###### ######`,
-    '0': `.####. ###### ##..## ##..## ##..## ##..## ###### .####.`,
+    // Slashed, so leet words (r00t, LY0NS) don't read as O.
+    '0': `.####. ###### ##.### ##.### ###.## ###.## ###### .####.`,
     '1': `.##. ###. .##. .##. .##. .##. #### ####`,
     '2': `.####. ###### ##..## ...##. ..##.. .##... ###### ######`,
     '3': `#####. ###### ....## .####. .####. ....## ###### #####.`,
@@ -52,6 +53,8 @@ const RAW: Record<string, string> = {
     "'": `## ## .# .. .. .. .. ..`,
     '+': `...... ...... ..##.. ###### ###### ..##.. ...... ......`,
     '/': `....## ....## ...##. ..##.. ..##.. .##... ##.... ##....`,
+    // Lowercase where leet spelling needs it (r00t); everything else is upper-cased.
+    r: `...... ...... ##.##. ###### ###... ##.... ##.... ##....`,
     ' ': `... ... ... ... ... ... ... ...`,
 };
 
@@ -68,6 +71,21 @@ export const GLYPHS: Record<string, Glyph> = Object.fromEntries(
     }),
 );
 
+/**
+ * The original letterforms where R25 redrew them, for bubble pieces (R28), which keep the look of the
+ * first title generator: its denser N, its W and an unslashed 0 (leet wall words keep the slash).
+ */
+export const LIVE_GLYPHS: Record<string, Glyph> = Object.fromEntries(
+    Object.entries({
+        N: `##..## ###.## ###### ###### ##.### ##..## ##..## ##..##`,
+        W: `##...## ##...## ##...## ##.#.## ####### ####### ###.### ##...##`,
+        '0': `.####. ###### ##..## ##..## ##..## ##..## ###### .####.`,
+    }).map(([ch, s]) => {
+        const rows = s.split(' ').map((r) => [...r].map((c) => c === '#'));
+        return [ch, { w: rows[0]!.length, rows }];
+    }),
+);
+
 export function glyphFor(ch: string): Glyph {
-    return GLYPHS[ch.toUpperCase()] ?? GLYPHS[' ']!;
+    return GLYPHS[ch] ?? GLYPHS[ch.toUpperCase()] ?? GLYPHS[' ']!;
 }

@@ -1,6 +1,6 @@
 /**
  * Build-time ANSI textures: the brick wall behind every page and the paint drips (dividers, cards).
- * Same contract as generator.ts: pure and deterministic.
+ * Same contract as piece.ts: pure and deterministic.
  */
 
 function rng(seed: number): () => number {
@@ -57,71 +57,65 @@ const DITHER: Record<string, [number, number][]> = {
     ],
 };
 
-export interface WallTile {
-    cols: number;
-    rows: number;
-    /** One standalone SVG per colour layer (class → svg), used as CSS mask images. */
-    layers: Record<string, string>;
+/** A theme's wall colours: bricks (`--ui`), mortar (`--ui-3`) and chips (`--ui-2`), as #rrggbb. */
+export interface WallColors {
+    b: string;
+    m: string;
+    c: string;
 }
 
 /**
- * The wall as a seamless tile of SVG masks — one per colour class — so CSS can repeat it down the
- * whole page (it scrolls with the content) and colour it with theme tokens. Same cells as the text
- * version, drawn as run-length rects filled with the glyph's dither pattern; no font needed.
+ * The wall's palette per terminal theme (global.css [data-theme] slots; a unit test keeps the two
+ * in step). The tile is baked per theme because a tiled bitmap costs almost nothing to raster,
+ * where the old theme-coloured CSS masks were re-rasterised for every tile that scrolled in (R22).
  */
-export function renderWallTile(cols = 80, rows = 30, seed = 9): WallTile {
-    const grid = wallCells(cols, rows, seed);
-    const w = cols * CELL_W;
-    const h = rows * CELL_H;
-    const patterns = Object.entries(DITHER)
-        .map(
-            ([ch, px], i) =>
-                `<pattern id="p${i}" width="2" height="2" patternUnits="userSpaceOnUse">${px
-                    .map(([x, y]) => `<rect x="${x}" y="${y}" width="1" height="1"/>`)
-                    .join('')}</pattern>`,
-        )
-        .join('');
-    const pid = Object.fromEntries(Object.keys(DITHER).map((ch, i) => [ch, `p${i}`]));
-    const layers: Record<string, string> = {};
-    for (const cls of ['w-b', 'w-m', 'w-c']) {
-        const rects: string[] = [];
-        grid.forEach((row, y) => {
-            let x = 0;
-            while (x < cols) {
-                const cell = row[x]!;
-                if (cell.c !== cls) {
-                    x++;
-                    continue;
-                }
-                let n = 1;
-                while (x + n < cols && row[x + n]!.c === cls && row[x + n]!.ch === cell.ch) n++;
-                rects.push(
-                    `<rect x="${x * CELL_W}" y="${y * CELL_H}" width="${n * CELL_W}" height="${CELL_H}" fill="url(#${pid[cell.ch]})"/>`,
-                );
-                x += n;
-            }
-        });
-        layers[cls] =
-            `<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}" viewBox="0 0 ${w} ${h}" shape-rendering="crispEdges"><defs>${patterns}</defs>${rects.join('')}</svg>`;
-    }
-    return { cols, rows, layers };
+export const WALL_THEMES: Record<string, WallColors> = {
+    wildstyle: { b: '#3cc4ff', m: '#4cc38a', c: '#36e2c6' },
+    bubble: { b: '#36e2c6', m: '#4cc38a', c: '#3cc4ff' },
+    ansi: { b: '#93a6dc', m: '#8fb7ff', c: '#4d9dff' },
+    sunset: { b: '#ff7a3d', m: '#36e2c6', c: '#ffd23f' },
+    green: { b: '#00ff41', m: '#00ff41', c: '#00bfff' },
+};
+
+/** Paint strength: a texture, never a pattern you read. Mortar is fainter than brick. */
+export const WALL_ALPHA = { b: 0.07, m: 0.042, c: 0.07 } as const;
+
+export interface WallPixels {
+    width: number;
+    height: number;
+    /** RGBA, row-major: one pixel per dither dot (a cell is CELL_W × CELL_H of them). */
+    data: Uint8Array;
 }
 
-/** An SVG string as a CSS `url()` value (percent-encoded just enough for a data URI). */
-export function svgDataUrl(svg: string): string {
-    return `url("data:image/svg+xml,${svg
-        .replace(/"/g, "'")
-        .replace(/%/g, '%25')
-        .replace(/#/g, '%23')
-        .replace(/</g, '%3C')
-        .replace(/>/g, '%3E')}")`;
+/**
+ * The wall as a seamless RGBA tile: each shade glyph becomes its 2 × 2 dither in the cell's colour
+ * at WALL_ALPHA, everything else transparent. Encoded to PNG at build (/art/wall-<theme>.png) and
+ * tiled down the page with `image-rendering: pixelated`.
+ */
+export function wallPixels(colors: WallColors, cols = 80, rows = 30, seed = 9): WallPixels {
+    const grid = wallCells(cols, rows, seed);
+    const width = cols * CELL_W;
+    const height = rows * CELL_H;
+    const data = new Uint8Array(width * height * 4);
+    const rgb = (h: string) => [1, 3, 5].map((i) => parseInt(h.slice(i, i + 2), 16));
+    for (let py = 0; py < height; py++) {
+        for (let px = 0; px < width; px++) {
+            const cell = grid[Math.floor(py / CELL_H)]![Math.floor(px / CELL_W)]!;
+            const key = cell.c.slice(2) as keyof WallColors; // 'w-b' → 'b'
+            if (!cell.c || !DITHER[cell.ch]!.some(([x, y]) => x === px % 2 && y === py % 2))
+                continue;
+            const i = (py * width + px) * 4;
+            data.set([...rgb(colors[key]), Math.round(WALL_ALPHA[key] * 255)], i);
+        }
+    }
+    return { width, height, data };
 }
 
 /**
  * A paint drip, 3 cells wide and centred on its middle cell: a 1-cell stem, then a teardrop built
  * from quadrant blocks. In half-cell pixels the drop is 2-4-4-6-6-4 wide: it tapers in gently from
  * the stem and swells to a rounded bottom, so it reads as a hanging drop of paint, not a ball.
- * (Strips only: dividers and cards. Title drips stay thin `█▓▒░` runs, see generator.ts.)
+ * (Strips only: dividers and cards. Title drips stay thin 1-unit runs, see piece.ts.)
  *
  *      █      stem (× stem)
  *     ▗█▖     neck
