@@ -51,8 +51,10 @@ test('skills and experience commands are generated from the data files', async (
     const input = page.locator('#terminal-input');
     await input.fill('experience');
     await input.press('Enter');
+    // The whole job history streams line by line (~15s on its own); allow for a busy machine.
+    test.setTimeout(60_000);
     await expect(page.locator('#terminal-body')).toContainText('Intern / Laser Technician', {
-        timeout: 15_000,
+        timeout: 30_000,
     });
 });
 
