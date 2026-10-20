@@ -29,6 +29,7 @@ export const PIECE_CLASSES = [
     'p-d3', // drip last fade (bubble's ░)
     'p-sp', // sparkle
     'p-os', // overspray
+    'p-bg', // wildstyle backdrop cloud and its bubbles
 ] as const;
 export type PieceClass = (typeof PIECE_CLASSES)[number];
 export const C = Object.fromEntries(PIECE_CLASSES.map((c, i) => [c, i])) as Record<

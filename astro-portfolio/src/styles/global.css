@@ -372,6 +372,11 @@
     fill: var(--title-spray);
     opacity: 0.6;
 }
+/* Wildstyle backdrop cloud and bubbles (R29): a thin coat of the theme's cool colour, so the wall
+   shows through and the piece sits in front of it. */
+.p-bg {
+    fill: color-mix(in oklab, var(--title-hi) 24%, transparent);
+}
 
 /* Bubble pieces (bubble.ts, R28): the original title generator's colours. Eight fill rows from
    --bubble-top to --bubble-bottom, the bottom row a ▓ shade (p-f8), white outline, a dark seam where a

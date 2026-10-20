@@ -78,8 +78,19 @@ slots only; the wall and text stay.
   ink line (counters and slots go dark, so letters stay readable) → 1-unit white outline that wraps the letter.
   A later letter paints over an earlier one, so in wildstyle the front letter's outline bites into the one
   behind. Then 3D extrusion (down-right, 3–4 units), thin 1-unit drips, 4-point sparkles and fine overspray.
-  - **Wildstyle**: chamfered leading corners, a lean, tapered blades off top-right or bottom-left corners, an
-    arrow off the last letter, a bevel shine under each top edge and a lime cut on every other letter.
+  - **Wildstyle** (v3, R29, from the reference burners in the user's examples: MUSTER, SHAPER, TALE, SENK):
+    chamfered leading corners, a lean, letters butted up so each one's outline bites into the last
+    (interlock), tapered blades off top-right corners, a long tapered **swoosh** off the first letter's foot,
+    and an arrow off the last letter.
+    - **Breaks/splits:** a 1-unit dark break line across each letter's lower third (below the H, A and E bars,
+      so letters stay readable), leaning alternately; below it the letter is one solid second tone (the
+      ramp's foot), so it reads as two-tone segments.
+    - A bevel shine under each top edge and a highlight dot.
+    - **Striped 3D:** 5 units deep, in 2-unit bands of near/far.
+    - **Backdrop cloud:** a scalloped blob 3–5 units round the piece with bubbles spraying off it, a thin
+      coat of `--title-hi` (24%) so the wall shows through. It gives the piece depth, sitting it in front of
+      the wall. It uses a chamfer distance transform, which is linear and cheap enough for the browser.
+      Wall pieces skip it for now.
   - **Bubble** (user direction, 2026-10-20: "the heading as it looks on stephenlyons.dev is the bubble style",
     `bubble.ts`): the original R6/R7 generator's look, kept exactly. Font pixels are 2 cells wide and 1 tall,
     with a lean of 1 pixel per 4 rows, a 0–1 pixel bounce, a 1-pixel white outline (4-neighbour, so corners
