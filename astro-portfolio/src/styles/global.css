@@ -1152,6 +1152,26 @@ body.js-reveal-ready .reveal.revealed {
 .hero-sub {
     margin-top: clamp(-2.25rem, -3vw, -0.5rem);
 }
+/* R31: the name and the subheader are separate pieces. The name fades up like any reveal; the
+   subheader sprays on a beat later, in stepped coats from the left; then the CTAs and terminal. */
+@keyframes hero-tagline-in {
+    from {
+        opacity: 0;
+        transform: translateX(-18px);
+    }
+}
+body.js-reveal-ready .hero-tagline.reveal:not(.revealed) {
+    transform: translateX(-18px);
+}
+body.js-reveal-ready .hero-tagline.reveal.revealed {
+    animation: hero-tagline-in 0.7s steps(6, end) 0.3s backwards;
+}
+body.js-reveal-ready .hero-cta.reveal.revealed {
+    animation-delay: 0.45s;
+}
+body.js-reveal-ready .hero-terminal.reveal.revealed {
+    animation-delay: 0.6s;
+}
 
 .hero-terminal {
     background: var(--bg-secondary);
