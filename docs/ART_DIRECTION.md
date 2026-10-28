@@ -111,6 +111,11 @@ avatar stays bubble.
     letter lies over the one after it, the first letter of a word in front. Each letter tucks 1 cell under the
     one before. A 1-unit dark seam runs where a front letter meets the letter behind, so the back letter's
     outline visibly passes under. Words never overlap across a space. Counters and slots stay bare wall.
+    **Legibility (R33, user direction 2026-10-28):** the original kept every outline out of a letter's whole
+    glyph box, so letters that don't fill it (Y, T, I, 4, 7) had no outline on their open sides and melted
+    into their neighbours. Now only what lies *between* a letter's strokes along a row or a column stays dark
+    (counters, C's mouth, E's and S's notches, the Y's V); open sides get the outline. The I is a plain
+    2-pixel bar.
   - Pieces are drawn as an **inline SVG of those cells** (`pieceToSvg`: one `<path>` per colour class,
     `crispEdges`), not as text: the art font's blocks are 1.32em tall on a 1em row, so half blocks can't land
     on the grid as glyphs. Same cells, exact halves, no seams, and about 20 paths instead of thousands of spans.
