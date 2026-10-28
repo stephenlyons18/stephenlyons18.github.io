@@ -200,14 +200,14 @@ describe('bubble pieces (the original title look, R28)', () => {
         row.filter((c, i) => c !== row[i - 1]).map((c) => (isFill(c) ? 'f' : c));
 
     test('locked: the titles render exactly as reviewed (a change here is a visible change)', () => {
-        // R28 matched the R6/R7 generator unit for unit (overlap 0, no seams, keepDark 'box'); R33
-        // outlines the letters' open sides and draws a plain-bar I.
+        // R28 matched the R6/R7 generator unit for unit (overlap 0, no seams); R33 outlines the Y's
+        // stem and draws a capital I, so only titles with a Y or an I change.
         const want: Record<string, [number, number, number]> = {
-            'Stephen Lyons': [176, 34, 584508528],
-            About: [76, 34, 2610308135],
-            Projects: [115, 34, 889045913],
-            Contact: [103, 36, 525425102],
-            '404': [48, 34, 974617819],
+            'Stephen Lyons': [175, 34, 119458628],
+            About: [74, 36, 3160936062],
+            Projects: [115, 34, 105108163],
+            Contact: [100, 36, 2849827036],
+            '404': [46, 36, 2912872422],
         };
         for (const [t, [w, h, sum]] of Object.entries(want)) {
             const p = renderPiece(t, { style: 'bubble' });
@@ -230,40 +230,25 @@ describe('bubble pieces (the original title look, R28)', () => {
         expect(mid.slice(0, 5)).toEqual(['p-ol', 'f', '', 'f', 'p-ol']);
     });
 
-    test('legible at a glance (R33): open sides are outlined; mouths, notches and counters stay dark', () => {
+    test('legible at a glance (R33): the Y stem is outlined, the I is a capital, the rest as live', () => {
         const o = { drips: 0, overspray: 0 } as const;
-        // A row through the lower stem of Y and T: outline, stem, outline (no bare wall beside it).
-        for (const ch of ['Y', 'T']) {
+        const lowerRow = (ch: string) => {
             const p = renderBubble(ch, o);
-            const row = runs(at(p, p.h - 8)).filter((c) => c && !c.startsWith('p-x'));
-            expect(row.slice(0, 3), ch).toEqual(['p-ol', 'f', 'p-ol']);
-        }
-        // The I is a plain bar: every row of paint (fill, or the glint on its top row) is as wide.
+            return runs(at(p, p.h - 8))
+                .filter((c) => c && !c.startsWith('p-x'))
+                .slice(0, 3);
+        };
+        // Y: outline, stem, outline (it melted into its neighbours without). T keeps the original
+        // dark sides under its bar (white blocks there read badly, user review).
+        expect(lowerRow('Y')).toEqual(['p-ol', 'f', 'p-ol']);
+        expect(lowerRow('T')).not.toEqual(['p-ol', 'f', 'p-ol']);
+        // The I is a full-width capital: its top and bottom bars are wider than its stem.
         const i = renderBubble('I', o);
         const paint = (c: string) => isFill(c) || c === 'p-sh';
         const widths = Array.from({ length: i.h }, (_, y) => at(i, y).filter(paint).length).filter(
             (n) => n > 0,
         );
-        expect(new Set(widths).size).toBe(1);
-        // C's mouth and E's notches stay bare wall, as in the original.
-        for (const ch of ['C', 'E']) {
-            const p = renderBubble(ch, o);
-            // Some row runs outline, stem, then bare wall in the mouth/notch (no outline inside it).
-            const rows = Array.from({ length: p.h }, (_, y) =>
-                runs(at(p, y))
-                    .filter((c) => !c.startsWith('p-x'))
-                    .join(' ')
-                    .trim(),
-            );
-            expect(
-                rows.some((r) => /^p-ol f( |$)/.test(r) && !/^p-ol f p-ol/.test(r)),
-                ch,
-            ).toBe(true);
-        }
-        // The original rule is still there, for comparison.
-        expect(pieceToText(renderBubble('Y', { ...o, keepDark: 'box' }))).not.toBe(
-            pieceToText(renderBubble('Y', o)),
-        );
+        expect(Math.max(...widths)).toBeGreaterThanOrEqual(3 * Math.min(...widths));
     });
 
     test('drawn on the original 0.6em × 0.5em cells: units stretch to the drawn ratio', () => {

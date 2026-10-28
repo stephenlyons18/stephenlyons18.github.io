@@ -32,8 +32,9 @@ export interface BubbleOptions {
     /** Slashed zeros (leet wall words), instead of the original's plain 0. */
     slashedZero?: boolean;
     /** Where a letter's outline (and the 3D) may not go: 'box', the original's whole glyph box; or
-     *  'hull' (R33), only what lies between its strokes along a row or a column, so open sides (the
-     *  Y's and T's stem, the I's waist) get an outline and every letter reads at a glance. */
+     *  'hull', only what lies between its strokes along a row or a column, so its open sides get an
+     *  outline. R33 uses 'box' (the original look: S, T, P keep their dark corners and undersides)
+     *  except for the letters in HULL_LETTERS, which melt into their neighbours without it. */
     keepDark?: 'box' | 'hull';
 }
 
@@ -45,8 +46,11 @@ const DEFAULTS: Required<BubbleOptions> = {
     overlap: 1,
     seams: 'all',
     slashedZero: false,
-    keepDark: 'hull',
+    keepDark: 'box',
 };
+/** Letters that need their open sides outlined to read (R33, user review): the Y, whose stem
+ *  otherwise melts into the letters beside it. Everything else keeps the original's dark box. */
+const HULL_LETTERS = new Set(['Y']);
 /** The original's moves: 1 pixel between letters, lean 1 pixel per 4 rows, bounce 0–1, 3D 2 deep. */
 const GAP = 1;
 const LEAN = 4;
@@ -74,7 +78,7 @@ export function renderBubble(text: string, opts: BubbleOptions = {}): Piece {
         y: number;
         row: number;
     }
-    const letters: { px: Px[]; box: Px[] }[] = [];
+    const letters: { px: Px[]; box: Px[]; ch: string }[] = [];
     let cx = 0;
     chars.forEach((ch) => {
         const g = (o.slashedZero && ch === '0' ? null : LIVE_GLYPHS[ch]) ?? glyphFor(ch);
@@ -89,7 +93,7 @@ export function renderBubble(text: string, opts: BubbleOptions = {}): Piece {
                     box.push(p);
                     if (g.rows[y]![x]) px.push(p);
                 }
-            letters.push({ px, box });
+            letters.push({ px, box, ch });
             // The next letter of this word tucks under this one.
             cx += (g.w + GAP) * 2 - o.overlap;
         } else cx += (g.w + GAP) * 2 + o.overlap;
@@ -123,7 +127,8 @@ export function renderBubble(text: string, opts: BubbleOptions = {}): Piece {
                 fill[p.y + oy]![p.x + ox + h] = 1;
                 row.set((p.y + oy) * CW + p.x + ox + h, p.row);
             }
-        return { fill, box, row, dark: o.keepDark === 'box' ? box : darkOf(fill, box) };
+        const hull = o.keepDark === 'hull' || HULL_LETTERS.has(l.ch);
+        return { fill, box, row, dark: hull ? darkOf(fill, box) : box };
     });
     // Any letter's dark cells: the notch clean-up and the 3D stay out of them too.
     const inDark = grid();
