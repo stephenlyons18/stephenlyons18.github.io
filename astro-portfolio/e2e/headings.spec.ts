@@ -121,12 +121,17 @@ test('the terminal sets the same choices, and the menu follows', async ({ page }
 test('wildstyle titles pass axe on every page; the new menu controls are ≥ 44px', async ({
     page,
 }) => {
+    test.setTimeout(60_000);
     await page.addInitScript(() => localStorage.setItem('sl-title-style', 'wild'));
     for (const path of PAGES) {
         await page.goto(path);
         await page.waitForLoadState('networkidle');
+        // The art is aria-hidden decoration (its real headings are scanned); walking its thousands
+        // of path nodes made this take minutes.
         const results = await new AxeBuilder({ page })
             .withTags(['wcag2a', 'wcag2aa', 'wcag21aa', 'wcag22aa'])
+            .exclude('.ansi-svg')
+            .exclude('.wall-piece')
             .analyze();
         const serious = results.violations
             .filter((v) => v.impact === 'serious' || v.impact === 'critical')
