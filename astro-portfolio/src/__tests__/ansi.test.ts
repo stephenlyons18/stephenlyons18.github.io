@@ -200,10 +200,10 @@ describe('bubble pieces (the original title look, R28)', () => {
         row.filter((c, i) => c !== row[i - 1]).map((c) => (isFill(c) ? 'f' : c));
 
     test('locked: the titles render exactly as reviewed (a change here is a visible change)', () => {
-        // Checked unit for unit against the R6/R7 generator (overlap 0, no seams: identical apart
-        // from a front letter's outline now covering the next letter at a lean/bounce junction).
+        // R28 matched the R6/R7 generator unit for unit (overlap 0, no seams); R33 outlines the Y's
+        // stem and draws a capital I, so only titles with a Y or an I change.
         const want: Record<string, [number, number, number]> = {
-            'Stephen Lyons': [175, 34, 2019228348],
+            'Stephen Lyons': [175, 34, 119458628],
             About: [74, 36, 3160936062],
             Projects: [115, 34, 105108163],
             Contact: [100, 36, 2849827036],
@@ -228,6 +228,27 @@ describe('bubble pieces (the original title look, R28)', () => {
         const o = renderBubble('O', { drips: 0, overspray: 0 });
         const mid = runs(at(o, Math.floor(o.h / 2) - 2)).filter((c) => !c.startsWith('p-x'));
         expect(mid.slice(0, 5)).toEqual(['p-ol', 'f', '', 'f', 'p-ol']);
+    });
+
+    test('legible at a glance (R33): the Y stem is outlined, the I is a capital, the rest as live', () => {
+        const o = { drips: 0, overspray: 0 } as const;
+        const lowerRow = (ch: string) => {
+            const p = renderBubble(ch, o);
+            return runs(at(p, p.h - 8))
+                .filter((c) => c && !c.startsWith('p-x'))
+                .slice(0, 3);
+        };
+        // Y: outline, stem, outline (it melted into its neighbours without). T keeps the original
+        // dark sides under its bar (white blocks there read badly, user review).
+        expect(lowerRow('Y')).toEqual(['p-ol', 'f', 'p-ol']);
+        expect(lowerRow('T')).not.toEqual(['p-ol', 'f', 'p-ol']);
+        // The I is a full-width capital: its top and bottom bars are wider than its stem.
+        const i = renderBubble('I', o);
+        const paint = (c: string) => isFill(c) || c === 'p-sh';
+        const widths = Array.from({ length: i.h }, (_, y) => at(i, y).filter(paint).length).filter(
+            (n) => n > 0,
+        );
+        expect(Math.max(...widths)).toBeGreaterThanOrEqual(3 * Math.min(...widths));
     });
 
     test('drawn on the original 0.6em × 0.5em cells: units stretch to the drawn ratio', () => {
@@ -298,8 +319,10 @@ describe('wall tile', () => {
     });
 
     test('deterministic, and the seed changes it', () => {
-        expect(wallPixels(WALL_THEMES['wildstyle']!)).toEqual(tile);
-        expect(wallPixels(WALL_THEMES['wildstyle']!, 80, 30, 2).data).not.toEqual(tile.data);
+        // Byte-wise (a deep toEqual of the pixel arrays takes seconds).
+        const same = (a: Uint8Array, b: Uint8Array) => Buffer.from(a).equals(Buffer.from(b));
+        expect(same(wallPixels(WALL_THEMES['wildstyle']!).data, tile.data)).toBe(true);
+        expect(same(wallPixels(WALL_THEMES['wildstyle']!, 80, 30, 2).data, tile.data)).toBe(false);
     });
 
     test('each cell lights its glyph’s dither, in its layer colour at the wall strength', () => {

@@ -31,6 +31,11 @@ export interface BubbleOptions {
     seams?: false | 'outline' | 'all';
     /** Slashed zeros (leet wall words), instead of the original's plain 0. */
     slashedZero?: boolean;
+    /** Where a letter's outline (and the 3D) may not go: 'box', the original's whole glyph box; or
+     *  'hull', only what lies between its strokes along a row or a column, so its open sides get an
+     *  outline. R33 uses 'box' (the original look: S, T, P keep their dark corners and undersides)
+     *  except for the letters in HULL_LETTERS, which melt into their neighbours without it. */
+    keepDark?: 'box' | 'hull';
 }
 
 const DEFAULTS: Required<BubbleOptions> = {
@@ -41,7 +46,11 @@ const DEFAULTS: Required<BubbleOptions> = {
     overlap: 1,
     seams: 'all',
     slashedZero: false,
+    keepDark: 'box',
 };
+/** Letters that need their open sides outlined to read (R33, user review): the Y, whose stem
+ *  otherwise melts into the letters beside it. Everything else keeps the original's dark box. */
+const HULL_LETTERS = new Set(['Y']);
 /** The original's moves: 1 pixel between letters, lean 1 pixel per 4 rows, bounce 0–1, 3D 2 deep. */
 const GAP = 1;
 const LEAN = 4;
@@ -69,7 +78,7 @@ export function renderBubble(text: string, opts: BubbleOptions = {}): Piece {
         y: number;
         row: number;
     }
-    const letters: { px: Px[]; box: Px[] }[] = [];
+    const letters: { px: Px[]; box: Px[]; ch: string }[] = [];
     let cx = 0;
     chars.forEach((ch) => {
         const g = (o.slashedZero && ch === '0' ? null : LIVE_GLYPHS[ch]) ?? glyphFor(ch);
@@ -84,7 +93,7 @@ export function renderBubble(text: string, opts: BubbleOptions = {}): Piece {
                     box.push(p);
                     if (g.rows[y]![x]) px.push(p);
                 }
-            letters.push({ px, box });
+            letters.push({ px, box, ch });
             // The next letter of this word tucks under this one.
             cx += (g.w + GAP) * 2 - o.overlap;
         } else cx += (g.w + GAP) * 2 + o.overlap;
@@ -118,8 +127,14 @@ export function renderBubble(text: string, opts: BubbleOptions = {}): Piece {
                 fill[p.y + oy]![p.x + ox + h] = 1;
                 row.set((p.y + oy) * CW + p.x + ox + h, p.row);
             }
-        return { fill, box, row };
+        const hull = o.keepDark === 'hull' || HULL_LETTERS.has(l.ch);
+        return { fill, box, row, dark: hull ? darkOf(fill, box) : box };
     });
+    // Any letter's dark cells: the notch clean-up and the 3D stay out of them too.
+    const inDark = grid();
+    for (const l of own)
+        for (let y = 0; y < CH; y++)
+            for (let x = 0; x < CW; x++) if (l.dark[y]![x]) inDark[y]![x] = 1;
 
     // 3. Paint letters last → first, each as its outline then its fill, so every letter lies over the
     //    one after it: the first letter of a word in front, the bubble convention. The outline is a
@@ -129,11 +144,11 @@ export function renderBubble(text: string, opts: BubbleOptions = {}): Piece {
     const olOf = grid(); // visible outline: letter index
     const rowOf = Array.from({ length: CH }, () => new Int8Array(CW).fill(-1));
     for (let i = letters.length; i >= 1; i--) {
-        const { fill, box, row } = own[i - 1]!;
+        const { fill, dark, row } = own[i - 1]!;
         const mine = (x: number, y: number) => at(fill, x, y) === 1;
         for (let y = 0; y < CH; y++)
             for (let x = 0; x < CW; x++) {
-                if (mine(x, y) || box[y]![x]) continue;
+                if (mine(x, y) || dark[y]![x]) continue;
                 // One pixel out: within 2 cells sideways on the row, or the cell above/below.
                 if (
                     mine(x - 1, y) ||
@@ -165,7 +180,7 @@ export function renderBubble(text: string, opts: BubbleOptions = {}): Piece {
     const add: [number, number, number][] = [];
     for (let y = 0; y < CH; y++)
         for (let x = 0; x < CW; x++) {
-            if (solid(x, y) || inBox[y]![x]) continue;
+            if (solid(x, y) || inDark[y]![x]) continue;
             const l = side(x, y, -1);
             const r = side(x, y, 1);
             const u = solid(x, y - 1);
@@ -188,7 +203,7 @@ export function renderBubble(text: string, opts: BubbleOptions = {}): Piece {
     for (let k = DEPTH; k >= 1; k--)
         for (let y = 0; y < CH; y++)
             for (let x = 0; x < CW; x++)
-                if (!solid(x, y) && !inBox[y]![x] && solid(x - 2 * k, y - k)) ext[y]![x] = k;
+                if (!solid(x, y) && !inDark[y]![x] && solid(x - 2 * k, y - k)) ext[y]![x] = k;
 
     // 5. Cells.
     const cells: Cell[][] = Array.from({ length: CH }, () =>
@@ -330,4 +345,30 @@ export function renderBubble(text: string, opts: BubbleOptions = {}): Piece {
 
     // Units are a cell wide and half a cell tall (0.6em × 0.5em), as the original's text cells were.
     return trim({ w: W, h: UH, cells: units, style: 'bubble', aspect: 1.2 });
+}
+
+/**
+ * A letter's dark cells (R33): empty cells of its glyph box that lie between two of its strokes,
+ * along the row (H, U, M, the Y's V) or along the column (C's mouth, E's and S's notches), plus any
+ * hole. What's left of the box is open wall beside a stroke (the Y's and T's stem, the I's waist), so
+ * it gets the outline and the letter reads at a glance; counters and notches stay dark, as before.
+ */
+function darkOf(fill: Uint8Array[], box: Uint8Array[]): Uint8Array[] {
+    const H = fill.length;
+    const W = fill[0]!.length;
+    const dark = Array.from({ length: H }, () => new Uint8Array(W));
+    const empty = (x: number, y: number) => box[y]![x] === 1 && !fill[y]![x];
+    for (let y = 0; y < H; y++) {
+        let first = -1;
+        let last = -1;
+        for (let x = 0; x < W; x++) if (fill[y]![x]) ((first = first < 0 ? x : first), (last = x));
+        for (let x = first + 1; x < last; x++) if (empty(x, y)) dark[y]![x] = 1;
+    }
+    for (let x = 0; x < W; x++) {
+        let first = -1;
+        let last = -1;
+        for (let y = 0; y < H; y++) if (fill[y]![x]) ((first = first < 0 ? y : first), (last = y));
+        for (let y = first + 1; y < last; y++) if (empty(x, y)) dark[y]![x] = 1;
+    }
+    return dark;
 }

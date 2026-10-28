@@ -74,12 +74,15 @@ export const GLYPHS: Record<string, Glyph> = Object.fromEntries(
 /**
  * The original letterforms where R25 redrew them, for bubble pieces (R28), which keep the look of the
  * first title generator: its denser N, its W and an unslashed 0 (leet wall words keep the slash).
+ * And a full-width capital I (R33, user review): serifs as wide as a letter, so it reads as I, never as a
+ * lump (the old 4-wide I) or an l (a plain bar).
  */
 export const LIVE_GLYPHS: Record<string, Glyph> = Object.fromEntries(
     Object.entries({
         N: `##..## ###.## ###### ###### ##.### ##..## ##..## ##..##`,
         W: `##...## ##...## ##...## ##.#.## ####### ####### ###.### ##...##`,
         '0': `.####. ###### ##..## ##..## ##..## ##..## ###### .####.`,
+        I: `###### ###### ..##.. ..##.. ..##.. ..##.. ###### ######`,
     }).map(([ch, s]) => {
         const rows = s.split(' ').map((r) => [...r].map((c) => c === '#'));
         return [ch, { w: rows[0]!.length, rows }];
