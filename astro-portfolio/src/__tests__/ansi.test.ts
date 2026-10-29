@@ -164,6 +164,35 @@ describe('renderPiece', () => {
         expect(p.w).toBeGreaterThan(flat.w);
     });
 
+    test('wildstyle: the first letter of a word is in front, each letter over the next (R35)', () => {
+        const p = renderPiece('HH', {
+            style: 'wild',
+            gap: -3,
+            lean: 0,
+            bounce: 0,
+            blades: 0,
+            arrow: false,
+            swoosh: false,
+            splits: false,
+            shine: false,
+            cloud: 0,
+            drips: 0,
+            sparkles: 0,
+            overspray: 0,
+        });
+        const rows = Array.from({ length: p.h }, (_, y) => {
+            const row = Array.from({ length: p.w }, (_, x) => cls(p, x, y));
+            return row
+                .filter((c, i) => c !== row[i - 1])
+                .filter((c) => !c.startsWith('p-x'))
+                .map((c) => (isFill(c) ? 'f' : c))
+                .join(' ');
+        });
+        // Left H's fill, its ink and outline, then the right H's fill: the left one is on top.
+        expect(rows.some((r) => r.includes('f p-ik p-ol f'))).toBe(true);
+        expect(rows.some((r) => r.includes('f p-ol p-ik f'))).toBe(false);
+    });
+
     test('drips are thin (1u) runs that hang below a fill and fade at the tip', () => {
         const p = renderPiece('About', { style: 'wild', drips: 1, dripMax: 8 });
         for (let y = 0; y < p.h; y++)
