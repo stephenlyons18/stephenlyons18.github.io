@@ -5,6 +5,7 @@ import { hash } from '../lib/ansi/grid';
 import {
     PIECE_CLASSES,
     balanceLines,
+    pieceChars,
     pieceToSvg,
     pieceToText,
     renderPiece,
@@ -188,6 +189,12 @@ describe('renderPiece', () => {
         for (const style of ['wild', 'bubble'] as const)
             for (const t of ['About', 'Projects', 'Contact', '404'])
                 expect(renderPiece(t, { style }).w, `${style} ${t}`).toBeLessThanOrEqual(140);
+    });
+
+    test('titles are all caps (R36): lowercase glyphs only for leet words that ask', () => {
+        expect(pieceChars('Cyber Security Engineer')).toEqual([...'CYBER SECURITY ENGINEER']);
+        expect(pieceChars('r00t', true)).toEqual(['r', '0', '0', 'T']);
+        expect(pieceChars('Cyber', true)).toEqual(['C', 'Y', 'B', 'E', 'r']);
     });
 
     test('text view uses only half and full blocks', () => {

@@ -38,6 +38,7 @@ export function wallPool(): WallPoolPiece[] {
                 sparkles: 1,
                 dripMax: 7,
                 slashedZero: true,
+                leet: true,
                 cloud: 3,
             });
             return {

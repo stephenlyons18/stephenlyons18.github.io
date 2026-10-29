@@ -66,6 +66,9 @@ export interface PieceOptions {
     swoosh?: boolean;
     /** A backdrop cloud with bubbles behind the piece (units of spread; 0 = none). */
     cloud?: number;
+    /** Leet spelling: keep the lowercase letters the font draws (the r of r00t). Off by default, so
+     *  titles are all caps whatever their casing (R36). */
+    leet?: boolean;
     /** Bubble only: slashed zeros (leet wall words) instead of the original's plain 0. */
     slashedZero?: boolean;
 }
@@ -87,6 +90,7 @@ const DEFAULTS: Required<PieceOptions> = {
     splits: true,
     swoosh: true,
     cloud: 5,
+    leet: false,
     slashedZero: true,
 };
 
@@ -262,6 +266,11 @@ function buildLetter(
     return { fill: m, gw };
 }
 
+/** The letters a piece draws: all caps, except, for leet words, the lowercase ones the font has. */
+export function pieceChars(text: string, leet = false): string[] {
+    return [...text].map((c) => (leet && c !== c.toUpperCase() && GLYPHS[c] ? c : c.toUpperCase()));
+}
+
 // ─── The piece ───────────────────────────────────────────────────────────────
 
 export function renderPiece(text: string, opts: PieceOptions = {}): Piece {
@@ -279,8 +288,7 @@ export function renderPiece(text: string, opts: PieceOptions = {}): Piece {
     }
     const o: Required<PieceOptions> = { ...DEFAULTS, ...opts, style };
     const rand = rng(hash(`v2:${style}:${text}`) ^ o.seed);
-    // Upper-case, except letters the font draws in lowercase (the r of r00t).
-    const chars = [...text].map((c) => (c !== c.toUpperCase() && GLYPHS[c] ? c : c.toUpperCase()));
+    const chars = pieceChars(text, o.leet);
     const firstIdx = chars.findIndex((c) => c !== ' ');
     const lastIdx = chars.findLastIndex((c) => c !== ' ');
 
