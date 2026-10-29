@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'vitest';
-import { PIECE_CLASSES } from '../lib/ansi/piece';
+import { PIECE_CLASSES, pieceChars } from '../lib/ansi/piece';
 import { WALL_WORDS, wallPool } from '../lib/ansi/wallPool';
 
 describe('wall pool (src/lib/ansi/wallPool.ts)', () => {
@@ -21,6 +21,15 @@ describe('wall pool (src/lib/ansi/wallPool.ts)', () => {
                 expect(PIECE_CLASSES as readonly string[], c).toContain(c);
             expect(p.svg).not.toContain('p-os');
         }
+    });
+
+    test('the wall gets the title lettering fixes (R38): no bubble seams, caps except leet', () => {
+        // R34: bubble pieces carry no dark overlap seams (ink is wildstyle's).
+        for (const p of pool.filter((x) => x.style === 'bubble'))
+            expect(p.svg, p.word).not.toContain('p-ik');
+        // R36: only the leet word keeps its lowercase r; everything else is drawn in caps.
+        for (const w of WALL_WORDS)
+            expect(pieceChars(w, true).join(''), w).toBe(w === 'r00t' ? 'r00T' : w.toUpperCase());
     });
 
     test('small enough to fetch once and cache (< 100 KB raw)', () => {
