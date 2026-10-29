@@ -78,7 +78,7 @@ const DEFAULTS: Required<PieceOptions> = {
     seed: 0,
     gap: 0,
     lean: 6,
-    bounce: 2,
+    bounce: 1,
     blades: 0.35,
     arrow: true,
     drips: 0.22,
@@ -179,6 +179,7 @@ interface Letter {
     oy: number;
     /** Glyph width in units (for advancing). */
     gw: number;
+    ch: string;
 }
 
 function buildLetter(
@@ -271,6 +272,9 @@ export function pieceChars(text: string, leet = false): string[] {
     return [...text].map((c) => (leet && c !== c.toUpperCase() && GLYPHS[c] ? c : c.toUpperCase()));
 }
 
+/** Letters whose legs say which letter they are: a break line would cut them (R37). */
+const LEGS = new Set(['A', 'R', 'K', 'X']);
+
 // ─── The piece ───────────────────────────────────────────────────────────────
 
 export function renderPiece(text: string, opts: PieceOptions = {}): Piece {
@@ -298,7 +302,7 @@ export function renderPiece(text: string, opts: PieceOptions = {}): Piece {
     chars.forEach((ch, i) => {
         const { fill, gw } = buildLetter(ch, o, rand, i === firstIdx, i === lastIdx);
         const dy = ch === ' ' ? 0 : Math.round(rand() * o.bounce);
-        if (ch !== ' ') letters.push({ fill, ox: cx - PAD, oy: dy - PAD, gw });
+        if (ch !== ' ') letters.push({ fill, ox: cx - PAD, oy: dy - PAD, gw, ch });
         cx += gw + (ch === ' ' ? 0 : o.gap) + (ch === ' ' ? 0 : 0);
     });
 
@@ -353,10 +357,17 @@ export function renderPiece(text: string, opts: PieceOptions = {}): Piece {
                 for (let x = 0; x < f.w; x++) if (at(f, x, y)) ((sx += x), n++);
             const cxl = sx / Math.max(1, n);
             const base = PAD + Math.round(LETTER_H * 0.72) + (li % 2);
+            // No dark line through a letter with a counter low down (B, R, A, D, O, Q, 6, 8, 0): it
+            // would cut the bowl, leg or bar that says which letter it is (R37, wildstyle guides).
+            // Those keep the colour split alone.
+            const counters = holes(f);
+            let low = LEGS.has(l.ch);
+            for (let y = base - 3; y < f.h && !low; y++)
+                for (let x = 0; x < f.w && !low; x++) if (at(counters, x, y)) low = true;
             for (let x = 0; x < f.w; x++) {
                 const yl = base + Math.round((x - cxl) * slope);
                 if (!(at(f, x, yl - 1) && at(f, x, yl) && at(f, x, yl + 1))) continue;
-                put(ox + x, oy + yl, C['p-ik']);
+                put(ox + x, oy + yl, low ? FILL0 + BANDS - 2 : C['p-ik']);
                 for (let y = yl + 1; y < f.h && at(f, x, y); y++)
                     put(ox + x, oy + y, FILL0 + BANDS - 2);
             }

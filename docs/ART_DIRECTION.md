@@ -92,9 +92,16 @@ avatar stays bubble.
     chamfered leading corners, a lean, letters butted up so each one's outline bites into the last
     (interlock), tapered blades off top-right corners, a long tapered **swoosh** off the first letter's foot,
     and an arrow off the last letter.
+    - **Rules (R37, from wildstyle guides; user direction 2026-10-28):** a readable block skeleton first,
+      one baseline (bounce ≤ 1 unit), each letter overlapping the next with the first letter in front (R35),
+      all caps (R36), extensions and arrows growing from strokes without covering the next letter's
+      identifying part, and nothing that cuts a bowl, leg or bar. No bar-to-bar connectors: at gap 0 the
+      letters already butt, and a bridge would fuse them. Test: the three-second read.
     - **Breaks/splits:** a 1-unit dark break line across each letter's lower third (below the H, A and E bars,
       so letters stay readable), leaning alternately; below it the letter is one solid second tone (the
-      ramp's foot), so it reads as two-tone segments.
+      ramp's foot), so it reads as two-tone segments. Letters with a counter low down (B, D, O, Q, 6, 8,
+      0) or legs that identify them (A, R, K, X) keep the colour split but no dark line, which would cut
+      the bowl or leg (R37).
     - A bevel shine under each top edge and a highlight dot.
     - **Striped 3D:** 5 units deep, in 2-unit bands of near/far.
     - **Backdrop cloud:** a scalloped blob 3–5 units round the piece with bubbles spraying off it, a thin
