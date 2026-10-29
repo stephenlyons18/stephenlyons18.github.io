@@ -117,7 +117,8 @@ describe('renderPiece', () => {
     test('has the parts of a piece: outline, ink, 3D, highlights, drips', () => {
         for (const style of ['wild', 'bubble'] as const) {
             const p = renderPiece('Stephen Lyons', { style, drips: 0.6 });
-            for (const c of ['p-ol', 'p-ik', 'p-x1', 'p-sh', 'p-dr'])
+            // Ink lines are wildstyle's; bubble's outline is white on the wall (no seams, R34).
+            for (const c of ['p-ol', ...(style === 'wild' ? ['p-ik'] : []), 'p-x1', 'p-sh', 'p-dr'])
                 expect(count(p, c), `${style} ${c}`).toBeGreaterThan(0);
         }
         expect(
@@ -201,13 +202,13 @@ describe('bubble pieces (the original title look, R28)', () => {
 
     test('locked: the titles render exactly as reviewed (a change here is a visible change)', () => {
         // R28 matched the R6/R7 generator unit for unit (overlap 0, no seams); R33 outlines the Y's
-        // stem and draws a capital I, so only titles with a Y or an I change.
+        // stem and draws a capital I; R34 drops the dark overlap seams.
         const want: Record<string, [number, number, number]> = {
-            'Stephen Lyons': [175, 34, 119458628],
-            About: [74, 36, 3160936062],
-            Projects: [115, 34, 105108163],
-            Contact: [100, 36, 2849827036],
-            '404': [46, 36, 2912872422],
+            'Stephen Lyons': [175, 34, 1267248091],
+            About: [74, 36, 3598178463],
+            Projects: [115, 34, 981169389],
+            Contact: [100, 36, 4232679747],
+            '404': [46, 36, 1436139175],
         };
         for (const [t, [w, h, sum]] of Object.entries(want)) {
             const p = renderPiece(t, { style: 'bubble' });
@@ -216,11 +217,20 @@ describe('bubble pieces (the original title look, R28)', () => {
     });
 
     test('each letter lies over the next: its outline, a dark seam, then the letter behind', () => {
-        const p = renderBubble('HH', { drips: 0, overspray: 0 });
+        const p = renderBubble('HH', { drips: 0, overspray: 0, seams: 'all' });
         // A row through the crossbar: front H's fill → its outline → seam → back H's fill.
         const rows = Array.from({ length: p.h }, (_, y) => runs(at(p, y)).join(' '));
         expect(rows.some((r) => r.includes('f p-ol p-ik f'))).toBe(true);
         expect(rows.some((r) => r.includes('f p-ik p-ol f'))).toBe(false);
+    });
+
+    test('no dark seams by default (R34): the overlap reads by the front letter outline alone', () => {
+        for (const t of ['Stephen Lyons', 'Cyber Security Engineer'])
+            expect(count(renderBubble(t), 'p-ik'), t).toBe(0);
+        const p = renderBubble('HH', { drips: 0, overspray: 0 });
+        const rows = Array.from({ length: p.h }, (_, y) => runs(at(p, y)).join(' '));
+        // Front H's fill, its outline, then straight onto the back H's fill.
+        expect(rows.some((r) => r.includes('f p-ol f'))).toBe(true);
     });
 
     test('words never overlap across a space; counters are bare wall, not outline', () => {

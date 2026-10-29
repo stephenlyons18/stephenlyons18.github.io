@@ -80,6 +80,7 @@ test('plain headings: art hidden, a real visible heading in its place, no overfl
 });
 
 test('every mode at once still passes axe (WCAG 2.2 AA) on every page', async ({ page }) => {
+    test.setTimeout(60_000);
     await page.addInitScript(() =>
         localStorage.setItem(
             'sl-a11y',
@@ -91,7 +92,11 @@ test('every mode at once still passes axe (WCAG 2.2 AA) on every page', async ({
         await page.waitForLoadState('networkidle');
         const results = await new AxeBuilder({ page })
             .withTags(['wcag2a', 'wcag2aa', 'wcag21aa', 'wcag22aa'])
+            // The art is aria-hidden decoration (its real headings are scanned); walking its path
+            // nodes is most of the time.
             .exclude('pre.ansi')
+            .exclude('.ansi-svg')
+            .exclude('.wall-piece')
             .analyze();
         const serious = results.violations
             .filter((v) => v.impact === 'serious' || v.impact === 'critical')

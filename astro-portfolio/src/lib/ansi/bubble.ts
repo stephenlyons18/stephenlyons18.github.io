@@ -27,7 +27,8 @@ export interface BubbleOptions {
     /** Cells each letter tucks under the one before it (0 = the original spacing). */
     overlap?: number;
     /** A dark seam where a front letter lies over the letter behind it: 'outline' only cuts the back
-     *  letter's outline; 'all' also its fill. */
+     *  letter's outline; 'all' also its fill. Off by default (R34, user review: the dark border looked
+     *  off in places; without it the overlap still reads, by the front letter's white outline). */
     seams?: false | 'outline' | 'all';
     /** Slashed zeros (leet wall words), instead of the original's plain 0. */
     slashedZero?: boolean;
@@ -44,7 +45,7 @@ const DEFAULTS: Required<BubbleOptions> = {
     dripMax: 5,
     overspray: 0.08,
     overlap: 1,
-    seams: 'all',
+    seams: false,
     slashedZero: false,
     keepDark: 'box',
 };

@@ -109,8 +109,9 @@ avatar stays bubble.
     so drips land where they always did. Units are drawn 0.6em × 0.5em, as the original text cells were.
     **Overlap** (bubble convention, references STKES / HONK / PIMO): letters are painted last → first, so each
     letter lies over the one after it, the first letter of a word in front. Each letter tucks 1 cell under the
-    one before. A 1-unit dark seam runs where a front letter meets the letter behind, so the back letter's
-    outline visibly passes under. Words never overlap across a space. Counters and slots stay bare wall.
+    one before, so the front letter's white outline runs over the next letter's edge. (R28 also drew a 1-unit
+    dark seam there; R34 dropped it on the user's review: it looked off in places, and the overlap reads
+    without it, as on the live site.) Words never overlap across a space. Counters and slots stay bare wall.
     **Legibility (R33, user direction and review 2026-10-28):** the original keeps every outline out of a
     letter's whole glyph box, which suits most letters (S, T, P keep their dark corners and undersides, as
     live) but left the **Y**'s stem without an outline, so it melted into its neighbours: the Y alone now
