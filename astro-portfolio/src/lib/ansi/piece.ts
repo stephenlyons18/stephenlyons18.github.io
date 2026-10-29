@@ -318,9 +318,12 @@ export function renderPiece(text: string, opts: PieceOptions = {}): Piece {
         if (x >= 0 && y >= 0 && x < W && y < H) cells[y * W + x] = v;
     };
 
-    // 3. Letters back to front: outline, ink, fill (+ highlights). A later letter paints over an
-    //    earlier one, outline first, so its outline cuts into the letter behind.
-    letters.forEach((l, li) => {
+    // 3. Letters last → first: outline, ink, fill (+ highlights). Each letter paints over the one after
+    //    it, outline first, so the first letter of a word is in front and every letter's outline cuts
+    //    into the next (R35: the other way round hid the start of each word; wildstyle guides: each
+    //    letter overlaps the next in sequence).
+    [...letters.keys()].reverse().forEach((li) => {
+        const l = letters[li]!;
         const f = l.fill;
         const ink = union(ring(f, N8), holes(f));
         const body = union(f, ink);
