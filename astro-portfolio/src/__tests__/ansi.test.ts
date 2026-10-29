@@ -193,6 +193,25 @@ describe('renderPiece', () => {
         expect(rows.some((r) => r.includes('f p-ol p-ik f'))).toBe(false);
     });
 
+    test('wildstyle breaks never cut a bowl or leg (R37): letters with a low counter keep the colour split only', () => {
+        const o = {
+            style: 'wild',
+            blades: 0,
+            arrow: false,
+            swoosh: false,
+            shine: false,
+            cloud: 0,
+            drips: 0,
+            sparkles: 0,
+            overspray: 0,
+        } as const;
+        const ink = (t: string, splits: boolean) => count(renderPiece(t, { ...o, splits }), 'p-ik');
+        // B, D, O (a low counter) and A, R (their legs): no dark line through them.
+        for (const t of ['B', 'R', 'A', 'D', 'O']) expect(ink(t, true), t).toBe(ink(t, false));
+        // E, S, T: a break line.
+        for (const t of ['E', 'S', 'T']) expect(ink(t, true), t).toBeGreaterThan(ink(t, false));
+    });
+
     test('drips are thin (1u) runs that hang below a fill and fade at the tip', () => {
         const p = renderPiece('About', { style: 'wild', drips: 1, dripMax: 8 });
         for (let y = 0; y < p.h; y++)
