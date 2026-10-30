@@ -7,12 +7,7 @@
     },
     // always use wsl terminal, including for running mcp server
     "terminal.integrated.defaultProfile.linux": "WSL",
-    "terminal.integrated.profiles.linux": {
-        "WSL": {
-            "path": "wsl.exe",
-            "args": ["-d", "Ubuntu"]
-        }
-    }
+    
    
 
 }
