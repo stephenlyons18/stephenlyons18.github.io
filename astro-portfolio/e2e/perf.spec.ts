@@ -86,8 +86,8 @@ test('no idle layer bloat: content waiting to reveal is not pre-promoted', async
     context,
 }) => {
     // Every composited layer is GPU tile memory; on a DPR-3 phone a dozen card-sized layers blew the
-    // tile budget and stuttered scrolling (R22). At rest a page needs the document, the header and
-    // the scroll UI, plus the odd overlap squash.
+    // tile budget and stuttered scrolling (R22). At rest a page needs the document, the header,
+    // the scroll UI and the paint kit, plus the odd overlap squash.
     const cdp = await context.newCDPSession(page);
     let layers: { drawsContent: boolean }[] = [];
     cdp.on('LayerTree.layerTreeDidChange', (e) => {
@@ -110,6 +110,8 @@ test('no idle layer bloat: content waiting to reveal is not pre-promoted', async
         await cdp.send('LayerTree.disable');
         const drawn = layers.filter((l) => l.drawsContent).length;
         test.info().annotations.push({ type: 'layers', description: `${path}: ${drawn}` });
-        expect(drawn, `${path} composited layers at rest`).toBeLessThanOrEqual(12);
+        // 13: the spray-paint kit (R53) is a fixed control on every page, so it is one small layer
+        // (~110 × 52 px) of its own. The home page's random wall pieces put it near the old cap of 12.
+        expect(drawn, `${path} composited layers at rest`).toBeLessThanOrEqual(13);
     }
 });

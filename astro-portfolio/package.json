@@ -7,7 +7,7 @@
   },
   "scripts": {
     "dev": "pnpm build:scripts && astro dev",
-    "build:scripts": "esbuild src/scripts/site.ts src/scripts/terminal.ts src/scripts/fx.ts src/scripts/wall.ts --bundle --format=iife --target=es2020 --minify --outdir=public/scripts --log-level=warning",
+    "build:scripts": "esbuild src/scripts/site.ts src/scripts/terminal.ts src/scripts/fx.ts src/scripts/wall.ts src/scripts/paint.ts --bundle --format=iife --target=es2020 --minify --outdir=public/scripts --log-level=warning",
     "build": "pnpm build:scripts && astro build && node scripts/postbuild.mjs",
     "build:local": "pnpm test && pnpm build",
     "test": "vitest run",
