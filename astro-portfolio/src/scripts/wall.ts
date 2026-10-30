@@ -101,19 +101,26 @@ const docRect = (r: DOMRect): Rect => ({
 });
 
 /** Everything a piece must keep clear of, in document space (one batch of layout reads). */
+/**
+ * Fixed UI floats over the page wherever you scroll, so it isn't content any part of the wall
+ * sits under: measured at the current scroll it would block whatever wall the viewport happens to
+ * show, and move pieces after a layout change mid-scroll (R56). (The wall keeps out of the
+ * header's band at the top of the page anyway.)
+ */
+const SKIP = '.wall-piece, .paint-kit, .site-header';
+
 function obstacles(): Rect[] {
     const out: Rect[] = [];
     const sel =
         'a, button, input, textarea, select, label, .card, .hero-terminal, .ansi-title, .ansi-divider, canvas, img, video, iframe';
     for (const el of document.querySelectorAll(sel))
-        if (visible(el) && !el.closest('.wall-piece'))
-            out.push(docRect(el.getBoundingClientRect()));
+        if (visible(el) && !el.closest(SKIP)) out.push(docRect(el.getBoundingClientRect()));
     // Text, by its line boxes (a centred heading's element box spans the whole container).
     const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
     const range = document.createRange();
     for (let n = walker.nextNode(); n; n = walker.nextNode()) {
         const el = n.parentElement;
-        if (!el || !n.textContent!.trim() || el.closest('.wall-piece, .sr-only, script, style'))
+        if (!el || !n.textContent!.trim() || el.closest(`${SKIP}, .sr-only, script, style`))
             continue;
         if (!visible(el)) continue;
         range.selectNodeContents(n);

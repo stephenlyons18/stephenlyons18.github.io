@@ -165,5 +165,19 @@ test('hero: the name and the subheader are separate pieces (own entrance, own dr
         await expect
             .poll(async () => Math.abs((await grab.boundingBox())!.x - g.x), { timeout: 2500 })
             .toBeLessThan(1);
+        // The snap-back is a bouncy spring: it passes home while still oscillating. Let it finish,
+        // or the next drag measures this piece still moving (a CI flake under load, R56).
+        await expect
+            .poll(
+                () =>
+                    grab.evaluate((el) =>
+                        el
+                            .closest('.hero-name, .hero-tagline')!
+                            .getAnimations({ subtree: true })
+                            .some((a) => a.playState === 'running'),
+                    ),
+                { timeout: 3000 },
+            )
+            .toBe(false);
     }
 });
