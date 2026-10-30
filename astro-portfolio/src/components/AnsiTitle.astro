@@ -22,6 +22,7 @@ import {
     type PieceOptions,
     type PieceStyle,
 } from '../lib/ansi/piece';
+import { stackQueries } from '../lib/ansi/title';
 
 interface Props {
     text: string;
@@ -98,13 +99,7 @@ const sets = (pinned ? [pinned] : (['bubble', 'wild'] as const)).map((style) => 
         });
     // Container widths (px) below which each variant would render cells smaller than minFont.
     const breaks = [one.w, ...stacks.map((s) => s.w)].map((w) => Math.ceil(w * 0.6 * minFont));
-    const sel = `#${id} [data-set='${style}']`;
-    const queries = stacks
-        .map((_, i) => {
-            const hide = i === 0 ? '.ansi-title__one' : `.ansi-title__stack--${i + 2}`;
-            return `@container (max-width: ${breaks[i]}px) { ${sel} ${hide} { display: none } ${sel} .ansi-title__stack--${i + 2} { display: block } }`;
-        })
-        .join(' ');
+    const queries = stackQueries(`#${id} [data-set='${style}']`, breaks.slice(0, stacks.length));
     return { style, one, stacks, queries };
 });
 const queries = sets.map((s) => s.queries).join(' ');
