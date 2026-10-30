@@ -13,7 +13,7 @@
  * stay dark because neither outline nor 3D ever paints inside a glyph box. Colours are piece
  * classes; `[data-piece='bubble']` in global.css maps them to the 2-stop bubble ramp.
  */
-import { GLYPH_HEIGHT, LIVE_GLYPHS, glyphFor } from './font';
+import { GLYPH_HEIGHT, LIVE_GLYPHS, glyphFor, pieceChars } from './font';
 import { C, hash, rng, trim, type Piece, type PieceClass } from './grid';
 
 export interface BubbleOptions {
@@ -32,6 +32,8 @@ export interface BubbleOptions {
     seams?: false | 'outline' | 'all';
     /** Slashed zeros (leet wall words), instead of the original's plain 0. */
     slashedZero?: boolean;
+    /** Leet words keep the lowercase letters the font has (the r of `r00t`, R36); else all caps. */
+    leet?: boolean;
     /** Where a letter's outline (and the 3D) may not go: 'box', the original's whole glyph box; or
      *  'hull', only what lies between its strokes along a row or a column, so its open sides get an
      *  outline. R33 uses 'box' (the original look: S, T, P keep their dark corners and undersides)
@@ -47,6 +49,7 @@ const DEFAULTS: Required<BubbleOptions> = {
     overlap: 1,
     seams: false,
     slashedZero: false,
+    leet: false,
     keepDark: 'box',
 };
 /** Letters that need their open sides outlined to read (R33, user review): the Y, whose stem
@@ -70,7 +73,7 @@ interface Cell {
 export function renderBubble(text: string, opts: BubbleOptions = {}): Piece {
     const o = { ...DEFAULTS, ...opts };
     const rand = rng(hash(`wild:${text}`) ^ o.seed);
-    const chars = [...text.toUpperCase()];
+    const chars = pieceChars(text, o.leet);
     const shiftOf = (row: number) => Math.floor((GLYPH_HEIGHT - 1 - row) / LEAN);
 
     // 1. Lay glyphs out in cell columns (a pixel is 2 cells), each letter's pixels and glyph box.

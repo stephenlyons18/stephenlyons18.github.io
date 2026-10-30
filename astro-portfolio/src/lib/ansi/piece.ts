@@ -17,7 +17,7 @@
  * piece. Rules: docs/ART_DIRECTION.md.
  */
 import { renderBubble } from './bubble';
-import { GLYPHS, GLYPH_HEIGHT, glyphFor } from './font';
+import { GLYPH_HEIGHT, glyphFor, pieceChars } from './font';
 import {
     BANDS,
     C,
@@ -267,10 +267,8 @@ function buildLetter(
     return { fill: m, gw };
 }
 
-/** The letters a piece draws: all caps, except, for leet words, the lowercase ones the font has. */
-export function pieceChars(text: string, leet = false): string[] {
-    return [...text].map((c) => (leet && c !== c.toUpperCase() && GLYPHS[c] ? c : c.toUpperCase()));
-}
+/** The letters a piece draws (font.ts; bubble pieces share it). */
+export { pieceChars };
 
 /** Letters whose legs say which letter they are: a break line would cut them (R37). */
 const LEGS = new Set(['A', 'R', 'K', 'X']);
@@ -281,13 +279,14 @@ export function renderPiece(text: string, opts: PieceOptions = {}): Piece {
     const style = opts.style ?? 'wild';
     if (style === 'bubble') {
         // The original generator's options, where given (its drips are counted in cells).
-        const { seed, drips, dripMax, overspray, slashedZero } = opts;
+        const { seed, drips, dripMax, overspray, slashedZero, leet } = opts;
         return renderBubble(text, {
             ...(seed !== undefined && { seed }),
             ...(drips !== undefined && { drips }),
             ...(dripMax !== undefined && { dripMax: Math.ceil(dripMax / 2) }),
             ...(overspray !== undefined && { overspray }),
             ...(slashedZero !== undefined && { slashedZero }),
+            ...(leet !== undefined && { leet }),
         });
     }
     const o: Required<PieceOptions> = { ...DEFAULTS, ...opts, style };

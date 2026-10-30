@@ -1,5 +1,6 @@
 import { describe, expect, test } from 'vitest';
-import { PIECE_CLASSES, pieceChars } from '../lib/ansi/piece';
+import { hash } from '../lib/ansi/grid';
+import { PIECE_CLASSES, pieceChars, pieceToSvg, renderPiece } from '../lib/ansi/piece';
 import { WALL_WORDS, wallPool } from '../lib/ansi/wallPool';
 
 describe('wall pool (src/lib/ansi/wallPool.ts)', () => {
@@ -30,6 +31,27 @@ describe('wall pool (src/lib/ansi/wallPool.ts)', () => {
         // R36: only the leet word keeps its lowercase r; everything else is drawn in caps.
         for (const w of WALL_WORDS)
             expect(pieceChars(w, true).join(''), w).toBe(w === 'r00t' ? 'r00T' : w.toUpperCase());
+    });
+
+    test('the leet r reaches both styles, bubble included (R40)', () => {
+        // wallPool()'s options without `leet`: the same piece with a capital R.
+        const capital = (style: 'bubble' | 'wild') =>
+            pieceToSvg(
+                renderPiece('r00t', {
+                    style,
+                    seed: hash('wall:r00t') % 1000,
+                    overspray: 0,
+                    sparkles: 1,
+                    dripMax: 7,
+                    slashedZero: true,
+                    cloud: 3,
+                }),
+                { attrs: { focusable: 'false' } },
+            );
+        for (const style of ['bubble', 'wild'] as const) {
+            const p = pool.find((x) => x.word === 'r00t' && x.style === style)!;
+            expect(p.svg, style).not.toBe(capital(style));
+        }
     });
 
     test('small enough to fetch once and cache (< 100 KB raw)', () => {
