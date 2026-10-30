@@ -204,29 +204,29 @@ const projects: Project[] = [
             'GitHub Actions pipelines for secret scanning, code formatting, and broken link detection. CI/CD with security gates baked into every workflow.',
         featuredTech: ['GitHub Actions', 'TruffleHog', 'Prettier', 'YAML'],
     },
-    {
-        id: 'portfolio',
-        tag: 'Personal',
-        title: 'Portfolio Website',
-        date: '2026',
-        descriptions: [
-            'This very site — a cybersecurity portfolio painted as ANSI graffiti on a brick wall, built with Astro, TypeScript and Motion. Features a working in-browser terminal, build-time ANSI art with paint drips, an interactive skill graph, View Transitions, and an accessibility menu.',
-        ],
-        sections: [
-            {
-                heading: 'Highlights',
-                items: [
-                    'Interactive terminal with tab-completion, command history, themes and easter eggs',
-                    'ANSI/graffiti titles, wall pieces and paint drips generated at build time: zero runtime JS for art',
-                    'd3-force skill graph (the only React island) with anchored hover and tap cards',
-                    'Accessibility menu: plain headings, reduced motion, readable font, larger text, high contrast',
-                    'Performance budgets and WCAG 2.2 AA checks in Playwright on desktop, laptop and phone',
-                    'Deployed as static files to GitHub Pages: minimal client JS',
-                ],
-            },
-        ],
-        tech: ['Astro', 'TypeScript', 'Motion', 'React', 'Playwright'],
-    },
+    // {
+    //     id: 'portfolio',
+    //     tag: 'Personal',
+    //     title: 'Portfolio Website',
+    //     date: '2026',
+    //     descriptions: [
+    //         'This very site — a cybersecurity portfolio painted as ANSI graffiti on a brick wall, built with Astro, TypeScript and Motion. Features a working in-browser terminal, build-time ANSI art with paint drips, an interactive skill graph, View Transitions, and an accessibility menu.',
+    //     ],
+    //     sections: [
+    //         {
+    //             heading: 'Highlights',
+    //             items: [
+    //                 'Interactive terminal with tab-completion, command history, themes and easter eggs',
+    //                 'ANSI/graffiti titles, wall pieces and paint drips generated at build time: zero runtime JS for art',
+    //                 'd3-force skill graph (the only React island) with anchored hover and tap cards',
+    //                 'Accessibility menu: plain headings, reduced motion, readable font, larger text, high contrast',
+    //                 'Performance budgets and WCAG 2.2 AA checks in Playwright on desktop, laptop and phone',
+    //                 'Deployed as static files to GitHub Pages: minimal client JS',
+    //             ],
+    //         },
+    //     ],
+    //     tech: ['Astro', 'TypeScript', 'Motion', 'React', 'Playwright'],
+    // },
     {
         id: 'down',
         tag: 'Security Engineering',
