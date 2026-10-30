@@ -5,43 +5,43 @@
             "css": 50,
             "font": 30,
             "img": 10,
-            "html": 160
+            "html": 160,
+            "data": 84
         },
         "/about/": {
             "js": 342,
             "css": 50,
             "font": 30,
             "img": 10,
-            "html": 62
+            "html": 62,
+            "data": 84
         },
         "/projects/": {
             "js": 72,
             "css": 50,
             "font": 30,
             "img": 100,
-            "html": 75
+            "html": 75,
+            "data": 84
         },
         "/contact/": {
             "js": 72,
             "css": 50,
             "font": 30,
             "img": 10,
-            "html": 48
+            "html": 48,
+            "data": 84
         },
         "/404.html": {
             "js": 72,
             "css": 50,
             "font": 30,
             "img": 10,
-            "html": 28
+            "html": 28,
+            "data": 84
         }
     },
-    "noFramework": [
-        "/",
-        "/projects/",
-        "/contact/",
-        "/404.html"
-    ],
+    "noFramework": ["/", "/projects/", "/contact/", "/404.html"],
     "load": {
         "lcpMs": 2500,
         "cls": 0.05,
