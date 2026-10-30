@@ -27,19 +27,22 @@ jobs:
       - name: Check endpoints
         id: check
         run: |
+          # Pages live at their directory URLs (R19: /about/, never /about, which Pages answers
+          # with a 301). A missing path must get the real 404 page. "path expected-status".
           ENDPOINTS=(
-            "/"
-            "/about"
-            "/projects"
-            "/contact"
-            "/404"
+            "/ 200"
+            "/about/ 200"
+            "/projects/ 200"
+            "/contact/ 200"
+            "/no/such/page/ 404"
           )
 
           FAIL=0
           printf "%-30s %-8s %-12s\n" "Endpoint" "Status" "Time (ms)"
           printf "%-30s %-8s %-12s\n" "--------" "------" "---------"
 
-          for path in "${ENDPOINTS[@]}"; do
+          for entry in "${ENDPOINTS[@]}"; do
+            read -r path EXPECTED <<< "$entry"
             URL="${BASE_URL}${path}"
             RESULT=$(curl -s -o /dev/null -w "%{http_code} %{time_total}" \
               --max-time 15 --connect-timeout 10 "$URL")
@@ -47,8 +50,7 @@ jobs:
             TIME_S=$(echo "$RESULT" | awk '{print $2}')
             TIME_MS=$(echo "$TIME_S * 1000" | bc | xargs printf "%.0f")
 
-            # Treat 200 and 404 (actual 404 page) as acceptable
-            if [[ "$STATUS" == "200" || ("$path" == "/404" && "$STATUS" == "404") ]]; then
+            if [[ "$STATUS" == "$EXPECTED" ]]; then
               ICON="✅"
             else
               ICON="❌"
