@@ -68,6 +68,15 @@ test('every page: unique title + description, canonical, social card, valid JSON
     }
 });
 
+test('every page is well-formed: nothing between the doctype and <html>', async ({ request }) => {
+    // A stray frontmatter fence (R54) once rendered a literal "---" there, which the browser
+    // then showed as text at the top of the page.
+    for (const path of PAGES) {
+        const html = await (await request.get(path)).text();
+        expect(html.slice(0, 40), path).toMatch(/^<!DOCTYPE html>\s*<html[\s>]/i);
+    }
+});
+
 test('og.png is a 1200×630 PNG', async ({ request }) => {
     const res = await request.get('/og.png');
     expect(res.ok()).toBe(true);
