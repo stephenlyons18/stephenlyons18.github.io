@@ -30,10 +30,10 @@ hand-offs. The board and PRs are the coordination layer.
 
 - `main`: release. A push to `main` builds and deploys to the `build` branch (GitHub Pages serves `build`).
 - `dev`: integration. Default base for normal work.
-- `epic/<name>`: an **epic branch**, cut from `dev` for a group of related items. The current one is
-  **`epic/polish`** (R18–R27). While it exists, work-item branches are cut from it and PR into it. When the epic is
-  done, it PRs into `dev` as one grouped PR (that's where the user signs off), and the branch is deleted after merge.
-  With no epic open, items branch from and PR into `dev`.
+- `epic/<name>`: an **epic branch**, cut from `dev` for a group of related items. **No epic is open now**: the
+  last one, `epic/polish` (R18–R46), merged into `dev` in #54. While an epic exists, work-item branches are cut from
+  it and PR into it. When the epic is done, it PRs into `dev` as one grouped PR (that's where the user signs off),
+  and the branch is deleted after merge. With no epic open, items branch from and PR into `dev`.
 - Archive and media branches are never merged: `archive/old-html` (the pre-Astro site), `pr-media` (PR screenshots).
 - Work-item branches: `<feat|fix|chore|docs|perf|test>/R<n>-<slug>`, one per board item (or a tight cluster).
 
@@ -67,14 +67,14 @@ GraphQL query per call, so don't loop it. If gh hits a rate limit, keep coding a
 `gh api rate_limit` resets.
 
 **Session start:** `tools/board.sh list`, then take the item the user names (otherwise the top **Ready** P0).
-`tools/board.sh show R<n>` and read the whole body. Then `git switch -c <type>/R<n>-<slug> origin/epic/polish` (or
-`origin/dev` when no epic is open), `git push -u origin HEAD`, and `tools/board.sh state R<n> "In progress"
+`tools/board.sh show R<n>` and read the whole body. Then `git switch -c <type>/R<n>-<slug> origin/dev` (or
+`origin/epic/<name>` while an epic is open), `git push -u origin HEAD`, and `tools/board.sh state R<n> "In progress"
 "<plan>"`.
 
 **During:** found more work? `tools/board.sh new Backlog …`. Don't grow the branch silently. Keep the State
 line true when you stop mid-item.
 
-**Finishing:** meet *Done means* (bottom), push, then `gh pr create --base epic/polish` (or `dev`) with the board id in the
+**Finishing:** meet *Done means* (bottom), push, then `gh pr create --base dev` (or the open epic branch) with the board id in the
 title, the spec, and a **Verified by running / Inferred** report with screenshots or videos attached (never
 committed). Then `tools/board.sh link R<n> <pr#>`. Once the bar is met locally, merge your own PR:
 `gh pr merge <#> --merge --delete-branch`, then `tools/board.sh move '#<pr>' Done`. **Exception:** visual /
