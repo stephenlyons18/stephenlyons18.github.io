@@ -332,6 +332,16 @@ describe('bubble pieces (the original title look, R28)', () => {
         );
         expect(plain).not.toBe(slashed);
     });
+
+    test('leet words keep their lowercase r (R40); everything else is all caps', () => {
+        const o = { drips: 0, overspray: 0 };
+        const draw = (t: string, leet?: boolean) =>
+            pieceToText(renderPiece(t, { style: 'bubble', ...o, ...(leet && { leet }) }));
+        // Same text, so the same random draws: only the r's glyph differs.
+        expect(draw('r00t', true)).not.toBe(draw('r00t'));
+        expect(draw('r00t', true)).toBe(pieceToText(renderBubble('r00t', { ...o, leet: true })));
+        expect(draw('SUD0', true)).toBe(draw('SUD0'));
+    });
 });
 
 describe('pieceToSvg', () => {

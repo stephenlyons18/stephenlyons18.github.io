@@ -92,3 +92,8 @@ export const LIVE_GLYPHS: Record<string, Glyph> = Object.fromEntries(
 export function glyphFor(ch: string): Glyph {
     return GLYPHS[ch] ?? GLYPHS[ch.toUpperCase()] ?? GLYPHS[' ']!;
 }
+
+/** The letters a piece draws: all caps, except, for leet words, the lowercase ones the font has. */
+export function pieceChars(text: string, leet = false): string[] {
+    return [...text].map((c) => (leet && c !== c.toUpperCase() && GLYPHS[c] ? c : c.toUpperCase()));
+}
