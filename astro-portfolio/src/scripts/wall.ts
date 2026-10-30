@@ -162,12 +162,12 @@ const overlaps = (a: Rect, b: Rect, pad = 0) =>
 let placed: Placed[] = [];
 let generation = 0;
 /** A placement still choosing spots, on the layout it measured first: what it was asked to keep. */
-let planning: { keep: Placed[]; limit: number } | null = null;
+let planning: { plans: Plan[]; keep: Placed[]; limit: number } | null = null;
 /** Place as many of the plans as fit, then add them to the page. Everything runs in idle slices:
  *  measuring is one slice, then as many tries as each slice has time for, then one piece per slice. */
 function place(plans: Plan[], keep: Placed[] = [], limit = Infinity) {
     const run = ++generation;
-    planning = { keep, limit };
+    planning = { plans, keep, limit };
     // Set again once every piece of this placement is on the page (tests wait for it).
     root.toggleAttribute('data-wall-ready', false);
     idle(() => {
@@ -345,7 +345,7 @@ async function start() {
             }
             // Still choosing spots on the old layout: choose again on this one.
             if (planning) {
-                place(plans, planning.keep, planning.limit);
+                place(planning.plans, planning.keep, planning.limit);
                 return;
             }
             if (!placed.length) return;
@@ -353,17 +353,21 @@ async function start() {
             // A piece that content now covers moves, and so does one not added yet (its spot was
             // chosen on the old layout). The rest stay, their boxes measured again for the new tries.
             const keep: Placed[] = [];
+            const moving: Plan[] = [];
             for (const p of placed) {
-                if (!p.el) continue;
-                const b = docRect(p.el.getBoundingClientRect());
-                if (busy.some((o) => overlaps(o, b, CLEAR / 2))) p.el.remove();
-                else keep.push({ ...p, box: b });
+                const b = p.el && docRect(p.el.getBoundingClientRect());
+                if (b && !busy.some((o) => overlaps(o, b, CLEAR / 2))) keep.push({ ...p, box: b });
+                else {
+                    p.el?.remove();
+                    moving.push(p.plan);
+                }
             }
-            if (keep.length === placed.length) return;
-            // Never more pieces than before.
+            if (!moving.length) return;
+            // The same pieces, somewhere free: the moving ones are tried first, and only take a
+            // different plan's piece where there is no room for them. Never more pieces than before.
             const before = placed.length;
             placed = keep;
-            place(plans, keep, before);
+            place([...moving, ...plans.filter((pl) => !moving.includes(pl))], keep, before);
         }, 250);
     }).observe(document.body);
 }
