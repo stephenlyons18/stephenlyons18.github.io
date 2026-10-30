@@ -13,8 +13,8 @@
    - Depth: smaller pieces are further back (dimmer, behind); bigger ones nearer. All sit below the
      content (z-index -1) and never take the pointer.
    - Changes only when it should: a new page load or a new theme re-rolls; a heading-style switch or a
-     layout change keeps the same pieces and only moves one if content now covers it; a width change
-     places the same pieces again.
+     layout change keeps the same pieces and only moves one if content now covers it (or it wasn't
+     added yet: its spot was chosen on the old layout); a width change places the same pieces again.
    - Cheap: the pieces are drawn at build time (one cached JSON pool), so the browser only picks and
      places them, in idle slices: measuring is one slice, then tries while a slice has time, then one
      piece added per slice. Nothing runs per frame. Each piece sprays on once when first seen (CSS),
@@ -161,10 +161,15 @@ const overlaps = (a: Rect, b: Rect, pad = 0) =>
 
 let placed: Placed[] = [];
 let generation = 0;
+/** A placement still choosing spots, on the layout it measured first: what it was asked to keep. */
+let planning: { keep: Placed[]; limit: number } | null = null;
 /** Place as many of the plans as fit, then add them to the page. Everything runs in idle slices:
  *  measuring is one slice, then as many tries as each slice has time for, then one piece per slice. */
 function place(plans: Plan[], keep: Placed[] = [], limit = Infinity) {
     const run = ++generation;
+    planning = { keep, limit };
+    // Set again once every piece of this placement is on the page (tests wait for it).
+    root.toggleAttribute('data-wall-ready', false);
     idle(() => {
         if (run !== generation) return; // re-rolled meanwhile
         const hosts = [
@@ -224,7 +229,10 @@ function place(plans: Plan[], keep: Placed[] = [], limit = Infinity) {
             do tryOne();
             while (i < plans.length && out.length < target && misses < MAX_MISSES && left() > 12);
             if (i < plans.length && out.length < target && misses < MAX_MISSES) idle(step);
-            else commit(out, hosts, run);
+            else {
+                planning = null;
+                commit(out, hosts, run);
+            }
         };
         idle(step);
     });
@@ -295,6 +303,7 @@ function sprayer() {
 
 function clear() {
     generation++;
+    planning = null;
     for (const p of placed) p.el?.remove();
     placed = [];
 }
@@ -334,18 +343,24 @@ async function start() {
                 place(plans);
                 return;
             }
+            // Still choosing spots on the old layout: choose again on this one.
+            if (planning) {
+                place(plans, planning.keep, planning.limit);
+                return;
+            }
             if (!placed.length) return;
             const busy = obstacles();
-            // Only pieces already on the page (the rest are still being added, and keep going).
-            const hit = placed.filter((p) => {
-                if (!p.el) return false;
+            // A piece that content now covers moves, and so does one not added yet (its spot was
+            // chosen on the old layout). The rest stay, their boxes measured again for the new tries.
+            const keep: Placed[] = [];
+            for (const p of placed) {
+                if (!p.el) continue;
                 const b = docRect(p.el.getBoundingClientRect());
-                return busy.some((o) => overlaps(o, b, CLEAR / 2));
-            });
-            if (!hit.length) return;
-            for (const p of hit) p.el?.remove();
-            // Only the covered pieces move: never more pieces than before.
-            const keep = placed.filter((p) => !hit.includes(p));
+                if (busy.some((o) => overlaps(o, b, CLEAR / 2))) p.el.remove();
+                else keep.push({ ...p, box: b });
+            }
+            if (keep.length === placed.length) return;
+            // Never more pieces than before.
             const before = placed.length;
             placed = keep;
             place(plans, keep, before);
