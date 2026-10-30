@@ -7,12 +7,14 @@
  */
 import { WALL_THEMES } from '../lib/ansi/wall';
 
-// Inline (not in global.css) so Vite leaves the generated /art/ URLs alone. Only the active theme's
-// tile is ever fetched.
+// Inline (not in global.css) so Vite leaves the generated /art/ URLs alone, and postbuild.mjs makes
+// them relative like every other URL in the page. Set as the image itself, not a custom property: a
+// relative url() inside one may resolve against the stylesheet that uses it. The default sits in
+// :where() so a theme's rule always wins. Only the active theme's tile is ever fetched.
 const tiles = Object.keys(WALL_THEMES)
     .map(
         (t) =>
-            `${t === 'wildstyle' ? ':root' : `[data-theme='${t}']`}{--wall-tile:url(/art/wall-${t}.png)}`,
+            `${t === 'wildstyle' ? ':where(:root)' : `[data-theme='${t}']`} .ansi-wall{background-image:url(/art/wall-${t}.png)}`,
     )
     .join('');
 ---

@@ -12,6 +12,7 @@
  *   /about, /about/#x        → {rel}/about/, {rel}/about/#x   (every dist/<route>/index.html)
  *   /, /#x                   → {rel}/, {rel}/#x
  *   /404.html                → {rel}/404.html
+ *   url(/art/x.png)          → url({rel}/art/x.png)       (inline <style>, e.g. the wall tile)
  * where {rel} is the path from the HTML file's directory back to dist/ ("." or "..").
  *
  * Leaves untouched: protocol URLs (https://...), protocol-relative (//...),
@@ -87,6 +88,9 @@ for (const file of walk(root)) {
         (_m, attr, list) => `${attr}="${list.replace(/(^|,\s*)\/(?!\/)/g, `$1${rel}/`)}"`,
     );
     html = html.replace(/(,\s*)(\/(?!\/)_astro\/)/g, `$1${rel}$2`);
+
+    // 7. url(/...) in inline styles (the wall tile, AnsiWall.astro).
+    html = html.replace(/url\((['"]?)\/(?!\/)/g, `url($1${rel}/`);
 
     if (html !== before) {
         writeFileSync(file, html);

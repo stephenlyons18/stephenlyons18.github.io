@@ -49,3 +49,31 @@ test('the 404 page keeps its styles and links at a nested missing path', async (
         .evaluate((a) => (a as HTMLAnchorElement).pathname);
     expect(home).toBe('/');
 });
+
+test('the built site works from disk: the wall tile loads over file:// (R43)', async ({ page }) => {
+    const dist = new URL('../dist/', import.meta.url);
+    for (const [file, theme] of [
+        ['index.html', null],
+        ['about/index.html', 'sunset'],
+    ] as const) {
+        if (theme) await page.addInitScript((t) => localStorage.setItem('sl-theme', t), theme);
+        await page.goto(new URL(file, dist).href);
+        const src = await page.evaluate(() => {
+            const bg = getComputedStyle(document.querySelector('.ansi-wall')!).backgroundImage;
+            return bg.match(/url\("?(.*?)"?\)/)?.[1] ?? bg;
+        });
+        expect(src, file).toMatch(new RegExp(`^file://.*/art/wall-${theme ?? 'wildstyle'}\\.png$`));
+        // The file is there: it decodes as an image.
+        const loaded = await page.evaluate(
+            (u) =>
+                new Promise<boolean>((done) => {
+                    const img = new Image();
+                    img.onload = () => done(img.naturalWidth > 0);
+                    img.onerror = () => done(false);
+                    img.src = u;
+                }),
+            src,
+        );
+        expect(loaded, src).toBe(true);
+    }
+});
