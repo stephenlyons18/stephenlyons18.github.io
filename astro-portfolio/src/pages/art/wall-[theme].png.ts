@@ -1,6 +1,6 @@
 /**
  * /art/wall-<theme>.png: the brick wall tile (src/lib/ansi/wall.ts) baked in each theme's colours,
- * ~2 KB each. global.css picks the active theme's tile (--wall-tile), so only one is downloaded.
+ * ~2 KB each. AnsiWall.astro picks the active theme's tile, so only one is downloaded.
  */
 import type { APIRoute, GetStaticPaths } from 'astro';
 import sharp from 'sharp';

@@ -603,8 +603,8 @@ body {
    (/art/wall-<theme>.png, colour and 7% strength included) and tiled down the whole document, so it
    scrolls with the content. A tiled bitmap is nearly free to raster; the old theme-coloured masks
    were re-drawn for every tile that scrolled in and cost most of the raster time on phones (R22).
-   The tile keeps the old cell size: a 0.6-aspect cell of max(12px, 100vw / 96) font. --wall-tile
-   (the active theme's PNG) is set in AnsiWall.astro. */
+   The tile keeps the old cell size: a 0.6-aspect cell of max(12px, 100vw / 96) font. The image (the
+   active theme's PNG) is set in AnsiWall.astro, so only longhands here. */
 body {
     position: relative;
 }
@@ -615,8 +615,9 @@ body {
     z-index: -1;
     pointer-events: none;
     contain: strict;
-    background: var(--wall-tile) 0 0 / calc(var(--wall-fs) * 0.6 * 80) calc(var(--wall-fs) * 30)
-        repeat;
+    background-position: 0 0;
+    background-size: calc(var(--wall-fs) * 0.6 * 80) calc(var(--wall-fs) * 30);
+    background-repeat: repeat;
     image-rendering: pixelated;
 }
 
