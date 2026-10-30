@@ -28,20 +28,22 @@ const positions = (page: Page) =>
 const contentHits = (page: Page) =>
     page.evaluate(() => {
         const visible = (el: Element) => el.checkVisibility();
+        // Fixed UI (the header, the paint kit) floats over everything, wall included: not content
+        // a piece sits under (wall.ts skips it too, R56).
+        const skip = '.wall-piece, .paint-kit, .site-header';
         // Boxes that are content as a whole…
         const boxes = [
             ...document.querySelectorAll(
                 'a, button, input, textarea, .card, .hero-terminal, .ansi-title svg, canvas, img',
             ),
         ]
-            .filter((el) => !el.closest('.wall-piece') && visible(el))
+            .filter((el) => !el.closest(skip) && visible(el))
             .map((el) => [el, el.getBoundingClientRect()] as const);
         // …and text, measured by its line boxes (a centred h2's box spans the container).
         const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
         for (let n = walker.nextNode(); n; n = walker.nextNode()) {
             const el = n.parentElement!;
-            if (!n.textContent!.trim() || el.closest('.wall-piece, .sr-only, script, style'))
-                continue;
+            if (!n.textContent!.trim() || el.closest(`${skip}, .sr-only, script, style`)) continue;
             if (!visible(el)) continue;
             const range = document.createRange();
             range.selectNodeContents(n);
@@ -124,6 +126,21 @@ test('a layout change while pieces are still going up never leaves one over cont
 });
 
 test('a heading-style switch keeps the wall; a new theme re-rolls it', async ({ page }) => {
+    // A fixed first seed: whether a piece that the new titles cover finds room elsewhere (and so
+    // stays the same piece, or swaps for one that fits, R52) depends on the visit's random wall.
+    // Pinned, the test is the same every run. The theme's re-roll still draws a fresh seed.
+    await page.addInitScript(() => {
+        const draw = crypto.getRandomValues.bind(crypto) as (a: Uint32Array) => Uint32Array;
+        let first = true;
+        crypto.getRandomValues = ((a: Uint32Array) => {
+            if (first && a instanceof Uint32Array && a.length === 1) {
+                first = false;
+                a[0] = 0x5eed;
+                return a;
+            }
+            return draw(a);
+        }) as typeof crypto.getRandomValues;
+    });
     await page.goto('/');
     await ready(page);
     // A late layout change at load (fonts, images) can still move a piece: let it settle first.
