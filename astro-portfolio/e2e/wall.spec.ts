@@ -24,51 +24,52 @@ const positions = (page: Page) =>
         els.map((e) => `${(e as HTMLElement).style.left},${(e as HTMLElement).style.top}`),
     );
 
+/** Every wall piece that overlaps content (controls, cards, art, media, or a line of text). */
+const contentHits = (page: Page) =>
+    page.evaluate(() => {
+        const visible = (el: Element) => el.checkVisibility();
+        // Boxes that are content as a whole…
+        const boxes = [
+            ...document.querySelectorAll(
+                'a, button, input, textarea, .card, .hero-terminal, .ansi-title svg, canvas, img',
+            ),
+        ]
+            .filter((el) => !el.closest('.wall-piece') && visible(el))
+            .map((el) => [el, el.getBoundingClientRect()] as const);
+        // …and text, measured by its line boxes (a centred h2's box spans the container).
+        const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
+        for (let n = walker.nextNode(); n; n = walker.nextNode()) {
+            const el = n.parentElement!;
+            if (!n.textContent!.trim() || el.closest('.wall-piece, .sr-only, script, style'))
+                continue;
+            if (!visible(el)) continue;
+            const range = document.createRange();
+            range.selectNodeContents(n);
+            for (const r of range.getClientRects()) boxes.push([el, r]);
+        }
+        const out: string[] = [];
+        for (const piece of document.querySelectorAll<HTMLElement>('.wall-piece')) {
+            const r = piece.getBoundingClientRect();
+            for (const [el, c] of boxes) {
+                if (!c.width || !c.height) continue;
+                const overlap =
+                    Math.min(r.right, c.right) - Math.max(r.left, c.left) > 2 &&
+                    Math.min(r.bottom, c.bottom) - Math.max(r.top, c.top) > 2;
+                if (overlap)
+                    out.push(
+                        `${piece.dataset['word']} × ${el.tagName}.${el.className}`.slice(0, 120),
+                    );
+            }
+        }
+        return [...new Set(out)];
+    });
+
 for (const path of PAGES) {
     test(`${path}: pieces sit in empty wall, never over content`, async ({ page }) => {
         await page.emulateMedia({ reducedMotion: 'reduce' }); // all visible, nothing moving
         await page.goto(path);
         await ready(page);
-        const hits = await page.evaluate(() => {
-            const visible = (el: Element) => el.checkVisibility();
-            // Boxes that are content as a whole…
-            const boxes = [
-                ...document.querySelectorAll(
-                    'a, button, input, textarea, .card, .hero-terminal, .ansi-title svg, canvas, img',
-                ),
-            ]
-                .filter((el) => !el.closest('.wall-piece') && visible(el))
-                .map((el) => [el, el.getBoundingClientRect()] as const);
-            // …and text, measured by its line boxes (a centred h2's box spans the container).
-            const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
-            for (let n = walker.nextNode(); n; n = walker.nextNode()) {
-                const el = n.parentElement!;
-                if (!n.textContent!.trim() || el.closest('.wall-piece, .sr-only, script, style'))
-                    continue;
-                if (!visible(el)) continue;
-                const range = document.createRange();
-                range.selectNodeContents(n);
-                for (const r of range.getClientRects()) boxes.push([el, r]);
-            }
-            const out: string[] = [];
-            for (const piece of document.querySelectorAll<HTMLElement>('.wall-piece')) {
-                const r = piece.getBoundingClientRect();
-                for (const [el, c] of boxes) {
-                    if (!c.width || !c.height) continue;
-                    const overlap =
-                        Math.min(r.right, c.right) - Math.max(r.left, c.left) > 2 &&
-                        Math.min(r.bottom, c.bottom) - Math.max(r.top, c.top) > 2;
-                    if (overlap)
-                        out.push(
-                            `${piece.dataset['word']} × ${el.tagName}.${el.className}`.slice(
-                                0,
-                                120,
-                            ),
-                        );
-                }
-            }
-            return [...new Set(out)];
-        });
+        const hits = await contentHits(page);
         expect(hits).toEqual([]);
         // Never pushes the page sideways; decoration only.
         expect(
@@ -98,6 +99,28 @@ test('a new visit paints a new wall', async ({ page }) => {
             JSON.stringify(first);
     }
     expect(differs).toBe(true);
+});
+
+test('a layout change while pieces are still going up never leaves one over content (R41)', async ({
+    page,
+}) => {
+    await page.emulateMedia({ reducedMotion: 'reduce' });
+    await page.goto('/');
+    // The first piece is up, so the rest are planned on this layout and waiting to be added.
+    await page.locator('[data-wall-piece]').first().waitFor({ state: 'attached', timeout: 15000 });
+    await page.evaluate(() => {
+        // Keep "scrolling" for a while: wall.ts adds no piece mid-scroll, so the rest keep waiting.
+        const t = setInterval(() => dispatchEvent(new Event('scroll')), 50);
+        setTimeout(() => clearInterval(t), 1500);
+        // Then the layout changes under them: wildstyle headings and larger text.
+        const root = document.documentElement;
+        root.setAttribute('data-title-style', 'wild');
+        root.setAttribute('data-a11y-large', '');
+    });
+    // The resize settles (250 ms debounce), then any re-placement finishes.
+    await page.waitForTimeout(800);
+    await ready(page);
+    expect(await contentHits(page)).toEqual([]);
 });
 
 test('a heading-style switch keeps the wall; a new theme re-rolls it', async ({ page }) => {
