@@ -102,9 +102,15 @@ const ld =
                 if (t && /^(bubble|ansi|sunset|green)$/.test(t)) d.setAttribute('data-theme', t);
                 if (localStorage.getItem('sl-title-style') === 'wild')
                     d.setAttribute('data-title-style', 'wild');
-                var a = JSON.parse(localStorage.getItem('sl-a11y') || '{}');
+                // Settings saved under the menu's old key (before R49) move to the new one, once.
+                var a = localStorage.getItem('sl-accessibility');
+                if (a === null && (a = localStorage.getItem('sl-a11y')) !== null) {
+                    localStorage.setItem('sl-accessibility', a);
+                    localStorage.removeItem('sl-a11y');
+                }
+                a = JSON.parse(a || '{}');
                 for (var k in a)
-                    if (a[k] && /^[a-z-]+$/.test(k)) d.setAttribute('data-a11y-' + k, '');
+                    if (a[k] && /^[a-z-]+$/.test(k)) d.setAttribute('data-accessibility-' + k, '');
                 if (a.motion || matchMedia('(prefers-reduced-motion: reduce)').matches)
                     d.setAttribute('data-reduce-motion', '');
             } catch (e) {}

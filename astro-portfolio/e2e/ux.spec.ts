@@ -126,7 +126,7 @@ test('keyboard-only hints show only where there is a keyboard', async ({ page, i
         ).toBe('none');
     } else {
         await expect(ctrlK).toBeVisible();
-        await expect(page.locator('.a11y-btn')).toContainText('Accessibility'); // label shown above 1100px
+        await expect(page.locator('.accessibility-btn')).toContainText('Accessibility'); // label shown above 1100px
     }
     // Either way, the terminal is one button away.
     await page.locator('.card [data-open-terminal]').click();

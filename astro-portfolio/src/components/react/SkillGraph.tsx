@@ -839,7 +839,7 @@ export default function SkillGraph({ height = 700 }: { height?: number }) {
     // ─── Effects ─────────────────────────────────────────────────────────────
 
     // Theme colours + label font: read once, re-read when the terminal `theme` command flips
-    // data-theme or the a11y menu flips the readable font on <html>; redraw once web fonts land.
+    // data-theme or the accessibility menu flips the readable font on <html>; redraw once web fonts land.
     useEffect(() => {
         const read = () => {
             themeRef.current = {
@@ -855,7 +855,7 @@ export default function SkillGraph({ height = 700 }: { height?: number }) {
         const mo = new MutationObserver(read);
         mo.observe(document.documentElement, {
             attributes: true,
-            attributeFilter: ['data-theme', 'data-a11y-font'],
+            attributeFilter: ['data-theme', 'data-accessibility-font'],
         });
         return () => mo.disconnect();
     }, []); // eslint-disable-line react-hooks/exhaustive-deps

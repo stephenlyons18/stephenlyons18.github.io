@@ -1,5 +1,5 @@
 /**
- * Colour themes and heading styles (R30): one source for the a11y menu, the terminal's `theme` and
+ * Colour themes and heading styles (R30): one source for the accessibility menu, the terminal's `theme` and
  * `style` commands, and BaseLayout's before-first-paint script.
  *
  * A theme's `id` is its `[data-theme]` value in global.css (the default, wildstyle, sets none) and its

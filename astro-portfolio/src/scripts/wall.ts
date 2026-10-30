@@ -1,6 +1,6 @@
 /* ============================================================
    wall.ts (R32): graffiti on the wall, different on every visit. Lazy-loaded by site.ts on idle,
-   never under the a11y menu's "Hide wall texture".
+   never under the accessibility menu's "Hide wall texture".
 
    Each page load draws a random seed. From it: which leet words get painted, in which style
    (bubble or wildstyle), which colour variant of the current theme, how big and how tilted. The

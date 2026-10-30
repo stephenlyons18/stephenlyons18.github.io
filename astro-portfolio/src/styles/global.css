@@ -70,7 +70,7 @@
     --graph-halo: rgba(7, 11, 18, 0.92);
     --graph-label: #eef6ff;
 
-    /* Typography (the a11y menu's "readable font" swaps --font-display and --font-body) */
+    /* Typography (the accessibility menu's "readable font" swaps --font-display and --font-body) */
     --font-mono-stack: ui-monospace, 'SFMono-Regular', Menlo, Consolas, monospace;
     --font-display: 'Press Start 2P', 'Departure Mono', var(--font-mono-stack);
     --font-body: 'Departure Mono', var(--font-mono-stack);
@@ -150,7 +150,7 @@
 }
 
 /* Theme slots, default theme (wildstyle). Also on [data-theme='wildstyle'] so an element can show
-   the default theme inside another one (the a11y menu's swatches, R30). */
+   the default theme inside another one (the accessibility menu's swatches, R30). */
 :root,
 [data-theme='wildstyle'] {
     /* Theme slots — overridden per [data-theme]; default = wildstyle */
@@ -278,7 +278,7 @@
     display: none;
 }
 /* Both styles are in the page (R30); <html data-title-style> picks one, set before first paint by
-   BaseLayout from the a11y menu / terminal choice. Bubble by default. A pinned set always shows. */
+   BaseLayout from the accessibility menu / terminal choice. Bubble by default. A pinned set always shows. */
 .ansi-title__set[data-set='wild']:not(.ansi-title__set--pinned),
 html[data-title-style='wild'] .ansi-title__set[data-set='bubble']:not(.ansi-title__set--pinned) {
     display: none;
@@ -478,7 +478,7 @@ html[data-reduce-motion] .wall-piece {
     opacity: var(--o, 0.5);
     animation: none;
 }
-html[data-a11y-wall] .wall-piece {
+html[data-accessibility-wall] .wall-piece {
     display: none;
 }
 /* Colour variants, all from the current theme (a new theme re-rolls the wall). The --wp-* copies are
@@ -2834,7 +2834,7 @@ html:has(dialog.lightbox[open]) {
     image-rendering: pixelated;
 }
 
-.a11y-menu {
+.accessibility-menu {
     /* Popover: in the top layer, pinned under the header's right edge. */
     position: fixed;
     inset: auto;
@@ -2853,16 +2853,16 @@ html:has(dialog.lightbox[open]) {
         6px 6px 0 var(--title-x2),
         0 18px 48px rgba(0, 0, 0, 0.55);
 }
-.a11y-menu:popover-open {
-    animation: a11y-in 0.16s var(--ease);
+.accessibility-menu:popover-open {
+    animation: accessibility-in 0.16s var(--ease);
 }
-@keyframes a11y-in {
+@keyframes accessibility-in {
     from {
         opacity: 0;
         transform: translateY(-6px);
     }
 }
-.a11y-menu__title {
+.accessibility-menu__title {
     font-family: var(--font-display);
     font-size: 0.75rem;
     color: var(--ui-2);
@@ -2870,7 +2870,7 @@ html:has(dialog.lightbox[open]) {
 }
 /* Heading style + colours (R30). The preview is drawn from the live tokens, so it changes the moment
    a choice does; a hovered or focused colour previews on it (data-theme on the box) before it's picked. */
-.a11y-preview {
+.accessibility-preview {
     display: flex;
     align-items: center;
     gap: 0.75rem;
@@ -2883,13 +2883,13 @@ html:has(dialog.lightbox[open]) {
         3px 3px 0 var(--title-x1),
         6px 6px 0 var(--title-x2);
 }
-.a11y-preview__swatch,
-.a11y-theme__swatch {
+.accessibility-preview__swatch,
+.accessibility-theme__swatch {
     flex: none;
     border-radius: 2px;
     background: linear-gradient(180deg, var(--bubble-top), var(--bubble-bottom));
 }
-html[data-title-style='wild'] :is(.a11y-preview__swatch, .a11y-theme__swatch) {
+html[data-title-style='wild'] :is(.accessibility-preview__swatch, .accessibility-theme__swatch) {
     background: linear-gradient(
         180deg,
         var(--title-top),
@@ -2899,58 +2899,58 @@ html[data-title-style='wild'] :is(.a11y-preview__swatch, .a11y-theme__swatch) {
         var(--title-bottom)
     );
 }
-.a11y-preview__swatch {
+.accessibility-preview__swatch {
     width: 2.5rem;
     height: 2.5rem;
     outline: 2px solid var(--title-outline);
     outline-offset: -2px;
 }
-.a11y-preview__art {
+.accessibility-preview__art {
     display: flex;
     height: 2.5rem;
 }
-.a11y-preview__piece {
+.accessibility-preview__piece {
     height: 100%;
     width: auto;
 }
-.a11y-preview__piece[data-piece='wild'],
-html[data-title-style='wild'] .a11y-preview__piece[data-piece='bubble'] {
+.accessibility-preview__piece[data-piece='wild'],
+html[data-title-style='wild'] .accessibility-preview__piece[data-piece='bubble'] {
     display: none;
 }
-html[data-title-style='wild'] .a11y-preview__piece[data-piece='wild'] {
+html[data-title-style='wild'] .accessibility-preview__piece[data-piece='wild'] {
     display: block;
 }
-.a11y-preview__name {
+.accessibility-preview__name {
     margin-left: auto;
     font-size: 0.75rem;
     color: var(--text-secondary);
     text-align: right;
 }
-.a11y-group {
+.accessibility-group {
     margin: 0 0 0.75rem;
     padding: 0;
     border: 0;
 }
-.a11y-group__label {
+.accessibility-group__label {
     padding: 0;
     margin-bottom: 0.4rem;
     font-family: var(--font-display);
     font-size: 0.6rem;
     color: var(--text-secondary);
 }
-.a11y-seg,
-.a11y-themes {
+.accessibility-seg,
+.accessibility-themes {
     display: grid;
     gap: 0.4rem;
 }
-.a11y-seg {
+.accessibility-seg {
     grid-template-columns: 1fr 1fr;
 }
-.a11y-themes {
+.accessibility-themes {
     grid-template-columns: repeat(auto-fill, minmax(6.25rem, 1fr));
 }
-.a11y-seg__opt,
-.a11y-theme {
+.accessibility-seg__opt,
+.accessibility-theme {
     position: relative;
     display: flex;
     align-items: center;
@@ -2964,42 +2964,42 @@ html[data-title-style='wild'] .a11y-preview__piece[data-piece='wild'] {
     cursor: pointer;
 }
 /* The radio covers its option: the whole tile is the target, keyboard arrows still work. */
-.a11y-seg__opt input,
-.a11y-theme input {
+.accessibility-seg__opt input,
+.accessibility-theme input {
     position: absolute;
     inset: 0;
     margin: 0;
     opacity: 0;
     cursor: pointer;
 }
-.a11y-seg__opt:has(input:checked),
-.a11y-theme:has(input:checked) {
+.accessibility-seg__opt:has(input:checked),
+.accessibility-theme:has(input:checked) {
     border-color: var(--ui);
     background: var(--ui-bg);
     box-shadow: inset 0 0 0 1px var(--ui);
 }
-.a11y-seg__opt:has(input:focus-visible),
-.a11y-theme:has(input:focus-visible) {
+.accessibility-seg__opt:has(input:focus-visible),
+.accessibility-theme:has(input:focus-visible) {
     outline: 2px solid var(--accent);
     outline-offset: 2px;
 }
-.a11y-theme {
+.accessibility-theme {
     gap: 0.4rem;
     padding-inline: 0.4rem;
     font-size: 0.75rem;
 }
-.a11y-theme__swatch {
+.accessibility-theme__swatch {
     width: 1.25rem;
     height: 1.75rem;
     box-shadow: 2px 2px 0 var(--title-x2);
     outline: 1px solid var(--title-outline);
 }
-.a11y-menu__list {
+.accessibility-menu__list {
     list-style: none;
     display: grid;
     gap: 0.25rem;
 }
-.a11y-switch {
+.accessibility-switch {
     display: flex;
     align-items: center;
     gap: 0.75rem;
@@ -3008,32 +3008,32 @@ html[data-title-style='wild'] .a11y-preview__piece[data-piece='wild'] {
     border-radius: var(--radius);
     cursor: pointer;
 }
-.a11y-switch:hover {
+.accessibility-switch:hover {
     background: var(--bg-elevated);
 }
-.a11y-switch input {
+.accessibility-switch input {
     /* Visually hidden but focusable: the track below is its visual. */
     position: absolute;
     opacity: 0;
     width: 1px;
     height: 1px;
 }
-.a11y-switch__text {
+.accessibility-switch__text {
     flex: 1;
     display: grid;
     gap: 0.1rem;
 }
-.a11y-switch__label {
+.accessibility-switch__label {
     font-size: 0.95rem;
     color: var(--white);
 }
-.a11y-switch__hint {
+.accessibility-switch__hint {
     font-size: 0.8rem;
     line-height: 1.35;
     color: var(--text-secondary);
 }
 /* A pixel switch: square track, square knob, hard shadow. */
-.a11y-switch__track {
+.accessibility-switch__track {
     flex: none;
     position: relative;
     width: 40px;
@@ -3042,7 +3042,7 @@ html[data-title-style='wild'] .a11y-preview__piece[data-piece='wild'] {
     border: 2px solid var(--border-bright);
     transition: background 0.15s var(--ease);
 }
-.a11y-switch__track::after {
+.accessibility-switch__track::after {
     content: '';
     position: absolute;
     top: 2px;
@@ -3052,22 +3052,28 @@ html[data-title-style='wild'] .a11y-preview__piece[data-piece='wild'] {
     background: var(--text-secondary);
     transition: transform 0.15s var(--ease);
 }
-.a11y-switch input:checked + .a11y-switch__text + .a11y-switch__track {
+.accessibility-switch input:checked + .accessibility-switch__text + .accessibility-switch__track {
     background: color-mix(in srgb, var(--ui-3) 30%, var(--bg-primary));
     border-color: var(--ui-3);
 }
-.a11y-switch input:checked + .a11y-switch__text + .a11y-switch__track::after {
+.accessibility-switch
+    input:checked
+    + .accessibility-switch__text
+    + .accessibility-switch__track::after {
     transform: translateX(18px);
     background: var(--ui-3);
 }
-.a11y-switch input:focus-visible + .a11y-switch__text + .a11y-switch__track {
+.accessibility-switch
+    input:focus-visible
+    + .accessibility-switch__text
+    + .accessibility-switch__track {
     outline: 2px solid var(--ui);
     outline-offset: 2px;
 }
-.a11y-switch input:disabled ~ * {
+.accessibility-switch input:disabled ~ * {
     opacity: 0.75;
 }
-.a11y-menu__foot {
+.accessibility-menu__foot {
     display: flex;
     justify-content: space-between;
     gap: 0.5rem;
@@ -3075,7 +3081,7 @@ html[data-title-style='wild'] .a11y-preview__piece[data-piece='wild'] {
     padding-top: 0.75rem;
     border-top: 1px solid var(--border);
 }
-.a11y-menu__foot button {
+.accessibility-menu__foot button {
     min-height: 44px;
     padding: 0 1rem;
     font-family: var(--font-display);
@@ -3086,20 +3092,20 @@ html[data-title-style='wild'] .a11y-preview__piece[data-piece='wild'] {
     border-radius: var(--radius);
     cursor: pointer;
 }
-.a11y-menu__foot .a11y-menu__close {
+.accessibility-menu__foot .accessibility-menu__close {
     color: var(--bg-primary);
     background: var(--ui-2);
     border-color: var(--ui-2);
 }
 
-/* ---------- Accessibility modes (data-a11y-* on <html>) ---------- */
+/* ---------- Accessibility modes (data-accessibility-* on <html>) ---------- */
 
 /* Plain headings: hide the art, show the real heading — still pixel type, still the burner
    gradient and a two-step block extrusion, so the page keeps its look. */
-html[data-a11y-plain] .ansi-title:not(.ansi-title--deco) > .ansi-title__set {
+html[data-accessibility-plain] .ansi-title:not(.ansi-title--deco) > .ansi-title__set {
     display: none !important;
 }
-html[data-a11y-plain] .ansi-title__text {
+html[data-accessibility-plain] .ansi-title__text {
     position: static;
     width: auto;
     height: auto;
@@ -3120,41 +3126,41 @@ html[data-a11y-plain] .ansi-title__text {
         drop-shadow(0.06em 0.06em 0 var(--title-x2));
     overflow-wrap: anywhere;
 }
-html[data-a11y-plain] h2.ansi-title__text,
-html[data-a11y-plain] h3.ansi-title__text {
+html[data-accessibility-plain] h2.ansi-title__text,
+html[data-accessibility-plain] h3.ansi-title__text {
     font-size: clamp(1rem, 3.2vw, 1.75rem);
 }
-html[data-a11y-plain] p.ansi-title__text {
+html[data-accessibility-plain] p.ansi-title__text {
     font-size: clamp(0.85rem, 2.4vw, 1.25rem);
 }
 
 /* Readable font: the pixel faces become the platform's UI sans (art keeps its cells). */
-html[data-a11y-font] {
+html[data-accessibility-font] {
     --font-display:
         system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
     --font-body: var(--font-display);
 }
 
 /* Larger text: everything sized in rem scales with the root. */
-html[data-a11y-large] {
+html[data-accessibility-large] {
     font-size: 20px;
 }
 
 /* High contrast: brighter secondary text and borders, no texture or glow behind content. */
-html[data-a11y-contrast] {
+html[data-accessibility-contrast] {
     --text-primary: #eef6ff;
     --text-secondary: #d3e0ec;
     --text-muted: #bccbda;
     --border: #4a6a8a;
     --border-bright: #7aa3c8;
 }
-html[data-a11y-contrast] body,
-html[data-a11y-wall] body {
+html[data-accessibility-contrast] body,
+html[data-accessibility-wall] body {
     background: var(--bg-primary);
 }
 
 /* Hide wall texture (and the CRT scanlines). */
-html[data-a11y-wall] .ansi-wall {
+html[data-accessibility-wall] .ansi-wall {
     display: none;
 }
 
@@ -3333,7 +3339,7 @@ html:active-view-transition-type(page)::view-transition-group(site-header) {
     cursor: grabbing;
 }
 html[data-reduce-motion] [data-drag],
-html[data-a11y-plain] [data-drag]:has(.ansi-title__text) {
+html[data-accessibility-plain] [data-drag]:has(.ansi-title__text) {
     cursor: auto;
     touch-action: auto;
     user-select: auto;

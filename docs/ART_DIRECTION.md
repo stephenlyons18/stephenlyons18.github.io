@@ -148,7 +148,7 @@ avatar stays bubble.
   for emphasis instead.
 - Press Start 2P carries its own wide spacing, so keep `letter-spacing` at about 0.02em. It is too wide for
   paragraphs and never sets body copy.
-- The a11y menu's **Readable font** swaps `--font-display`/`--font-body` for the platform sans. Art keeps its
+- The accessibility menu's **Readable font** swaps `--font-display`/`--font-body` for the platform sans. Art keeps its
   cells.
 
 ## Site-wide pieces (all build-time, zero JS)
@@ -193,7 +193,7 @@ avatar stays bubble.
 - **Headers** (`AnsiTitle.astro`, `piece.ts`): bubble (the original look) for the hero, its subheader, the
   page titles, the 404 and the "SL" avatar. Long titles stack into 2 (or up to `lines`) balanced lines by container query when one line
   would drop below a legible unit size; only the last line keeps the arrow.
-  With the a11y menu's **Plain headings**, the art hides and its real heading shows instead: Press Start 2P,
+  With the accessibility menu's **Plain headings**, the art hides and its real heading shows instead: Press Start 2P,
   the same burner gradient and a two-step block extrusion (`drop-shadow` in `--title-x1`/`--title-x2`).
 - **Wall pieces** (`wall.ts`, R32; user direction 2026-10-20 replacing R27's fixed spots): original leet
   pieces painted on the brick wall, **different on every visit**. Words: PWN, PWN3D, H4CK, CV3, LY0NS, SL,
@@ -229,7 +229,7 @@ avatar stays bubble.
   hero, on its own rows.
 - Move under the pointer on its own, or shift layout after load. No CLS from art. Movement the user starts is
   fine: grabbing `[data-drag]` art, hovering a card or a divider to pour its drips.
-- Animate when motion is off. Every animation stops under `data-reduce-motion` (the OS setting or the a11y
+- Animate when motion is off. Every animation stops under `data-reduce-motion` (the OS setting or the accessibility
   menu).
   - Allowed (user OK, 2026-10-12): drips pouring on hover/focus (R12, R17), page transitions, card
     tilt/press, and draggable art (R13).

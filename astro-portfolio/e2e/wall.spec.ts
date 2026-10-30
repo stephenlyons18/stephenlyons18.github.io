@@ -115,7 +115,7 @@ test('a layout change while pieces are still going up never leaves one over cont
         // Then the layout changes under them: wildstyle headings and larger text.
         const root = document.documentElement;
         root.setAttribute('data-title-style', 'wild');
-        root.setAttribute('data-a11y-large', '');
+        root.setAttribute('data-accessibility-large', '');
     });
     // The resize settles (250 ms debounce), then any re-placement finishes.
     await page.waitForTimeout(800);
@@ -163,10 +163,10 @@ test('reduced motion: pieces are simply there; hide-wall mode never loads them',
     await page.goto('/');
     await ready(page);
     expect(await page.locator('.wall-piece.is-waiting, .wall-piece.is-sprayed').count()).toBe(0);
-    await page.evaluate(() => document.documentElement.setAttribute('data-a11y-wall', ''));
+    await page.evaluate(() => document.documentElement.setAttribute('data-accessibility-wall', ''));
     await expect(page.locator('.wall-piece').first()).toBeHidden();
 
-    await page.addInitScript(() => localStorage.setItem('sl-a11y', '{"wall":true}'));
+    await page.addInitScript(() => localStorage.setItem('sl-accessibility', '{"wall":true}'));
     const loaded: string[] = [];
     page.on('request', (r) => r.url().endsWith('/wall.js') && loaded.push(r.url()));
     await page.goto('/');
