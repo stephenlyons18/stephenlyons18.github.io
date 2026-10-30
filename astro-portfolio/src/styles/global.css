@@ -1475,7 +1475,8 @@ body.js-reveal-ready .hero-terminal.reveal.revealed {
         position: fixed;
         right: 0;
         top: calc(var(--header-h) + env(safe-area-inset-top, 0px) + 10px);
-        bottom: calc(14px + env(safe-area-inset-bottom, 0px));
+        /* Ends above the spray-paint kit in the corner (PaintKit.astro). */
+        bottom: calc(var(--paint-kit-h) + 24px + env(safe-area-inset-bottom, 0px));
         width: 34px;
         z-index: 9990;
         pointer-events: none;
@@ -2950,7 +2951,8 @@ html[data-title-style='wild'] .accessibility-preview__piece[data-piece='wild'] {
     grid-template-columns: repeat(auto-fill, minmax(6.25rem, 1fr));
 }
 .accessibility-seg__opt,
-.accessibility-theme {
+.accessibility-theme,
+.paint-opt {
     position: relative;
     display: flex;
     align-items: center;
@@ -2965,7 +2967,8 @@ html[data-title-style='wild'] .accessibility-preview__piece[data-piece='wild'] {
 }
 /* The radio covers its option: the whole tile is the target, keyboard arrows still work. */
 .accessibility-seg__opt input,
-.accessibility-theme input {
+.accessibility-theme input,
+.paint-opt input {
     position: absolute;
     inset: 0;
     margin: 0;
@@ -2973,13 +2976,15 @@ html[data-title-style='wild'] .accessibility-preview__piece[data-piece='wild'] {
     cursor: pointer;
 }
 .accessibility-seg__opt:has(input:checked),
-.accessibility-theme:has(input:checked) {
+.accessibility-theme:has(input:checked),
+.paint-opt:has(input:checked) {
     border-color: var(--ui);
     background: var(--ui-bg);
     box-shadow: inset 0 0 0 1px var(--ui);
 }
 .accessibility-seg__opt:has(input:focus-visible),
-.accessibility-theme:has(input:focus-visible) {
+.accessibility-theme:has(input:focus-visible),
+.paint-opt:has(input:focus-visible) {
     outline: 2px solid var(--accent);
     outline-offset: 2px;
 }
@@ -3073,7 +3078,8 @@ html[data-title-style='wild'] .accessibility-preview__piece[data-piece='wild'] {
 .accessibility-switch input:disabled ~ * {
     opacity: 0.75;
 }
-.accessibility-menu__foot {
+.accessibility-menu__foot,
+.paint-menu__foot {
     display: flex;
     justify-content: space-between;
     gap: 0.5rem;
@@ -3081,7 +3087,8 @@ html[data-title-style='wild'] .accessibility-preview__piece[data-piece='wild'] {
     padding-top: 0.75rem;
     border-top: 1px solid var(--border);
 }
-.accessibility-menu__foot button {
+.accessibility-menu__foot button,
+.paint-menu__foot button {
     min-height: 44px;
     padding: 0 1rem;
     font-family: var(--font-display);
@@ -3092,10 +3099,378 @@ html[data-title-style='wild'] .accessibility-preview__piece[data-piece='wild'] {
     border-radius: var(--radius);
     cursor: pointer;
 }
-.accessibility-menu__foot .accessibility-menu__close {
+.accessibility-menu__foot .accessibility-menu__close,
+.paint-menu__foot .paint-menu__close {
     color: var(--bg-primary);
     background: var(--ui-2);
     border-color: var(--ui-2);
+}
+
+/* ---------- Spray paint (R53: PaintKit.astro, paint.ts) ----------
+   The paint layer is document-sized (absolute in the relative body, like the wall), so paint
+   scrolls with the page and can never widen it. Chunk canvases hold one 3px dither dot per pixel
+   and are scaled up crisp; they only exist where there's paint. The capture layer exists only
+   while paint mode is on: it takes the pointer so a drag sprays instead of selecting or clicking. */
+:root {
+    --paint-kit-h: 52px;
+    --paint-color: var(--title-hi);
+}
+.paint-layer {
+    position: absolute;
+    inset: 0;
+    z-index: 9000;
+    overflow: hidden;
+    pointer-events: none;
+}
+.paint-layer canvas {
+    position: absolute;
+    left: 0;
+    image-rendering: pixelated;
+}
+.paint-capture {
+    position: fixed;
+    inset: 0;
+    z-index: 9500;
+    touch-action: none;
+    cursor: none;
+    -webkit-user-select: none;
+    user-select: none;
+}
+.paint-capture[hidden] {
+    display: none;
+}
+/* The spray cursor (mouse and pen, paint mode only): a dotted, hollow pixel ring the size of the
+   spray, shown over the capture layer (which hides the native cursor). Everywhere else, and with paint
+   off, the normal cursor. */
+.spray-ring {
+    position: fixed;
+    top: 0;
+    left: 0;
+    z-index: 10010;
+    pointer-events: none;
+    will-change: transform;
+}
+.spray-ring[hidden] {
+    display: none;
+}
+.spray-ring__art {
+    position: absolute;
+    display: block;
+    transform: translate(-50%, -50%);
+    transition: transform 0.12s var(--ease);
+}
+.spray-ring.is-spraying .spray-ring__art {
+    transform: translate(-50%, -50%) scale(0.92);
+}
+.spray-ring__tip {
+    position: absolute;
+    top: 0;
+    left: calc(var(--ring-r, 12px) + 10px);
+    transform: translateY(-50%);
+    padding: 0.3rem 0.5rem;
+    white-space: nowrap;
+    font-family: var(--font-body);
+    font-size: 0.8rem;
+    color: var(--white);
+    background: var(--bg-card);
+    border: 2px solid var(--ui-2);
+    box-shadow: 3px 3px 0 var(--title-x2);
+}
+.spray-ring__tip[hidden] {
+    display: none;
+}
+.spray-ring__tip kbd {
+    padding: 0 0.3em;
+    font-family: inherit;
+    color: var(--bg-primary);
+    background: var(--ui-2);
+}
+
+.paint-kit {
+    position: fixed;
+    right: max(16px, env(safe-area-inset-right, 0px));
+    bottom: calc(16px + env(safe-area-inset-bottom, 0px));
+    z-index: 9995;
+    display: flex;
+    align-items: flex-end;
+    gap: 8px;
+}
+.paint-fab {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.4rem;
+    min-width: var(--paint-kit-h);
+    height: var(--paint-kit-h);
+    padding: 0 0.6rem;
+    color: var(--text-primary);
+    background: var(--bg-card);
+    border: 2px solid var(--border-bright);
+    box-shadow: 3px 3px 0 var(--title-x2);
+    cursor: pointer;
+    transition:
+        transform 0.15s var(--ease),
+        border-color 0.15s var(--ease);
+}
+.paint-fab:hover,
+.paint-fab:focus-visible {
+    border-color: var(--ui-2);
+    transform: translate(-1px, -1px);
+}
+.paint-fab:active {
+    transform: translate(2px, 2px);
+}
+.paint-fab:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+}
+.paint-fab--menu {
+    min-width: 44px;
+    width: 44px;
+    height: 44px;
+    padding: 0;
+}
+.paint-fab__label {
+    fill: var(--paint-color);
+}
+.paint-fab__mist {
+    fill: var(--paint-color);
+    opacity: 0;
+    transition: opacity 0.15s var(--ease);
+}
+.paint-fab__state {
+    font-family: var(--font-display);
+    font-size: 0.55rem;
+}
+.paint-fab--can[aria-pressed='true'] {
+    color: var(--bg-primary);
+    background: var(--paint-color);
+    border-color: var(--white);
+    box-shadow:
+        3px 3px 0 var(--title-x1),
+        6px 6px 0 var(--title-x2);
+}
+.paint-fab--can[aria-pressed='true'] .paint-fab__label {
+    fill: var(--bg-primary);
+}
+.paint-fab--can[aria-pressed='true'] .paint-fab__mist {
+    opacity: 1;
+    fill: var(--bg-primary);
+}
+.paint-toast {
+    position: absolute;
+    right: 0;
+    bottom: calc(100% + 10px);
+    width: max-content;
+    max-width: min(18rem, calc(100vw - 32px));
+    padding: 0.45rem 0.6rem;
+    font-size: 0.8rem;
+    line-height: 1.4;
+    color: var(--white);
+    background: var(--bg-card);
+    border: 2px solid var(--ui-2);
+    box-shadow: 3px 3px 0 var(--title-x2);
+    opacity: 0;
+    transform: translateY(4px);
+    transition:
+        opacity 0.2s var(--ease),
+        transform 0.2s var(--ease);
+    pointer-events: none;
+}
+.paint-toast.is-on {
+    opacity: 1;
+    transform: none;
+}
+.paint-toast:empty {
+    display: none;
+}
+/* Paint needs motion: with motion off (OS or the accessibility menu) the kit isn't there at all. */
+html[data-reduce-motion] :is(.paint-kit, .paint-menu, .paint-layer, .paint-capture, .spray-ring) {
+    display: none !important;
+}
+
+.paint-menu {
+    position: fixed;
+    inset: auto;
+    right: max(16px, env(safe-area-inset-right, 0px));
+    bottom: calc(var(--paint-kit-h) + 28px + env(safe-area-inset-bottom, 0px));
+    width: min(21rem, calc(100vw - 32px));
+    max-height: calc(100dvh - var(--header-h) - var(--paint-kit-h) - 3rem);
+    overflow-y: auto;
+    margin: 0;
+    padding: 1rem;
+    color: var(--text-primary);
+    background: var(--bg-card);
+    border: 2px solid var(--ui-2);
+    border-radius: var(--radius);
+    box-shadow:
+        6px 6px 0 var(--title-x2),
+        0 18px 48px rgba(0, 0, 0, 0.55);
+}
+.paint-menu:popover-open {
+    animation: paint-menu-in 0.16s var(--ease);
+}
+@keyframes paint-menu-in {
+    from {
+        opacity: 0;
+        transform: translateY(6px);
+    }
+}
+.paint-menu__title {
+    font-family: var(--font-display);
+    font-size: 0.75rem;
+    color: var(--ui-2);
+    margin-bottom: 0.5rem;
+}
+.paint-menu__list {
+    list-style: none;
+    margin-bottom: 0.5rem;
+}
+.paint-preview {
+    display: block;
+    width: 100%;
+    height: auto;
+    aspect-ratio: 120 / 28;
+    margin-bottom: 0.75rem;
+    image-rendering: pixelated;
+    background: var(--bg-primary);
+    border: 1px solid var(--border-bright);
+}
+.paint-group {
+    margin: 0 0 0.75rem;
+    padding: 0;
+    border: 0;
+}
+.paint-group__label {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0;
+    margin-bottom: 0.4rem;
+    font-family: var(--font-display);
+    font-size: 0.6rem;
+    color: var(--text-secondary);
+}
+.paint-group__hint {
+    margin-top: 0.15rem;
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+}
+.paint-swatches {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(44px, 1fr));
+    gap: 0.35rem;
+}
+.paint-swatch {
+    position: relative;
+    display: grid;
+    place-items: center;
+    min-height: 44px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    cursor: pointer;
+}
+.paint-swatch input {
+    position: absolute;
+    inset: 0;
+    margin: 0;
+    opacity: 0;
+    cursor: pointer;
+}
+.paint-swatch__chip {
+    width: 24px;
+    height: 24px;
+    background: var(--sw);
+    outline: 1px solid var(--title-outline);
+    box-shadow: 2px 2px 0 var(--title-x2);
+}
+.paint-swatch:has(input:checked) {
+    border-color: var(--ui);
+    background: var(--ui-bg);
+    box-shadow: inset 0 0 0 1px var(--ui);
+}
+.paint-swatch:has(input:focus-visible) {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+}
+.paint-custom {
+    display: flex;
+    gap: 0.4rem;
+    margin-top: 0.4rem;
+}
+.paint-custom__wheel {
+    flex: none;
+    width: 44px;
+    height: 44px;
+    padding: 2px;
+    background: var(--bg-elevated);
+    border: 1px solid var(--border-bright);
+    border-radius: var(--radius);
+    cursor: pointer;
+}
+.paint-custom__hex {
+    flex: 1;
+    min-width: 0;
+    min-height: 44px;
+    padding: 0 0.6rem;
+    font-family: var(--font-body);
+    font-size: 1rem;
+    color: var(--white);
+    background: var(--bg-elevated);
+    border: 1px solid var(--border-bright);
+    border-radius: var(--radius);
+}
+.paint-custom__hex[aria-invalid='true'] {
+    border-color: var(--accent);
+}
+.paint-custom__wheel:focus-visible,
+.paint-custom__hex:focus-visible,
+.paint-size:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+}
+.paint-caps {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(3.1rem, 1fr));
+    gap: 0.35rem;
+}
+.paint-cap {
+    flex-direction: column;
+    justify-content: center;
+    gap: 0.2rem;
+    min-height: 60px;
+    padding: 0.3rem 0.1rem;
+    font-size: 0.65rem;
+}
+.paint-cap__icon {
+    width: 26px;
+    height: 26px;
+    color: var(--paint-color);
+}
+.paint-seg {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0.4rem;
+}
+.paint-seg .paint-opt {
+    justify-content: center;
+}
+.paint-size {
+    width: 100%;
+    height: 44px;
+    margin: 0;
+    accent-color: var(--ui);
+    cursor: pointer;
+}
+.paint-size__value {
+    font-family: var(--font-body);
+    font-size: 0.8rem;
+    color: var(--white);
+}
+@media (pointer: coarse) {
+    :root {
+        --paint-kit-h: 56px;
+    }
 }
 
 /* ---------- Accessibility modes (data-accessibility-* on <html>) ---------- */
