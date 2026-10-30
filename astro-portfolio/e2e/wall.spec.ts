@@ -126,6 +126,9 @@ test('a layout change while pieces are still going up never leaves one over cont
 test('a heading-style switch keeps the wall; a new theme re-rolls it', async ({ page }) => {
     await page.goto('/');
     await ready(page);
+    // A late layout change at load (fonts, images) can still move a piece: let it settle first.
+    await page.waitForTimeout(800);
+    await ready(page);
     const before = await signature(page);
     await page.evaluate(() => document.documentElement.setAttribute('data-title-style', 'wild'));
     // The resize settles (250 ms debounce), then a piece that content now covers is placed again,
