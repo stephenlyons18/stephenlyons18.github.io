@@ -75,10 +75,13 @@ const threshold = () => DRIPS.find((d) => d.id === settings.drips)!.threshold;
 
 // ── Colour: a theme token (resolved once per theme change, never per frame) or a custom hex ──
 let colorHex = '#22c7ff';
+const isToken = (v: string) => PAINT_TOKENS.some((t) => t.token === v);
 function resolveColor(): void {
-    colorHex = settings.color.startsWith('--')
-        ? (cssToHex(getComputedStyle(root).getPropertyValue(settings.color)) ?? colorHex)
-        : settings.color;
+    // Only ever a normalised #rrggbb: a known token's computed value, or a custom hex.
+    colorHex =
+        (isToken(settings.color)
+            ? cssToHex(getComputedStyle(root).getPropertyValue(settings.color))
+            : normalizeHex(settings.color)) ?? colorHex;
     root.style.setProperty('--paint-color', colorHex);
     drawRing();
     drawPreview();
@@ -399,6 +402,11 @@ ring.innerHTML =
     '<p class="spray-ring__tip" hidden><kbd>Shift</kbd> + scroll to resize</p>';
 document.body.appendChild(ring);
 const ringArt = ring.firstElementChild as SVGSVGElement;
+// The dots are two paths, built once and updated by attribute: no markup is ever parsed from data.
+const [inkPath, paintPath] = [0, 1].map(() =>
+    ringArt.appendChild(document.createElementNS('http://www.w3.org/2000/svg', 'path')),
+) as [SVGPathElement, SVGPathElement];
+inkPath.style.fill = 'var(--title-ink)';
 const tip = ring.lastElementChild as HTMLElement;
 let ringKey = '';
 /** The pointer is over the paint surface (the capture layer), the only place the ring shows. */
@@ -432,9 +440,9 @@ function drawRing(): void {
     ringArt.setAttribute('viewBox', `${-n - 0.5} ${-n - 0.5} ${2 * n + 1} ${2 * n + 1}`);
     ringArt.setAttribute('width', String(size));
     ringArt.setAttribute('height', String(size));
-    ringArt.innerHTML =
-        `<path d="${ink}" style="fill:var(--title-ink)"/>` +
-        `<path d="${paint}" style="fill:${colorHex}"/>`;
+    inkPath.setAttribute('d', ink);
+    paintPath.setAttribute('d', paint);
+    paintPath.style.fill = colorHex;
     ring.style.setProperty('--ring-r', `${size / 2}px`);
 }
 
@@ -580,10 +588,15 @@ const setCustom = (h: string) => {
 for (const r of radios('paint-color'))
     r.addEventListener('change', () => {
         if (!r.checked) return;
-        settings.color = r.value === 'custom' ? customHex : r.value;
+        if (r.value === 'custom') settings.color = customHex;
+        else if (isToken(r.value)) settings.color = r.value;
+        else return;
         apply();
     });
-wheel?.addEventListener('input', () => setCustom(wheel.value));
+wheel?.addEventListener('input', () => {
+    const h = normalizeHex(wheel.value);
+    if (h) setCustom(h);
+});
 hex?.addEventListener('input', () => {
     const h = normalizeHex(hex.value);
     hex.setAttribute('aria-invalid', String(!h));
