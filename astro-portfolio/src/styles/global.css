@@ -60,18 +60,6 @@
     --ansi-blue: #4d9dff;
     --ansi-steel: #93a6dc;
 
-    /* Theme slots — overridden per [data-theme]; default = wildstyle */
-    --ui: var(--spray-sky);
-    --ui-2: var(--spray-aqua);
-    --ui-3: var(--spray-forest);
-    --accent: var(--spray-magenta);
-    --title-top: var(--spray-cyan);
-    --title-bottom: var(--spray-magenta);
-    --title-outline: var(--white);
-    --title-x1: #7b3fe4;
-    --title-x2: #3b2385;
-    --title-spray: var(--spray-lavender);
-
     /* Derived — always follow the active theme */
     --ui-dim: color-mix(in oklab, var(--ui) 70%, var(--bg-primary));
     --ui-glow: color-mix(in srgb, var(--ui) 32%, transparent);
@@ -161,39 +149,85 @@
     );
 }
 
+/* Theme slots, default theme (wildstyle). Also on [data-theme='wildstyle'] so an element can show
+   the default theme inside another one (the a11y menu's swatches, R30). */
+:root,
+[data-theme='wildstyle'] {
+    /* Theme slots — overridden per [data-theme]; default = wildstyle */
+    --ui: var(--spray-sky);
+    --ui-2: var(--spray-aqua);
+    --ui-3: var(--spray-forest);
+    --accent: var(--spray-magenta);
+    /* Title pieces (piece.ts, R25): a five-stop fill borrowed from the reference burners (ice →
+       cyan → royal blue → violet → magenta, no yellow), lime accent cuts, a dark ink line, a white
+       outline and deep indigo 3D. */
+    --title-top: #9ff0ff;
+    --title-hi: var(--spray-cyan);
+    --title-mid: #2f6bff;
+    --title-lo: #8a3ffc;
+    --title-bottom: var(--spray-magenta);
+    --title-cut: #9dff6a;
+    --title-ink: #060914;
+    --title-outline: var(--white);
+    --title-x1: #7b3fe4;
+    --title-x2: #3b2385;
+    --title-spray: var(--spray-lavender);
+    /* Bubble pieces (R28, the original title look): a 2-stop fill, top → bottom. */
+    --bubble-top: var(--spray-cyan);
+    --bubble-bottom: var(--spray-magenta);
+}
+
 /* ---------- Themes (terminal: `theme <name>`) ---------- */
 [data-theme='bubble'] {
     --ui: var(--spray-aqua);
     --ui-2: var(--spray-sky);
     --ui-3: var(--spray-forest);
-    --title-top: var(--spray-aqua);
-    --title-bottom: var(--spray-cyan);
+    --title-top: #c4fff3;
+    --title-hi: var(--spray-aqua);
+    --title-mid: var(--spray-cyan);
+    --title-lo: #2f6bff;
+    --title-bottom: #3b2385;
+    --title-cut: var(--spray-magenta);
     --title-outline: var(--spray-magenta);
     --title-x1: #2f5bd0;
     --title-x2: #1b2f73;
     --title-spray: var(--spray-aqua);
+    --bubble-top: var(--spray-aqua);
+    --bubble-bottom: var(--spray-cyan);
 }
 [data-theme='ansi'] {
     --ui: var(--ansi-steel);
     --ui-2: var(--ansi-blue);
     --ui-3: #8fb7ff;
-    --title-top: #c9d3f2;
-    --title-bottom: var(--ansi-blue);
+    --title-top: #eef2ff;
+    --title-hi: #c9d3f2;
+    --title-mid: var(--ansi-steel);
+    --title-lo: var(--ansi-blue);
+    --title-bottom: #3346b8;
+    --title-cut: #8fb7ff;
     --title-outline: var(--ansi-steel);
     --title-x1: #3346b8;
     --title-x2: #1d2766;
     --title-spray: var(--ansi-steel);
+    --bubble-top: #c9d3f2;
+    --bubble-bottom: var(--ansi-blue);
 }
 [data-theme='sunset'] {
     --ui: var(--spray-orange);
     --ui-2: var(--spray-yellow);
     --ui-3: var(--spray-aqua);
-    --title-top: var(--spray-yellow);
-    --title-bottom: var(--spray-magenta);
+    --title-top: #ffe9a8;
+    --title-hi: var(--spray-yellow);
+    --title-mid: var(--spray-orange);
+    --title-lo: var(--spray-magenta);
+    --title-bottom: #8a2a5c;
+    --title-cut: var(--spray-aqua);
     --title-outline: var(--white);
     --title-x1: var(--spray-orange);
     --title-x2: #8a2a5c;
     --title-spray: var(--spray-orange);
+    --bubble-top: var(--spray-yellow);
+    --bubble-bottom: var(--spray-magenta);
 }
 /* The original phosphor look, kept for nostalgia. */
 [data-theme='green'] {
@@ -201,12 +235,18 @@
     --ui-2: #00bfff;
     --ui-3: #00ff41;
     --accent: #00ff41;
-    --title-top: #b6ffc8;
-    --title-bottom: #00ff41;
+    --title-top: #e6ffe9;
+    --title-hi: #b6ffc8;
+    --title-mid: #00ff41;
+    --title-lo: #00a82b;
+    --title-bottom: #005c17;
+    --title-cut: #00bfff;
     --title-outline: #e6edf3;
     --title-x1: #00a82b;
     --title-x2: #005c17;
     --title-spray: #00ff41;
+    --bubble-top: #b6ffc8;
+    --bubble-bottom: #00ff41;
 }
 
 /* ---------- ANSI art (AnsiTitle.astro / src/lib/ansi) ---------- */
@@ -237,48 +277,258 @@
 .ansi-title__stack {
     display: none;
 }
+/* Both styles are in the page (R30); <html data-title-style> picks one, set before first paint by
+   BaseLayout from the a11y menu / terminal choice. Bubble by default. A pinned set always shows. */
+.ansi-title__set[data-set='wild']:not(.ansi-title__set--pinned),
+html[data-title-style='wild'] .ansi-title__set[data-set='bubble']:not(.ansi-title__set--pinned) {
+    display: none;
+}
+html[data-title-style='wild'] .ansi-title__set[data-set='wild'] {
+    display: block;
+}
+/* Terminal banner and other text art (a-f0…a-f7): the same five-stop ramp as the pieces. */
 .a-f0 {
     color: var(--title-top);
 }
 .a-f1 {
-    color: color-mix(in oklab, var(--title-top) 86%, var(--title-bottom));
+    color: color-mix(in oklab, var(--title-top) 40%, var(--title-hi));
 }
 .a-f2 {
-    color: color-mix(in oklab, var(--title-top) 71%, var(--title-bottom));
+    color: color-mix(in oklab, var(--title-hi) 70%, var(--title-mid));
 }
 .a-f3 {
-    color: color-mix(in oklab, var(--title-top) 57%, var(--title-bottom));
+    color: var(--title-mid);
 }
 .a-f4 {
-    color: color-mix(in oklab, var(--title-top) 43%, var(--title-bottom));
+    color: color-mix(in oklab, var(--title-mid) 40%, var(--title-lo));
 }
 .a-f5 {
-    color: color-mix(in oklab, var(--title-top) 29%, var(--title-bottom));
+    color: var(--title-lo);
 }
 .a-f6 {
-    color: color-mix(in oklab, var(--title-top) 14%, var(--title-bottom));
+    color: color-mix(in oklab, var(--title-lo) 40%, var(--title-bottom));
 }
 .a-f7,
 .a-dr {
     color: var(--title-bottom);
 }
-.a-ol {
-    color: var(--title-outline);
+
+/* Pieces (piece.ts → inline SVG, one path per class; AnsiTitle.astro). A unit is one cell wide and
+   half a cell tall. The SVG scales to its container, never past --ansi-max per cell (0.6 × that per
+   unit). Static: nothing here animates. */
+.ansi-svg {
+    display: block;
+    width: min(100%, calc(var(--w) * var(--ansi-max, 13px) * 0.6));
+    height: auto;
+    overflow: visible;
 }
-.a-x1 {
-    color: var(--title-x1);
+.p-f0 {
+    fill: var(--title-top);
 }
-.a-x2 {
-    color: var(--title-x2);
+.p-f1 {
+    fill: color-mix(in oklab, var(--title-top) 50%, var(--title-hi));
 }
-.a-gl {
-    color: #fff;
-    background: var(--title-top);
+.p-f2 {
+    fill: var(--title-hi);
 }
-.a-os {
-    color: var(--title-spray);
+.p-f3 {
+    fill: color-mix(in oklab, var(--title-hi) 50%, var(--title-mid));
+}
+.p-f4 {
+    fill: var(--title-mid);
+}
+.p-f5 {
+    fill: color-mix(in oklab, var(--title-mid) 50%, var(--title-lo));
+}
+.p-f6 {
+    fill: var(--title-lo);
+}
+.p-f7 {
+    fill: color-mix(in oklab, var(--title-lo) 50%, var(--title-bottom));
+}
+.p-f8,
+.p-dr {
+    fill: var(--title-bottom);
+}
+.p-f9 {
+    fill: color-mix(in oklab, var(--title-bottom) 80%, var(--title-ink));
+}
+.p-d1 {
+    fill: color-mix(in oklab, var(--title-bottom) 60%, transparent);
+}
+.p-d2 {
+    fill: color-mix(in oklab, var(--title-bottom) 30%, transparent);
+}
+.p-d3 {
+    fill: color-mix(in oklab, var(--title-bottom) 15%, transparent);
+}
+.p-ik {
+    fill: var(--title-ink);
+}
+.p-ol {
+    fill: var(--title-outline);
+}
+/* Piece 3D: deeper than the UI's --title-x2 shadows, so it reads as depth behind the outline. */
+.p-x1 {
+    fill: var(--title-x2);
+}
+.p-x2 {
+    fill: color-mix(in oklab, var(--title-x2) 55%, var(--title-ink));
+}
+.p-sh,
+.p-sp {
+    fill: #fff;
+}
+.p-cu {
+    fill: var(--title-cut);
+}
+.p-os {
+    fill: var(--title-spray);
+    opacity: 0.6;
+}
+/* Wildstyle backdrop cloud and bubbles (R29): a thin coat of the theme's cool colour, so the wall
+   shows through and the piece sits in front of it. */
+.p-bg {
+    fill: color-mix(in oklab, var(--title-hi) 24%, transparent);
+}
+
+/* Bubble pieces (bubble.ts, R28): the original title generator's colours. Eight fill rows from
+   --bubble-top to --bubble-bottom, the bottom row a ▓ shade (p-f8), white outline, a dark seam where a
+   letter runs under the one in front, violet 3D (the far step a ▓ shade), drips fading ▓ ▒ ░. */
+[data-piece='bubble'] .p-f0 {
+    fill: var(--bubble-top);
+}
+[data-piece='bubble'] .p-f1 {
+    fill: color-mix(in oklab, var(--bubble-top) 86%, var(--bubble-bottom));
+}
+[data-piece='bubble'] .p-f2 {
+    fill: color-mix(in oklab, var(--bubble-top) 71%, var(--bubble-bottom));
+}
+[data-piece='bubble'] .p-f3 {
+    fill: color-mix(in oklab, var(--bubble-top) 57%, var(--bubble-bottom));
+}
+[data-piece='bubble'] .p-f4 {
+    fill: color-mix(in oklab, var(--bubble-top) 43%, var(--bubble-bottom));
+}
+[data-piece='bubble'] .p-f5 {
+    fill: color-mix(in oklab, var(--bubble-top) 29%, var(--bubble-bottom));
+}
+[data-piece='bubble'] .p-f6 {
+    fill: color-mix(in oklab, var(--bubble-top) 14%, var(--bubble-bottom));
+}
+[data-piece='bubble'] .p-f7,
+[data-piece='bubble'] .p-dr {
+    fill: var(--bubble-bottom);
+}
+[data-piece='bubble'] .p-f8,
+[data-piece='bubble'] .p-d1 {
+    fill: color-mix(in oklab, var(--bubble-bottom) 75%, transparent);
+}
+[data-piece='bubble'] .p-d2 {
+    fill: color-mix(in oklab, var(--bubble-bottom) 50%, transparent);
+}
+[data-piece='bubble'] .p-d3 {
+    fill: color-mix(in oklab, var(--bubble-bottom) 25%, transparent);
+}
+[data-piece='bubble'] .p-x1 {
+    fill: var(--title-x1);
+}
+[data-piece='bubble'] .p-x2 {
+    fill: color-mix(in oklab, var(--title-x2) 75%, transparent);
+}
+[data-piece='bubble'] .p-os {
     opacity: 0.55;
-    -webkit-text-stroke: 0; /* the seam-closing stroke would bloat dots into blocks */
+}
+
+/* ---------- Wall pieces (wall.ts, R32) ---------- */
+/* Painted on the wall at random each visit: placed by wall.ts in free wall inside a section, behind
+   every element (z -1), never interactive. Depth: --o is lower for small (far) pieces. One transform
+   list for every state. */
+.section,
+.page-header {
+    position: relative;
+}
+.wall-piece {
+    position: absolute;
+    z-index: -1;
+    pointer-events: none;
+    opacity: var(--o, 0.5);
+    transform: rotate(var(--tilt)) scale(1);
+    contain: layout paint style;
+}
+.wall-piece svg {
+    display: block;
+    width: 100%;
+    height: 100%;
+}
+/* Sprayed on once when first seen: a few stepped coats, like a can going over it. */
+.wall-piece.is-waiting {
+    opacity: 0;
+}
+.wall-piece.is-sprayed {
+    animation: spray-on 0.9s steps(6, end) both;
+}
+@keyframes spray-on {
+    from {
+        opacity: 0;
+        transform: rotate(var(--tilt)) scale(0.94);
+    }
+}
+html[data-reduce-motion] .wall-piece {
+    opacity: var(--o, 0.5);
+    animation: none;
+}
+html[data-a11y-wall] .wall-piece {
+    display: none;
+}
+/* Colour variants, all from the current theme (a new theme re-rolls the wall). The --wp-* copies are
+   taken on <html>, so a piece can swap the theme's stops without referring to itself. */
+:root {
+    --wp-top: var(--title-top);
+    --wp-hi: var(--title-hi);
+    --wp-mid: var(--title-mid);
+    --wp-lo: var(--title-lo);
+    --wp-bottom: var(--title-bottom);
+    --wp-btop: var(--bubble-top);
+    --wp-bbottom: var(--bubble-bottom);
+}
+/* 1: the ramp upside down. */
+.wp-v1 {
+    --title-top: var(--wp-bottom);
+    --title-hi: var(--wp-lo);
+    --title-lo: var(--wp-hi);
+    --title-bottom: var(--wp-top);
+    --bubble-top: var(--wp-bbottom);
+    --bubble-bottom: var(--wp-btop);
+}
+/* 2: cool, in the UI's own blues and greens. */
+.wp-v2 {
+    --title-hi: var(--ui-2);
+    --title-mid: var(--ui);
+    --title-lo: var(--wp-mid);
+    --title-bottom: var(--wp-lo);
+    --bubble-top: var(--ui-2);
+    --bubble-bottom: var(--ui);
+}
+/* 3: a dark ink outline instead of white (a throw-up look). */
+.wp-v3 {
+    --title-outline: var(--title-ink);
+}
+/* 4: the accent as outline, a narrower ramp. */
+.wp-v4 {
+    --title-outline: var(--accent);
+    --bubble-top: var(--wp-hi);
+    --bubble-bottom: var(--wp-mid);
+}
+/* 5: the ramp rotated one stop. */
+.wp-v5 {
+    --title-top: var(--wp-hi);
+    --title-hi: var(--wp-mid);
+    --title-mid: var(--wp-lo);
+    --title-lo: var(--wp-bottom);
+    --title-bottom: var(--wp-top);
+    --bubble-top: var(--wp-bbottom);
+    --bubble-bottom: var(--wp-hi);
 }
 
 /* ---------- Reset & Base ---------- */
@@ -349,10 +599,12 @@ body {
         var(--bg-primary);
 }
 
-/* ANSI brick wall (AnsiWall.astro): three layers (bricks, mortar, chips) masked by a seamless
-   80 × 30-cell tile from /art/wall.css. It spans the whole document and scrolls with it. The tile
-   keeps the old cell size: a 0.6-aspect cell of max(12px, 100vw / 96) font. Opacity keeps it a
-   texture, never a pattern you read. */
+/* ANSI brick wall (AnsiWall.astro): one seamless 80 × 30-cell tile, baked per theme into a PNG
+   (/art/wall-<theme>.png, colour and 7% strength included) and tiled down the whole document, so it
+   scrolls with the content. A tiled bitmap is nearly free to raster; the old theme-coloured masks
+   were re-drawn for every tile that scrolled in and cost most of the raster time on phones (R22).
+   The tile keeps the old cell size: a 0.6-aspect cell of max(12px, 100vw / 96) font. The image (the
+   active theme's PNG) is set in AnsiWall.astro, so only longhands here. */
 body {
     position: relative;
 }
@@ -361,28 +613,12 @@ body {
     position: absolute;
     inset: 0;
     z-index: -1;
-    overflow: clip;
     pointer-events: none;
-    opacity: 0.07;
     contain: strict;
-}
-.ansi-wall > div {
-    position: absolute;
-    inset: 0;
-    mask-repeat: repeat;
-    mask-size: calc(var(--wall-fs) * 0.6 * 80) calc(var(--wall-fs) * 30);
-    /* Nothing paints until /art/wall.css supplies the masks (no flash of solid colour). */
-    mask-image: linear-gradient(transparent, transparent);
-}
-.ansi-wall .w-b {
-    background: var(--ui);
-}
-.ansi-wall .w-m {
-    background: var(--ui-3);
-    opacity: 0.6;
-}
-.ansi-wall .w-c {
-    background: var(--ui-2);
+    background-position: 0 0;
+    background-size: calc(var(--wall-fs) * 0.6 * 80) calc(var(--wall-fs) * 30);
+    background-repeat: repeat;
+    image-rendering: pixelated;
 }
 
 /* Paint drips (AnsiDrips.astro): a sprayed bar (dividers) or a card's bottom edge, with teardrop
@@ -393,8 +629,40 @@ body {
 .drips {
     container-type: inline-size;
     pointer-events: none;
-    /* Viscous paint: it runs, catches, runs again, then creeps to a stop. */
-    --drip-ease: linear(0, 0.34 14%, 0.42 24%, 0.45 33%, 0.66 47%, 0.71 58%, 0.88 74%, 0.96 88%, 1);
+    /* Viscous paint: it runs, catches, runs again, then creeps to a stop. Sampled from a speed
+       curve that swells and eases but never stops or jumps (R22): the old one went flat and then
+       lurched, which read as stutter. */
+    --drip-ease: linear(
+        0,
+        0.059,
+        0.14,
+        0.227,
+        0.318,
+        0.405,
+        0.485,
+        0.544,
+        0.585,
+        0.615,
+        0.635,
+        0.653,
+        0.674,
+        0.703,
+        0.739,
+        0.78,
+        0.826,
+        0.866,
+        0.901,
+        0.929,
+        0.949,
+        0.962,
+        0.97,
+        0.976,
+        0.981,
+        0.987,
+        0.993,
+        0.997,
+        1
+    );
 }
 .drips .ansi {
     --ansi-max: 9px;
@@ -436,8 +704,9 @@ body {
     white-space: pre;
 }
 
-/* Section divider: drips always hang under the bar (about halfway out). Hover, or a tap on touch
-   (fx.ts .is-poked), runs every drip out to full length; they creep back slowly afterwards. fx.ts
+/* Section divider: drips always hang under the bar (about halfway out). Hover, or on touch the
+   divider scrolling through the middle of the screen (fx.ts .is-focus), runs every drip out to full
+   length; they creep back slowly afterwards. fx.ts
    tucks drips below the fold into the bar until they scroll into view (.is-tucked). */
 .ansi-divider {
     margin: 2.5rem 0;
@@ -454,7 +723,7 @@ body {
     transition: none;
 }
 .ansi-divider:hover .drip-run,
-.ansi-divider.is-poked .drip-run {
+.ansi-divider.is-focus .drip-run {
     transform: none;
     transition: transform var(--drip-t) var(--drip-ease) var(--drip-d);
 }
@@ -484,7 +753,7 @@ body {
 .card:hover .card-drips .drip-run,
 .card:focus-within .card-drips .drip-run,
 .card-link:focus-visible .card-drips .drip-run,
-.card.is-poked .card-drips .drip-run {
+.card.is-focus .card-drips .drip-run {
     visibility: visible;
     transform: none;
     transition:
@@ -535,6 +804,35 @@ ol {
 }
 
 /* ---------- Utilities ---------- */
+/* Keyboard-only hints (Ctrl+K) vs their touch wording: a phone has no Ctrl key. */
+.only-touch {
+    display: none;
+}
+@media (hover: none) and (pointer: coarse) {
+    .only-kbd {
+        display: none;
+    }
+    .only-touch {
+        display: inline;
+    }
+    /* The pixel scrubber (.scrub) is the scrollbar on touch screens; the native one would sit on
+       top of it. */
+    html {
+        scrollbar-width: none;
+    }
+    html::-webkit-scrollbar,
+    body::-webkit-scrollbar {
+        display: none;
+    }
+}
+.kbd {
+    background: var(--bg-elevated);
+    border: 1px solid var(--border);
+    padding: 0.15rem 0.5rem;
+    border-radius: 3px;
+    font-family: var(--font-display);
+    font-size: 0.8rem;
+}
 .container {
     width: min(var(--max-w), 90%);
     margin-inline: auto;
@@ -603,11 +901,12 @@ ol {
 
 /* JS-enhanced path: hide until observed */
 /* Only the not-yet-revealed state declares a transform: a revealed element must not, or it would
-   out-specify (and silently cancel) card hover lifts and fx.ts tilts. */
+   out-specify (and silently cancel) card hover lifts and fx.ts tilts. No will-change here: it kept
+   every waiting element on its own layer, ~15–20 Mpx of extra GPU tiles on a phone, and the tile
+   budget overflowing is what stuttered (R22). The entrance animation promotes each one briefly. */
 body.js-reveal-ready .reveal:not(.revealed) {
     opacity: 0;
     transform: translateY(24px);
-    will-change: transform, opacity;
 }
 body.js-reveal-ready .reveal.revealed {
     /* backwards (not both): once the entrance finishes, no transform is held, so hover lifts work. */
@@ -626,7 +925,6 @@ body.js-reveal-ready .reveal.revealed {
         animation: none;
         opacity: 1;
         transform: none;
-        will-change: auto;
     }
 }
 
@@ -853,6 +1151,31 @@ body.js-reveal-ready .reveal.revealed {
     position: relative;
     z-index: 2;
 }
+/* The subheader piece (R24) tucks up under the name: its 3D and drips overlap the name's
+   bottom margin, like a second piece sprayed below the first. */
+.hero-sub {
+    margin-top: clamp(-2.25rem, -3vw, -0.5rem);
+}
+/* R31: the name and the subheader are separate pieces. The name fades up like any reveal; the
+   subheader sprays on a beat later, in stepped coats from the left; then the CTAs and terminal. */
+@keyframes hero-tagline-in {
+    from {
+        opacity: 0;
+        transform: translateX(-18px);
+    }
+}
+body.js-reveal-ready .hero-tagline.reveal:not(.revealed) {
+    transform: translateX(-18px);
+}
+body.js-reveal-ready .hero-tagline.reveal.revealed {
+    animation: hero-tagline-in 0.7s steps(6, end) 0.3s backwards;
+}
+body.js-reveal-ready .hero-cta.reveal.revealed {
+    animation-delay: 0.45s;
+}
+body.js-reveal-ready .hero-terminal.reveal.revealed {
+    animation-delay: 0.6s;
+}
 
 .hero-terminal {
     background: var(--bg-secondary);
@@ -978,7 +1301,7 @@ body.js-reveal-ready .reveal.revealed {
 }
 
 .hero-cta {
-    margin-top: 2rem;
+    margin: 1.75rem 0 2.5rem;
     display: flex;
     flex-wrap: wrap;
     gap: 1rem;
@@ -1030,10 +1353,17 @@ body.js-reveal-ready .reveal.revealed {
     opacity: 0;
     transition: opacity 0.25s var(--ease);
 }
-.card:hover {
+.card:hover,
+.card.is-focus {
     --lift: -2px;
 }
+/* Touch (fx.ts .is-focus): the card in the middle of the screen lifts a touch further and its skin
+   fades in, so focus reads at arm's length. */
+.card.is-focus {
+    --lift: -3px;
+}
 .card:hover::after,
+.card.is-focus::after,
 .card-link:focus-visible .card::after {
     opacity: 1;
 }
@@ -1337,9 +1667,8 @@ html:has(dialog.lightbox[open]) {
     animation: lightbox-in 0.18s var(--ease);
 }
 .lightbox::backdrop {
-    background: rgba(7, 11, 18, 0.88);
-    backdrop-filter: blur(6px);
-    -webkit-backdrop-filter: blur(6px);
+    /* Solid, no blur (CLAUDE.md: no backdrop-filter). */
+    background: rgba(7, 11, 18, 0.92);
 }
 @keyframes lightbox-in {
     from {
@@ -2074,9 +2403,9 @@ html:has(dialog.lightbox[open]) {
     display: flex;
     align-items: center;
     justify-content: center;
-    background: rgba(0, 0, 0, 0.7);
-    backdrop-filter: blur(8px);
-    -webkit-backdrop-filter: blur(8px);
+    /* A solid dim, no backdrop blur: blurring the whole page under a fixed overlay costs a full
+       re-composite every frame (CLAUDE.md, smooth hover and scroll). */
+    background: rgba(4, 7, 12, 0.86);
     opacity: 0;
     visibility: hidden;
     transition:
@@ -2093,8 +2422,18 @@ html:has(dialog.lightbox[open]) {
         visibility 0s;
 }
 
-.terminal-panel {
+/* The window and the paint running off it move together (the panel clips its own content). */
+.terminal-wrap {
+    position: relative;
     width: min(900px, 92vw);
+    transform: translateY(20px) scale(0.97);
+    transition: transform 0.3s var(--ease);
+}
+.terminal-overlay.active .terminal-wrap {
+    transform: translateY(0) scale(1);
+}
+.terminal-panel {
+    width: 100%;
     max-height: 80vh;
     background: var(--bg-secondary);
     border: 1px solid var(--ui-dim);
@@ -2105,11 +2444,31 @@ html:has(dialog.lightbox[open]) {
     display: flex;
     flex-direction: column;
     overflow: hidden;
-    transform: translateY(20px) scale(0.97);
-    transition: transform 0.3s var(--ease);
 }
-.terminal-overlay.active .terminal-panel {
-    transform: translateY(0) scale(1);
+/* Drips off the window's bottom edge (terminal.ts termDrips): tucked and hidden while closed; on
+   open they pour once, a beat after the window lands, and hang there until it closes. Same runs
+   and easing as card drips; under reduced motion they simply appear. */
+.term-drips {
+    position: absolute;
+    left: 1.25rem;
+    right: 1.25rem;
+    top: 100%;
+    overflow-x: clip;
+    --drip-color: var(--ui-dim);
+}
+.term-drips .ansi {
+    font-size: 7px;
+}
+.term-drips .drip-run {
+    visibility: hidden;
+    transform: translateY(-100%);
+}
+.terminal-overlay.active .term-drips .drip-run {
+    visibility: visible;
+    transform: none;
+    transition:
+        transform var(--drip-t) var(--drip-ease) calc(var(--drip-d) + 0.25s),
+        visibility 0s 0.25s;
 }
 
 .terminal-bar {
@@ -2365,9 +2724,12 @@ html:has(dialog.lightbox[open]) {
         left: -1.5rem;
     }
 
-    .terminal-panel {
-        max-height: 90vh;
+    .terminal-wrap {
         width: 96vw;
+    }
+    .terminal-panel {
+        /* Leaves room under the window for its drips. */
+        max-height: 84vh;
         border-radius: var(--radius);
     }
     .terminal-body {
@@ -2461,6 +2823,12 @@ html:has(dialog.lightbox[open]) {
     background: color-mix(in srgb, var(--ui-2) 12%, transparent);
     box-shadow: 0 0 12px color-mix(in srgb, var(--ui-2) 35%, transparent);
 }
+/* Same type as the Terminal button's label, so the pair reads as one set. */
+.nav-icon-btn__label {
+    font-size: 0.65rem;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+}
 .pixel-icon {
     display: block;
     image-rendering: pixelated;
@@ -2499,6 +2867,132 @@ html:has(dialog.lightbox[open]) {
     font-size: 0.75rem;
     color: var(--ui-2);
     margin-bottom: 0.75rem;
+}
+/* Heading style + colours (R30). The preview is drawn from the live tokens, so it changes the moment
+   a choice does; a hovered or focused colour previews on it (data-theme on the box) before it's picked. */
+.a11y-preview {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 0.75rem;
+    padding: 0.5rem 0.6rem;
+    background: var(--bg-elevated);
+    border: 2px solid var(--title-outline);
+    border-radius: var(--radius);
+    box-shadow:
+        3px 3px 0 var(--title-x1),
+        6px 6px 0 var(--title-x2);
+}
+.a11y-preview__swatch,
+.a11y-theme__swatch {
+    flex: none;
+    border-radius: 2px;
+    background: linear-gradient(180deg, var(--bubble-top), var(--bubble-bottom));
+}
+html[data-title-style='wild'] :is(.a11y-preview__swatch, .a11y-theme__swatch) {
+    background: linear-gradient(
+        180deg,
+        var(--title-top),
+        var(--title-hi) 25%,
+        var(--title-mid) 50%,
+        var(--title-lo) 72%,
+        var(--title-bottom)
+    );
+}
+.a11y-preview__swatch {
+    width: 2.5rem;
+    height: 2.5rem;
+    outline: 2px solid var(--title-outline);
+    outline-offset: -2px;
+}
+.a11y-preview__art {
+    display: flex;
+    height: 2.5rem;
+}
+.a11y-preview__piece {
+    height: 100%;
+    width: auto;
+}
+.a11y-preview__piece[data-piece='wild'],
+html[data-title-style='wild'] .a11y-preview__piece[data-piece='bubble'] {
+    display: none;
+}
+html[data-title-style='wild'] .a11y-preview__piece[data-piece='wild'] {
+    display: block;
+}
+.a11y-preview__name {
+    margin-left: auto;
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+    text-align: right;
+}
+.a11y-group {
+    margin: 0 0 0.75rem;
+    padding: 0;
+    border: 0;
+}
+.a11y-group__label {
+    padding: 0;
+    margin-bottom: 0.4rem;
+    font-family: var(--font-display);
+    font-size: 0.6rem;
+    color: var(--text-secondary);
+}
+.a11y-seg,
+.a11y-themes {
+    display: grid;
+    gap: 0.4rem;
+}
+.a11y-seg {
+    grid-template-columns: 1fr 1fr;
+}
+.a11y-themes {
+    grid-template-columns: repeat(auto-fill, minmax(6.25rem, 1fr));
+}
+.a11y-seg__opt,
+.a11y-theme {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    min-height: 44px;
+    padding: 0.35rem 0.6rem;
+    font-size: 0.8rem;
+    color: var(--text-primary);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    cursor: pointer;
+}
+/* The radio covers its option: the whole tile is the target, keyboard arrows still work. */
+.a11y-seg__opt input,
+.a11y-theme input {
+    position: absolute;
+    inset: 0;
+    margin: 0;
+    opacity: 0;
+    cursor: pointer;
+}
+.a11y-seg__opt:has(input:checked),
+.a11y-theme:has(input:checked) {
+    border-color: var(--ui);
+    background: var(--ui-bg);
+    box-shadow: inset 0 0 0 1px var(--ui);
+}
+.a11y-seg__opt:has(input:focus-visible),
+.a11y-theme:has(input:focus-visible) {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+}
+.a11y-theme {
+    gap: 0.4rem;
+    padding-inline: 0.4rem;
+    font-size: 0.75rem;
+}
+.a11y-theme__swatch {
+    width: 1.25rem;
+    height: 1.75rem;
+    box-shadow: 2px 2px 0 var(--title-x2);
+    outline: 1px solid var(--title-outline);
 }
 .a11y-menu__list {
     list-style: none;
@@ -2602,7 +3096,7 @@ html:has(dialog.lightbox[open]) {
 
 /* Plain headings: hide the art, show the real heading — still pixel type, still the burner
    gradient and a two-step block extrusion, so the page keeps its look. */
-html[data-a11y-plain] .ansi-title:not(.ansi-title--deco) > :is(pre, .ansi-title__stack) {
+html[data-a11y-plain] .ansi-title:not(.ansi-title--deco) > .ansi-title__set {
     display: none !important;
 }
 html[data-a11y-plain] .ansi-title__text {
@@ -2629,6 +3123,9 @@ html[data-a11y-plain] .ansi-title__text {
 html[data-a11y-plain] h2.ansi-title__text,
 html[data-a11y-plain] h3.ansi-title__text {
     font-size: clamp(1rem, 3.2vw, 1.75rem);
+}
+html[data-a11y-plain] p.ansi-title__text {
+    font-size: clamp(0.85rem, 2.4vw, 1.25rem);
 }
 
 /* Readable font: the pixel faces become the platform's UI sans (art keeps its cells). */
@@ -2683,6 +3180,20 @@ html[data-reduce-motion]::view-transition-group(*),
 html[data-reduce-motion]::view-transition-old(*),
 html[data-reduce-motion]::view-transition-new(*) {
     animation: none !important;
+}
+/* Mid widths (small laptops, tablets): the nav needs the room, so the header buttons go icon-only
+   (their aria-labels still name them). */
+@media (max-width: 1100px) {
+    .nav-icon-btn__label,
+    .nav-terminal-btn__label {
+        display: none;
+    }
+    .nav-icon-btn,
+    .nav-terminal-btn {
+        min-width: 44px;
+        min-height: 44px;
+        justify-content: center;
+    }
 }
 @media (max-width: 768px) {
     .nav-icon-btn {

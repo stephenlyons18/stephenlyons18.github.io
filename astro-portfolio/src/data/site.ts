@@ -27,7 +27,7 @@ export interface Route {
     priority: number;
 }
 
-/** Every indexable route (the 404 page is not one). Keep in sync with scripts/postbuild.mjs. */
+/** Every indexable route (the 404 page is not one): nav, terminal `cd`, sitemap, llms.txt. */
 export const ROUTES: Route[] = [
     {
         path: '/',

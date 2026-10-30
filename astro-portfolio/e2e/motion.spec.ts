@@ -41,10 +41,7 @@ test('same-site navigation runs a page view transition (and none under reduced m
         });
     });
     await page.goto('/');
-    await page
-        .locator('.nav-links a[href$="about/index.html"], .nav-links a[href="/about"]')
-        .first()
-        .click();
+    await page.locator('.nav-links a', { hasText: 'About' }).first().click();
     await page.waitForURL(/about/);
     expect(await page.evaluate(() => sessionStorage.getItem('vt'))).toBe('true');
     // The header is its own transition group, so it stays put while the page changes.
@@ -107,4 +104,66 @@ test('reduced motion: no tilt, no drag, nothing moves', async ({ page, isMobile 
     await page.mouse.move(b.x + 140, b.y + 60, { steps: 6 });
     expect(Math.abs((await art.boundingBox())!.x - b.x)).toBeLessThan(1);
     await page.mouse.up();
+});
+
+for (const path of ['/about/', '/projects/', '/contact/']) {
+    test(`${path} header can be grabbed with a mouse and snaps home`, async ({
+        page,
+        isMobile,
+    }) => {
+        test.skip(isMobile, 'big art drags with a mouse only; touch keeps scrolling');
+        await page.goto(path);
+        await fxReady(page);
+        const art = page.locator('.drag-art[data-drag="fine"]').first();
+        const b = (await art.boundingBox())!;
+        await page.mouse.move(b.x + b.width / 3, b.y + b.height / 2);
+        await page.mouse.down();
+        await page.mouse.move(b.x + b.width / 3 + 120, b.y + b.height / 2 + 40, { steps: 8 });
+        expect((await art.boundingBox())!.x - b.x).toBeGreaterThan(30);
+        await page.mouse.up();
+        await expect
+            .poll(async () => Math.abs((await art.boundingBox())!.x - b.x), { timeout: 2500 })
+            .toBeLessThan(1);
+    });
+}
+
+test('hero: the name and the subheader are separate pieces (own entrance, own drag)', async ({
+    page,
+    isMobile,
+}) => {
+    await page.goto('/');
+    // Two entrances: the subheader's is its own animation, a beat after the name's.
+    const names = await page.evaluate(() =>
+        ['.hero-name', '.hero-tagline'].map((s) =>
+            document
+                .querySelector(s)!
+                .getAnimations()
+                .map((a) => (a as CSSAnimation).animationName),
+        ),
+    );
+    expect(names[0]).toEqual(['reveal-fade-up']);
+    expect(names[1]).toEqual(['hero-tagline-in']);
+    test.skip(isMobile, 'big art drags with a mouse only; touch keeps scrolling');
+    await fxReady(page);
+    await page.waitForTimeout(1200); // entrances done
+    const name = page.locator('.hero-name [data-drag]');
+    const sub = page.locator('.hero-tagline [data-drag]');
+    for (const [grab, other] of [
+        [name, sub],
+        [sub, name],
+    ] as const) {
+        const g = (await grab.boundingBox())!;
+        const o = (await other.boundingBox())!;
+        // Grab the middle of the piece's top half (below it, the subheader overlaps the name).
+        const y = grab === name ? g.y + g.height * 0.3 : g.y + g.height * 0.6;
+        await page.mouse.move(g.x + g.width / 3, y);
+        await page.mouse.down();
+        await page.mouse.move(g.x + g.width / 3 + 120, y + 40, { steps: 8 });
+        expect((await grab.boundingBox())!.x - g.x).toBeGreaterThan(30);
+        expect(Math.abs((await other.boundingBox())!.x - o.x)).toBeLessThan(1);
+        await page.mouse.up();
+        await expect
+            .poll(async () => Math.abs((await grab.boundingBox())!.x - g.x), { timeout: 2500 })
+            .toBeLessThan(1);
+    }
 });

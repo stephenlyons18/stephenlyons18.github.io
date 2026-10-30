@@ -15,19 +15,46 @@ import { featuredProjects } from '../data/projects';
     <!-- Hero Section -->
     <section class="hero" aria-label="Introduction">
         <div class="container">
-            <div class="hero-content reveal">
-                <!-- Grab-and-fling with a mouse (fx.ts); touch keeps scrolling the page. -->
-                <div class="drag-art" data-drag="fine">
-                    <AnsiTitle
-                        text="Stephen Lyons"
-                        label="Stephen Lyons — Cybersecurity Engineer"
-                        as="h1"
-                        style="wild"
-                        maxFont={12}
-                        class="hero-piece"
-                    />
+            <div class="hero-content">
+                <!-- The name and the subheader are two pieces with their own entrance and their own
+                     grab-and-fling (fx.ts, mouse only; touch keeps scrolling the page). Each entrance
+                     sits on an outer wrapper, so it never fights the drag's transform. -->
+                <div class="hero-name reveal">
+                    <div class="drag-art" data-drag="fine">
+                        <AnsiTitle text="Stephen Lyons" as="h1" maxFont={12} class="hero-piece" />
+                    </div>
                 </div>
-                <div class="hero-terminal" role="img" aria-label="Animated terminal introduction">
+                <div class="hero-tagline reveal">
+                    <div class="drag-art" data-drag="fine">
+                        <AnsiTitle
+                            text="Cyber Security Engineer"
+                            as="p"
+                            seed={4}
+                            maxFont={7}
+                            minFont={3}
+                            lines={2}
+                            opts={{ drips: 0.12, dripMax: 6, overspray: 0 }}
+                            wildOpts={{ blades: 0.25, sparkles: 1, dripMax: 6, overspray: 0 }}
+                            class="hero-sub"
+                        />
+                    </div>
+                </div>
+                <div class="hero-cta reveal">
+                    <a href="/projects" class="btn btn--filled">
+                        View Projects →
+                    </a>
+                    <a href="/about" class="btn">
+                        About Me
+                    </a>
+                    <a href="/contact" class="btn">
+                        Get In Touch
+                    </a>
+                </div>
+                <div
+                    class="hero-terminal reveal"
+                    role="img"
+                    aria-label="Animated terminal introduction"
+                >
                     <div class="hero-terminal__bar">
                         <span class="hero-terminal__dot hero-terminal__dot--red"></span>
                         <span class="hero-terminal__dot hero-terminal__dot--yellow"></span>
@@ -41,17 +68,6 @@ import { featuredProjects } from '../data/projects';
                         role="group"
                         aria-label="Terminal output"
                     ></div>
-                </div>
-                <div class="hero-cta">
-                    <a href="/projects" class="btn btn--filled">
-                        View Projects →
-                    </a>
-                    <a href="/about" class="btn">
-                        About Me
-                    </a>
-                    <a href="/contact" class="btn">
-                        Get In Touch
-                    </a>
                 </div>
             </div>
         </div>

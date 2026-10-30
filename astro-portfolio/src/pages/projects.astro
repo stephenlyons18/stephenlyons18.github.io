@@ -32,7 +32,10 @@ const galleries = Object.fromEntries(
     <section class="page-header" aria-label="Page header">
         <div class="container reveal">
             <span class="section-label">Portfolio</span>
-            <AnsiTitle text="Projects" as="h1" style="wild" />
+            <!-- Grab-and-fling with a mouse (fx.ts), like the home title; touch keeps scrolling. -->
+            <div class="drag-art" data-drag="fine">
+                <AnsiTitle text="Projects" as="h1" />
+            </div>
             <p class="page-desc">
                 A selection of notable projects spanning full-stack development, mobile apps, and
                 security engineering.

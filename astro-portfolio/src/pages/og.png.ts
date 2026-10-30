@@ -1,16 +1,13 @@
 /**
  * /og.png — the 1200 × 630 social preview, drawn at build time from the same ANSI art as the site
- * (default "wildstyle" palette) and rasterised by sharp. Pure rects, so no font is needed.
+ * (the default theme's bubble look) and rasterised by sharp. Pure rects, so no font is needed.
  */
 import type { APIRoute } from 'astro';
 import sharp from 'sharp';
-import { renderAnsi } from '../lib/ansi/generator';
-import { artToSvg, SVG_CELL } from '../lib/ansi/svg';
+import { pieceToSvg, renderPiece, type Piece, type PieceClass } from '../lib/ansi/piece';
 
 const W = 1200;
 const H = 630;
-const TOP = '#22c7ff';
-const BOTTOM = '#ff3d9a';
 
 const mix = (a: string, b: string, t: number) => {
     const p = (h: string) => [1, 3, 5].map((i) => parseInt(h.slice(i, i + 2), 16));
@@ -24,39 +21,52 @@ const mix = (a: string, b: string, t: number) => {
         .join('')}`;
 };
 
-const TITLE_COLORS: Record<string, string> = {
+// The default theme's bubble colours (R28: the hero's look), as global.css resolves them (no CSS in
+// sharp): eight rows cyan → magenta, white outline, violet 3D, drips fading out over the wall.
+const [TOP, BOTTOM, BG] = ['#22c7ff', '#ff3d9a', '#070b12'];
+const COLORS: Partial<Record<PieceClass, string>> = {
     ...Object.fromEntries(
-        Array.from({ length: 8 }, (_, i) => [`a-f${i}`, mix(TOP, BOTTOM, i / 7)]),
+        Array.from({ length: 8 }, (_, i) => [`p-f${i}` as PieceClass, mix(TOP, BOTTOM, i / 7)]),
     ),
-    'a-dr': BOTTOM,
-    'a-ol': '#eef6ff',
-    'a-x1': '#7b3fe4',
-    'a-x2': '#3b2385',
-    'a-gl': '#ffffff',
-    'a-os': '#b99cff',
+    'p-f8': mix(BOTTOM, BG, 0.25),
+    'p-dr': BOTTOM,
+    'p-d1': mix(BOTTOM, BG, 0.25),
+    'p-d2': mix(BOTTOM, BG, 0.5),
+    'p-d3': mix(BOTTOM, BG, 0.75),
+    'p-ik': '#060914',
+    'p-ol': '#eef6ff',
+    'p-x1': '#7b3fe4',
+    'p-x2': mix('#3b2385', BG, 0.25),
+    'p-sh': '#ffffff',
+    'p-os': mix('#b99cff', BG, 0.45),
 };
 
-/** Fit art `cols` cells into `width` px: SVG units per cell unit. */
-const fit = (cols: number, width: number) => width / (cols * SVG_CELL.w);
+/** A piece placed at (x, y), scaled to `width` px. Returns its SVG and drawn height. */
+const place = (p: Piece, x: number, y: number, width: number) => {
+    const h = (width / (p.w * (p.aspect ?? 1))) * p.h;
+    const svg = pieceToSvg(p, {
+        colors: COLORS,
+        attrs: { x: String(x), y: String(y), width: String(width), height: h.toFixed(1) },
+    });
+    return { svg, h };
+};
 
 export const GET: APIRoute = async () => {
-    const title = renderAnsi('Stephen Lyons', { style: 'wild', seed: 3 });
-    const sub = renderAnsi('Cybersecurity Engineer', { style: 'block', drips: 0, overspray: 0 });
-    const url = renderAnsi('stephenlyons.dev', { style: 'block', drips: 0, overspray: 0 });
-
-    const tScale = fit(title.cols, 1080);
-    const sScale = fit(sub.cols, 760);
-    const uScale = fit(url.cols, 360);
-    const tH = title.rows * SVG_CELL.h * tScale;
-    const sH = sub.rows * SVG_CELL.h * sScale;
-    const top = (H - tH - sH - 70) / 2;
+    const title = renderPiece('Stephen Lyons', { style: 'bubble' });
+    const sub = renderPiece('Cyber Security Engineer', { style: 'bubble', seed: 4, drips: 0.15 });
+    const tw = 1080;
+    const sw = 900;
+    const th = (tw / (title.w * (title.aspect ?? 1))) * title.h;
+    const sh = (sw / (sub.w * (sub.aspect ?? 1))) * sub.h;
+    const top = (H - th - sh - 30) / 2;
+    const t = place(title, 60, top, tw);
+    const s = place(sub, 60, top + th + 30, sw);
 
     const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" shape-rendering="crispEdges">
 <rect width="${W}" height="${H}" fill="#070b12"/>
 <rect x="0" y="${H - 14}" width="${W}" height="14" fill="#3cc4ff" fill-opacity="0.55"/>
-${artToSvg(title, { colors: TITLE_COLORS, backgrounds: { 'a-gl': TOP }, opacity: { 'a-os': 0.55 }, x: 60, y: top, scale: tScale })}
-${artToSvg(sub, { colors: { ...TITLE_COLORS, 'a-ol': '#36e2c6' }, opacity: { 'a-os': 0 }, x: 60, y: top + tH + 40, scale: sScale })}
-${artToSvg(url, { colors: Object.fromEntries(Object.keys(TITLE_COLORS).map((k) => [k, k === 'a-ol' ? '#4cc38a' : k.startsWith('a-x') ? '#14301f' : '#96aac0'])), x: W - 60 - 360, y: H - 70, scale: uScale })}
+${t.svg}
+${s.svg}
 </svg>`;
     const png = await sharp(Buffer.from(svg))
         .png({ compressionLevel: 9, palette: true })

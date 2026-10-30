@@ -91,14 +91,17 @@ const ld =
         ].map((f) => (
             <link rel="preload" href={`/fonts/${f}`} as="font" type="font/woff2" crossorigin />
         ))}
-        <!-- Before first paint (no flash): the saved theme, and the accessibility menu's choices
-             (Header.astro / site.ts). Old values from the green-era themes fall back to default.
+        <!-- Before first paint (no flash): the saved theme and heading style (src/data/themes.ts),
+             and the accessibility menu's choices (Header.astro / site.ts). Unknown values fall back
+             to the defaults.
              Reduced motion is on when the OS asks for it, or when the user turned it on here. -->
         <script is:inline>
             try {
                 var d = document.documentElement;
                 var t = localStorage.getItem('sl-theme');
                 if (t && /^(bubble|ansi|sunset|green)$/.test(t)) d.setAttribute('data-theme', t);
+                if (localStorage.getItem('sl-title-style') === 'wild')
+                    d.setAttribute('data-title-style', 'wild');
                 var a = JSON.parse(localStorage.getItem('sl-a11y') || '{}');
                 for (var k in a)
                     if (a[k] && /^[a-z-]+$/.test(k)) d.setAttribute('data-a11y-' + k, '');

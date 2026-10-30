@@ -8,8 +8,8 @@ vanilla-TS bundles (site interactivity + a working in-browser **terminal**). Dep
 `build` branch. The look is **ANSI/ASCII art crossed with NY/SF/LA graffiti** (wildstyle, bubble letters,
 pixel drips, 3D block shading) layered over a terminal that still really works.
 
-All site code lives in `astro-portfolio/`. `old-html/` is the frozen pre-Astro site, kept for reference. Never
-edit it and never port new work into it.
+All site code lives in `astro-portfolio/`. The pre-Astro site is archived on the `archive/old-html` branch (never
+merged, never edited; don't port work into it).
 
 One developer (**stephenlyons18**), any number of agents. There are no lock files, no "players" and no
 hand-offs. The board and PRs are the coordination layer.
@@ -30,8 +30,11 @@ hand-offs. The board and PRs are the coordination layer.
 
 - `main`: release. A push to `main` builds and deploys to the `build` branch (GitHub Pages serves `build`).
 - `dev`: integration. Default base for normal work.
-- `revamp`: the current **epic branch** (art-direction overhaul, cut from `dev`). While it exists, work-item
-  branches are cut from `revamp` and PR into `revamp`. When the epic is done, `revamp` PRs into `dev`.
+- `epic/<name>`: an **epic branch**, cut from `dev` for a group of related items. The current one is
+  **`epic/polish`** (R18–R27). While it exists, work-item branches are cut from it and PR into it. When the epic is
+  done, it PRs into `dev` as one grouped PR (that's where the user signs off), and the branch is deleted after merge.
+  With no epic open, items branch from and PR into `dev`.
+- Archive and media branches are never merged: `archive/old-html` (the pre-Astro site), `pr-media` (PR screenshots).
 - Work-item branches: `<feat|fix|chore|docs|perf|test>/R<n>-<slug>`, one per board item (or a tight cluster).
 
 ## Tracking work: the board, PRs, and (security-only) issues
@@ -46,7 +49,7 @@ The repo is **public**, so development is not tracked in public issues. Instead:
 - **Repo issues are only for security findings**: Dependabot / code scanning / secret scanning / `pnpm audit` /
   anything with a vulnerability angle. Label `security`, then `tools/board.sh add-issue <#>`. Fixing PRs say `Fixes #N`.
   Closing keywords only fire on the default branch (`main`), so **close the issue by hand** (`gh issue close
-  <#> -c "Fixed in #PR"`) when the fixing PR merges into `revamp`/`dev`.
+  <#> -c "Fixed in #PR"`) when the fixing PR merges into the epic branch or `dev`.
 - Dependabot PRs land on the board by themselves. Supersede them with a real upgrade PR and close them with a comment.
 
 | Column      | Means                                                                              |
@@ -64,22 +67,24 @@ GraphQL query per call, so don't loop it. If gh hits a rate limit, keep coding a
 `gh api rate_limit` resets.
 
 **Session start:** `tools/board.sh list`, then take the item the user names (otherwise the top **Ready** P0).
-`tools/board.sh show R<n>` and read the whole body. Then `git switch -c <type>/R<n>-<slug> origin/revamp` (or
-`origin/dev` once the epic has merged), `git push -u origin HEAD`, and `tools/board.sh state R<n> "In progress"
+`tools/board.sh show R<n>` and read the whole body. Then `git switch -c <type>/R<n>-<slug> origin/epic/polish` (or
+`origin/dev` when no epic is open), `git push -u origin HEAD`, and `tools/board.sh state R<n> "In progress"
 "<plan>"`.
 
 **During:** found more work? `tools/board.sh new Backlog …`. Don't grow the branch silently. Keep the State
 line true when you stop mid-item.
 
-**Finishing:** meet *Done means* (bottom), push, then `gh pr create --base revamp` with the board id in the
+**Finishing:** meet *Done means* (bottom), push, then `gh pr create --base epic/polish` (or `dev`) with the board id in the
 title, the spec, and a **Verified by running / Inferred** report with screenshots or videos attached (never
 committed). Then `tools/board.sh link R<n> <pr#>`. Once the bar is met locally, merge your own PR:
 `gh pr merge <#> --merge --delete-branch`, then `tools/board.sh move '#<pr>' Done`. **Exception:** visual /
-art-direction PRs wait for the user's sign-off on the screenshots unless the user said to go ahead.
+art-direction PRs wait for the user's sign-off on the screenshots unless the user said to go ahead. Inside an
+epic, item PRs (screenshots attached) merge into the epic branch so the grouped PR shows the whole change, and the
+**grouped epic → `dev` PR** is the one that waits for the sign-off.
 
 **CI runs only on PRs into `main`** (the release gate), and deploy builds once per merge to `main`. PRs into
-`dev`/`revamp` trigger no Actions, which saves the user's minutes. Your local run of the full bar *is* the check
-for them, so paste its results into the PR's report. Never add `dev`/`revamp`/push triggers back to a workflow
+`dev` or an epic branch trigger no Actions, which saves the user's minutes. Your local run of the full bar *is* the check
+for them, so paste its results into the PR's report. Never add `dev`/epic/push triggers back to a workflow
 that builds or tests.
 
 ## Toolchain
@@ -121,9 +126,12 @@ pnpm preview        # serve dist/
   `https://github.com/stephenlyons18/stephenlyons18.github.io/blob/pr-media/R<n>/<file>?raw=true`. That branch
   is never merged.
 - **Suites:** `smoke` (load, console, overflow, art fits its box), `skill-graph` (card anchoring, 0 label
-  overlaps), `terminal`, `scroll` (progress strip, touch scrubber drag), `drips`, `ux` (axe WCAG 2.2 AA, nav, mobile menu, keyboard, reduced motion, no idle rAF),
+  overlaps), `terminal` (incl. window drips), `scroll` (progress strip, touch scrubber drag), `drips` (incl. touch
+  focus), `urls` (clean directory URLs, nested 404), `wall` (pieces never over content, spray once), `motion`
+  (tilt, draggable art), `a11y-menu`, `headings` (style/colour switching, both styles fit and pass axe),
+  `seo`, `gallery`, `ux` (axe WCAG 2.2 AA, nav, mobile menu, keyboard, reduced motion, no idle rAF),
   `budget` (bytes per page by kind vs `e2e/budget.json`, plus LCP/CLS/blocking time on a throttled phone) and
-  `perf` (scroll frame timing).
+  `perf` (scroll frame timing, composited layers at rest).
   - The last two run after the functional tests, in the `budget-*` and then `perf-*` projects, so they measure
     the site rather than other tests' CPU. `perf-*` runs one device at a time.
   - Raising a budget needs a reason in the PR; lower it when a PR wins bytes back.
@@ -134,11 +142,12 @@ pnpm preview        # serve dist/
 
 - `src/layouts/BaseLayout.astro` wraps every page (`fixedFooter`, `fullFooter`, `showHeader`,
   `showScrollProgress` props; the last also gives touch screens the right-edge scrub grip). Pages: `index`, `about`, `projects`, `contact`, `404`.
-- `src/scripts/site.ts`, `terminal.ts` and `fx.ts` are bundled by **esbuild** (not Astro) into IIFEs at
+- `src/scripts/site.ts`, `terminal.ts`, `fx.ts` and `wall.ts` are bundled by **esbuild** (not Astro) into IIFEs at
   `public/scripts/` (generated, git-ignored).
   - Only `site.js` is in the page (`<script is:inline defer>`).
   - It loads `terminal.js` on idle or first use.
-  - It loads `fx.js` (Motion's `motion/mini` + `spring`: card tilt, draggable art, drip taps on touch) on idle,
+  - It loads `wall.js` (random wall pieces, R32) on idle, unless the wall is hidden.
+  - It loads `fx.js` (Motion's `motion/mini` + `spring`: card tilt, draggable art, touch focus) on idle,
     only on pages with something to animate and never under reduced motion. Animation code goes in `fx.ts`
     or CSS, compositor-only (transform/opacity), and stops under `data-reduce-motion`.
   - **Smooth hover and scroll are rules, not luck** (perf traces in R17):
@@ -147,6 +156,15 @@ pnpm preview        # serve dist/
     - One transform function list per element across all its states (mixed lists interpolate on the main
       thread).
     - Many small moving things move as a few grouped layers (drip runs), never one animation each.
+    - Every composited layer is GPU tile memory (×9 on a DPR-3 phone). No `will-change` on content that's
+      waiting (e.g. unrevealed `.reveal`); the entrance animation promotes it briefly. `perf.spec` caps
+      layers at rest.
+    - Big repeating textures are baked bitmaps tiled as a background (the wall PNGs), never CSS masks or
+      SVG patterns, which re-rasterise for every tile that scrolls in.
+    - Heavy JS work (the skill graph's 1200-tick settle) is time-sliced so it never lands as one long task
+      mid-scroll.
+    - Easing curves never stop dead and then lurch: a slow-down reads as motion, and a stop-start reads as
+      stutter.
     - No forced reflow in pointer handlers, and no style writes on every scroll frame (flip a class on change).
     - No `backdrop-filter` or full-screen fixed overlays.
     - Scroll-linked UI uses CSS scroll-driven animations. Write `animation-timeline` in its own rule: the CSS
@@ -160,17 +178,23 @@ pnpm preview        # serve dist/
   → node radius; `connections` must be **bidirectional**, which tests enforce), and job history. Pages, the
   terminal and the graph all read from these, so never hand-copy content into a second place.
 - **Build-time art** lives in `src/lib/` (pure TS, unit-tested). It is rendered by Astro components into
-  static, `aria-hidden` text with a real text equivalent, so art costs zero runtime JS.
+  static, `aria-hidden` art with a real text equivalent, so art costs zero runtime JS. Title pieces
+  (`src/lib/ansi/piece.ts`, `bubble.ts`) are inline SVG on a half-block grid, drips and dividers are text
+  cells, and the wall is a baked PNG tile. Wall pieces (R32) are random per visit: drawn at build time
+  into a pool (`wallPool.ts` → `/art/wall-pieces.json`), then `src/scripts/wall.ts` picks, colours and
+  places them on idle, only in free wall. Never run the renderer in the browser (long tasks on phones).
+  `wall.spec` fails if one overlaps any visible text or control, at any size.
 - **SEO and AI search** come from data, so they can't drift:
   - `src/data/site.ts` (`SITE`, `ROUTES`) drives canonical URLs and Open Graph/Twitter tags in `BaseLayout`
     (every page passes `kind`), plus JSON-LD (`src/lib/seo.ts`: WebSite + Person + a page type).
   - Endpoints in `src/pages/` build `sitemap.xml`, `robots.txt` (AI crawlers welcome), `llms.txt` and
     `llms-full.txt` (llmstxt.org).
-  - `og.png` is the ANSI title rendered to SVG rects (`src/lib/ansi/svg.ts`) and rasterised by sharp.
+  - `og.png` is the hero piece (`src/lib/ansi/piece.ts` → `pieceToSvg` with fixed colours) rasterised by sharp.
   - A new page needs a `ROUTES` entry; `seo.spec` checks the meta, JSON-LD, sitemap and one `<h1>` with no
     skipped heading levels.
-- `scripts/postbuild.mjs` rewrites absolute URLs in `dist/*.html` to relative ones so `dist/` also works over
-  `file://`. New top-level routes must be added to its `DIR_ROUTES`.
+- `scripts/postbuild.mjs` rewrites absolute URLs in `dist/*.html` to relative ones, and links pages by their
+  **directory URL** (`../about/`), so the address bar never shows `index.html`. It finds routes on disk; a new page
+  needs only its `ROUTES` entry (nav, terminal `cd`, sitemap and llms.txt read it).
 - **`.nojekyll` must reach the `build` branch**, or GitHub Pages strips `_astro/` (all CSS/JS). `deploy.yml`
   enforces it; never remove that check or `include-hidden-files: true`.
 
@@ -188,7 +212,9 @@ Workflow rules: pin third-party actions to a **SHA with a version comment**; set
 ## Non-negotiables
 
 - **Mobile-first, every device smooth.** Design at 320–430px first. Touch targets ≥ 44px. Every hover has a
-  tap/focus equivalent. No horizontal scroll at any width (e2e checks this). Canvas work degrades on small
+  tap/focus equivalent; on touch, cards and dividers take their hover state from scroll focus (the middle of
+  the screen, `fx.ts` `.is-focus`), not from taps. Keyboard-only hints (Ctrl+K) are wrapped in `.only-kbd` with an `.only-touch` wording
+  beside them; touch screens hide the native scrollbar because the pixel scrubber replaces it. No horizontal scroll at any width (e2e checks this). Canvas work degrades on small
   screens.
 - **Art enhances, never obstructs.** ANSI/graffiti art never sits behind body copy, never blocks navigation or
   focus, never moves under the pointer, and is `aria-hidden` with a real text equivalent (an `sr-only` heading
@@ -214,6 +240,10 @@ Workflow rules: pin third-party actions to a **SHA with a version comment**; set
     attribute, never `matchMedia` alone. Every new animation must stop under it.
   - Every new art heading must keep its real heading (`AnsiTitle` does this) so **Plain headings** works.
   - `a11y-menu.spec` checks each mode with axe.
+  - It also holds **Heading style** and **Colours** (R30): radio groups that set `data-title-style`
+    (`wild`, or none for bubble) and `data-theme` on `<html>`, saved as `sl-title-style` / `sl-theme`,
+    shared with the terminal's `style` and `theme` (names in `src/data/themes.ts`). Titles carry both
+    styles; never add a title that renders only one unless it is decorative (`style` pins it).
 - **Terminal UX:** `scrollTop = scrollHeight` goes inside `requestAnimationFrame`; use a `MutationObserver` for
   streamed output. Escape every user-supplied string before it touches `innerHTML`.
 
@@ -241,14 +271,13 @@ Commits end with only the `Co-Authored-By:` line. Grep a PR body for `claude.ai/
 
 ## Internet and docs
 
-Astro 7, Vite 8, Tailwind 4, React 19.3, Motion, Vitest 5 and Playwright 1.64 all move fast and may post-date
+Astro 7, Vite 8, React 19.3, Motion, Vitest 5 and Playwright 1.64 all move fast and may post-date
 your training data. **Before using an unfamiliar API or config key, fetch the docs or run a 10-second
 experiment.** Don't assert library behaviour from memory. Prefer the specific sub-page:
 
 | Tech                              | Docs                                                                    |
 | --------------------------------- | ----------------------------------------------------------------------- |
 | Astro (components, assets, islands) | https://docs.astro.build/en/reference/directives-reference/ · https://docs.astro.build/en/guides/images/ |
-| Tailwind CSS v4                   | https://tailwindcss.com/docs                                            |
 | d3-force                          | https://d3js.org/d3-force/simulation                                    |
 | React 19                          | https://react.dev/reference/react                                       |
 | Motion                            | https://motion.dev/docs/react-quick-start                               |
@@ -273,6 +302,6 @@ leave the item in Backlog with `needs decision` in its State line, and say so.
 
 **Done means:** `pnpm test`, `pnpm build`, `pnpm e2e` and `pnpm format:check` are green; screenshots or video at
 all three viewports for anything visual; `pnpm audit --audit-level high` reviewed; `README.md`/this file updated
-if a command, convention or page changed; a PR into `revamp` (or `dev`) naming its board id with a report that
+if a command, convention or page changed; a PR into the epic branch (or `dev`) naming its board id with a report that
 separates **what you verified by running** from **what you inferred**; the board card linked and moved; any
 fixed security issue closed by hand.
