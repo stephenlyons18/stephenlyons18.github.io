@@ -122,6 +122,9 @@ test('wildstyle titles pass axe on every page; the new menu controls are ≥ 44p
     page,
 }) => {
     test.setTimeout(60_000);
+    // Settle reveal animations first (as ux.spec does): mid-fade, axe measures blended colours
+    // (the hero terminal's title read under 4.5:1 on a slower CI runner; 4.85:1 at rest).
+    await page.emulateMedia({ reducedMotion: 'reduce' });
     await page.addInitScript(() => localStorage.setItem('sl-title-style', 'wild'));
     for (const path of PAGES) {
         await page.goto(path);

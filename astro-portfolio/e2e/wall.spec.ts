@@ -128,7 +128,10 @@ test('a heading-style switch keeps the wall; a new theme re-rolls it', async ({ 
     await ready(page);
     const before = await signature(page);
     await page.evaluate(() => document.documentElement.setAttribute('data-title-style', 'wild'));
-    await page.waitForTimeout(1200);
+    // The resize settles (250 ms debounce), then a piece that content now covers is placed again,
+    // in idle slices: wait for that, not a fixed time (a busy machine takes longer).
+    await page.waitForTimeout(800);
+    await ready(page);
     expect((await signature(page)).sort()).toEqual([...before].sort());
     await page.evaluate(() => document.documentElement.setAttribute('data-theme', 'sunset'));
     await expect
