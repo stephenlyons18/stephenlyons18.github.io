@@ -1,0 +1,211 @@
+---
+/**
+ * Spray paint (R53): the corner kit (paint on/off + the menu) and the menu itself. Static HTML so
+ * nothing shifts when the engine arrives; paint.ts (lazy, src/scripts/paint.ts) wires it up. It loads
+ * on idle where there's a mouse (for the spray cursor) and on first use on touch. The whole kit is
+ * hidden under reduced motion (the OS setting or the accessibility menu).
+ *
+ * The menu is a native popover like the accessibility menu: top layer, light dismiss, Escape.
+ */
+import { CAPS, DRIPS, PAINT_TOKENS, SIZE } from '../data/paint';
+import { capIconCells, cellsToSvg } from '../lib/paint/spray';
+
+const icon = (id: (typeof CAPS)[number]['id']) =>
+    cellsToSvg(capIconCells(id), 11, 'paint-cap__icon');
+---
+
+<div class="paint-kit" data-paint-kit>
+    <p class="paint-toast" role="status" aria-live="polite" data-paint-toast></p>
+    <button
+        type="button"
+        class="paint-fab paint-fab--menu"
+        popovertarget="paint-menu"
+        aria-label="Paint settings"
+        title="Paint settings"
+    >
+        <svg
+            viewBox="0 0 8 9"
+            width="18"
+            height="20"
+            aria-hidden="true"
+            shape-rendering="crispEdges"
+        >
+            <path
+                fill="currentColor"
+                d="M0 1h8v1H0zM5 0h2v3H5zM0 4h8v1H0zM1 3h2v3H1zM0 7h8v1H0zM4 6h2v3H4z"
+            ></path>
+        </svg>
+    </button>
+    <button
+        type="button"
+        class="paint-fab paint-fab--can"
+        aria-pressed="false"
+        aria-label="Spray paint"
+        title="Spray paint (P)"
+        data-paint-toggle
+    >
+        <svg
+            viewBox="0 0 12 12"
+            width="26"
+            height="26"
+            aria-hidden="true"
+            shape-rendering="crispEdges"
+        >
+            <path fill="currentColor" d="M3 0h2v1H3zM2 1h4v2H2zM1 3h6v9H1z"></path>
+            <path class="paint-fab__label" d="M1 6h6v3H1z"></path>
+            <path
+                class="paint-fab__mist"
+                d="M8 0h1v1H8zM10 1h1v1h-1zM9 2h1v1H9zM11 3h1v1h-1zM8 4h1v1H8z"
+            ></path>
+        </svg>
+        <span class="paint-fab__state" aria-hidden="true">
+            Paint
+        </span>
+    </button>
+</div>
+
+<div id="paint-menu" class="paint-menu" popover role="dialog" aria-labelledby="paint-menu-title">
+    <p class="paint-menu__title" id="paint-menu-title">
+        Spray paint
+    </p>
+    <ul class="paint-menu__list">
+        <li>
+            <label class="accessibility-switch">
+                <input type="checkbox" role="switch" data-paint-on />
+                <span class="accessibility-switch__text">
+                    <span class="accessibility-switch__label">Paint on the page</span>
+                    <span class="accessibility-switch__hint">
+                        <span class="only-kbd">Drag to spray. P or Esc to stop.</span>
+                        <span class="only-touch">One finger sprays, two fingers scroll.</span>
+                    </span>
+                </span>
+                <span class="accessibility-switch__track" aria-hidden="true"></span>
+            </label>
+        </li>
+    </ul>
+
+    <!-- A test patch in the current colour, cap and size, drawn by the same engine. -->
+    <canvas
+        class="paint-preview"
+        data-paint-preview
+        width="120"
+        height="28"
+        aria-hidden="true"
+    ></canvas>
+
+    <fieldset class="paint-group">
+        <legend class="paint-group__label">Colour</legend>
+        <div class="paint-swatches">
+            {PAINT_TOKENS.map((t, i) => (
+                <label class="paint-swatch" title={t.label} style={`--sw: var(${t.token})`}>
+                    <input
+                        type="radio"
+                        name="paint-color"
+                        value={t.token}
+                        checked={i === 0}
+                        aria-label={t.label}
+                    />
+                    <span class="paint-swatch__chip" aria-hidden="true" />
+                </label>
+            ))}
+            <label class="paint-swatch paint-swatch--custom" title="Custom" data-paint-custom-tile>
+                <input type="radio" name="paint-color" value="custom" aria-label="Custom colour" />
+                <span class="paint-swatch__chip" aria-hidden="true"></span>
+            </label>
+        </div>
+        <div class="paint-custom">
+            <input
+                type="color"
+                class="paint-custom__wheel"
+                value="#ff3d9a"
+                aria-label="Pick a custom colour"
+                data-paint-wheel
+            />
+            <input
+                type="text"
+                class="paint-custom__hex"
+                value="#ff3d9a"
+                maxlength="7"
+                spellcheck="false"
+                autocomplete="off"
+                autocapitalize="off"
+                aria-label="Custom colour as hex"
+                data-paint-hex
+            />
+        </div>
+    </fieldset>
+
+    <fieldset class="paint-group">
+        <legend class="paint-group__label">Cap</legend>
+        <div class="paint-caps">
+            {CAPS.map((c, i) => (
+                <label class="paint-opt paint-cap" title={c.desc}>
+                    <input type="radio" name="paint-cap" value={c.id} checked={i === 0} />
+                    <Fragment set:html={icon(c.id)} />
+                    <span>{c.label}</span>
+                </label>
+            ))}
+        </div>
+    </fieldset>
+
+    <div class="paint-group">
+        <label class="paint-group__label paint-size__label" for="paint-size">
+            Size{' '}
+            <output class="paint-size__value" for="paint-size" data-paint-size-value>
+                {SIZE.default}
+            </output>
+        </label>
+        <input
+            id="paint-size"
+            class="paint-size"
+            type="range"
+            min={SIZE.min}
+            max={SIZE.max}
+            step="1"
+            value={SIZE.default}
+            data-paint-size
+        />
+        <p class="paint-group__hint only-kbd">Or hold Shift and scroll over the page.</p>
+    </div>
+
+    <fieldset class="paint-group">
+        <legend class="paint-group__label">Drips</legend>
+        <div class="paint-seg">
+            {DRIPS.map((d) => (
+                <label class="paint-opt">
+                    <input type="radio" name="paint-drips" value={d.id} checked={d.id === 'some'} />
+                    <span>{d.label}</span>
+                </label>
+            ))}
+        </div>
+    </fieldset>
+
+    <ul class="paint-menu__list">
+        <li>
+            <label class="accessibility-switch">
+                <input type="checkbox" role="switch" data-paint-keep />
+                <span class="accessibility-switch__text">
+                    <span class="accessibility-switch__label">Keep paint</span>
+                    <span class="accessibility-switch__hint" data-paint-keep-hint>
+                        Off: paint fades a moment after it lands
+                    </span>
+                </span>
+                <span class="accessibility-switch__track" aria-hidden="true"></span>
+            </label>
+        </li>
+    </ul>
+
+    <div class="paint-menu__foot">
+        <button type="button" data-paint-clear>
+            Clear paint
+        </button>
+        <button
+            type="button"
+            class="paint-menu__close"
+            popovertarget="paint-menu"
+            popovertargetaction="hide"
+        >
+            Done
+        </button>
+    </div>
+</div>

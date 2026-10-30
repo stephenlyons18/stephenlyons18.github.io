@@ -3,10 +3,12 @@
    ============================================================ */
 
 import { DEFAULT_THEME, THEME_KEY, TITLE_STYLE_KEY } from '../data/themes';
+import { PAINT_ART_KEY } from '../data/paint';
 
 declare global {
     interface Window {
         openTerminal?: () => void;
+        slPaint?: { toggle: (on?: boolean) => void };
     }
 }
 
@@ -517,6 +519,54 @@ function initWallPieces(): void {
     });
 }
 
+// ── Spray paint (PaintKit.astro, paint.ts, R53) ─────────────────────────────────────────────
+// paint.js loads on first use (the corner kit, its menu, or the P key), or on idle when this page
+// has paint kept from earlier in the visit. Never under reduced motion: the kit is hidden then.
+const PAINT_SRC = TERMINAL_SRC?.replace(/terminal\.js$/, 'paint.js');
+let paintLoading: Promise<void> | null = null;
+function loadPaint(): Promise<void> {
+    if (window.slPaint || motionOff() || !PAINT_SRC) return Promise.resolve();
+    paintLoading ??= new Promise((resolve, reject) => {
+        const s = document.createElement('script');
+        s.src = PAINT_SRC;
+        s.onload = () => resolve();
+        s.onerror = () => reject(new Error('paint failed to load'));
+        document.head.appendChild(s);
+    });
+    return paintLoading;
+}
+function initPaint(): void {
+    const kit = document.querySelector<HTMLElement>('[data-paint-kit]');
+    if (!kit) return;
+    // Before the engine is here, the can loads it and switches paint on (after that, paint.ts
+    // owns the button).
+    kit.querySelector('[data-paint-toggle]')?.addEventListener('click', () => {
+        if (!window.slPaint) loadPaint().then(() => window.slPaint?.toggle(true));
+    });
+    document.getElementById('paint-menu')?.addEventListener('toggle', () => void loadPaint());
+    let kept = false;
+    try {
+        kept = sessionStorage.getItem(PAINT_ART_KEY + location.pathname) !== null;
+    } catch {
+        /* no storage: nothing kept */
+    }
+    if (kept) idle(() => void loadPaint().catch(() => {}));
+    // P switches paint on before the engine is here (paint.ts owns the key once it's loaded).
+    document.addEventListener('keydown', (e) => {
+        if (window.slPaint || (e.key !== 'p' && e.key !== 'P')) return;
+        if (
+            e.ctrlKey ||
+            e.metaKey ||
+            e.altKey ||
+            document.querySelector('.terminal-overlay.active')
+        )
+            return;
+        const t = e.target;
+        if (t instanceof Element && t.closest('input, textarea, select, [contenteditable]')) return;
+        loadPaint().then(() => window.slPaint?.toggle(true));
+    });
+}
+
 // ── Accessibility menu (Header.astro) ────────────────────────────────────────
 // Each switch mirrors a data-accessibility-<key> attribute on <html>, persisted as JSON in localStorage.
 // "motion" also drives data-reduce-motion, which stays on regardless when the OS asks for it.
@@ -663,6 +713,7 @@ function init(): void {
     initFx();
     initScrollProgress();
     initScrubber();
+    initPaint();
 }
 
 if (document.readyState === 'loading') {

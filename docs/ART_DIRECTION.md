@@ -223,10 +223,47 @@ avatar stays bubble.
   labels start with a `▓▒░` ramp; the timeline is a sprayed sky→forest stripe with square pixel markers; the
   terminal banner uses the title gradient.
 
+## Spray paint (R53, user direction 2026-10-30)
+
+Visitors can paint over the site in its own style. It is the one place art goes **over content**, and only because
+the visitor puts it there.
+
+- **Off until switched on**: the corner can (bottom right, every device), the menu's switch, or **P**. Off, the
+  site and its cursor behave exactly as before: no ring, no captured pointer, no engine loaded. **Esc**, **P** or
+  the can switch it off. The header stays usable while painting.
+- **Cursor (paint mode, mouse and pen):** a hollow ring of dither dots the size of the spray (round, or square for
+  the block pen). Dots run paint colour, ink, gap, so it reads on the wall, on paint and on its own colour, and
+  fresh paint shows through it (user direction 2026-10-30: transparent with a dotted outline). Over the header, the
+  kit, menus and text fields the normal cursor comes back.
+- **Look:** cells are square (~6px, snapped so a dither dot is whole device pixels), each a 2 × 2 dither of the
+  wall's ramp: `░` `▒` `▓` `█` as 1–4 dots. Spray builds up by time, not distance: a quick pass leaves a `░▒`
+  speckle, a slow one a solid coat. Caps: **Soft** (round, dithered edge), **Fat** (even, short fade), **Skinny**
+  (tight line), **Splatter** (flecks), **Block** (a square pixel pen that lays `█` at once, for pixel letters).
+- **Colour:** the theme's own tokens by default (`--title-hi` first, then the title ramp, accent, cut, white, ink),
+  so paint follows the colour theme; a colour wheel or hex sets a custom one. Paint already on the wall keeps its
+  colour when the theme changes.
+- **Fade:** by default paint holds 1.4s, then steps down the ramp `█ ▓ ▒ ░` and is gone over 1.2s: an ANSI
+  dissolve, never an alpha fade. **Keep paint** keeps it for the visit, per page (sessionStorage); a reload clears it.
+- **Drips** (`src/lib/paint/drips.ts`), thin-film flow simplified, following the drip rules above (runs, catches,
+  creeps to a stop; never detaches, falls or splats):
+  - Wet paint dries over time; a cell sags when its wet load passes a threshold (**Some** 2.4 coats, **Lots** 1.3,
+    or **Off**). Holding the can still is what drips: a quick pass never does.
+  - The excess feeds the run in that column (paint flows down its own channel), so a longer hold makes more runs,
+    and longer, faster, fatter ones: about 4–20 cells for a 1s hold, ~30 for 2s, ~65 for 4s.
+  - Head speed ≈ K·(paint − pin)^⅔, capped at ~130px/s, eased (no jumps), slowed by smooth wall roughness at
+    "catches" without stopping; every row of stem costs paint; below the pin it creeps to a stop.
+  - A 1-cell stem ending in the site's teardrop bead (`▗█▖` / `▟█▙` / `▜█▛`), sized by the paint left.
+- **Touch:** scrolling never paints. In paint mode one finger sprays and two fingers scroll.
+- **Exceptions (user OK, 2026-10-30):** paint may sit over body copy and controls (the visitor painted it; it fades
+  by default and Clear wipes it). Its rAF loop is allowed only while a can is held, a drip runs or paint fades, and
+  it stops by itself. Under reduced motion there is no paint at all: no kit, no cursor, no engine.
+- **Cost:** `paint.js` (~9 KB gzipped) loads on first use, not with the page. Paint is canvas chunks of 64 cell rows
+  that exist only where there is paint, written as dirty rectangles; the page never widens.
+
 ## What art may never do
 
 - Sit behind body copy, form fields or the terminal text. Art lives in headers, margins, separators and the
-  hero, on its own rows.
+  hero, on its own rows. (The one exception is paint the visitor sprays themselves, above.)
 - Move under the pointer on its own, or shift layout after load. No CLS from art. Movement the user starts is
   fine: grabbing `[data-drag]` art, hovering a card or a divider to pour its drips.
 - Animate when motion is off. Every animation stops under `data-reduce-motion` (the OS setting or the accessibility

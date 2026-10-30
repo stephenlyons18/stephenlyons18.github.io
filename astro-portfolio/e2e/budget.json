@@ -2,7 +2,7 @@
     "pages": {
         "/": {
             "js": 72,
-            "css": 50,
+            "css": 58,
             "font": 30,
             "img": 10,
             "html": 160,
@@ -10,15 +10,15 @@
         },
         "/about/": {
             "js": 342,
-            "css": 50,
+            "css": 58,
             "font": 30,
             "img": 10,
-            "html": 62,
+            "html": 68,
             "data": 84
         },
         "/projects/": {
             "js": 72,
-            "css": 50,
+            "css": 58,
             "font": 30,
             "img": 100,
             "html": 75,
@@ -26,18 +26,18 @@
         },
         "/contact/": {
             "js": 72,
-            "css": 50,
+            "css": 58,
             "font": 30,
             "img": 10,
-            "html": 48,
+            "html": 55,
             "data": 84
         },
         "/404.html": {
             "js": 72,
-            "css": 50,
+            "css": 58,
             "font": 30,
             "img": 10,
-            "html": 28,
+            "html": 39,
             "data": 84
         }
     },

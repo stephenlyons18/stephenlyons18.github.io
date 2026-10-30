@@ -12,6 +12,11 @@ Stephen Lyons' cybersecurity portfolio: a working in-browser terminal painted on
 - Build-time ANSI/ASCII art: wildstyle and bubble pieces (titles and original pieces painted in the wall's whitespace) with ink outlines, 3D shading and paint drips, zero runtime JS
 - Pixel type, self-hosted and subset (~22 KB): **Press Start 2P** for display, **Departure Mono** for body. A tiny JetBrains Mono subset sets the art's cells
 - Play, all compositor-only: paint drips that pour out of cards and dividers on hover, cards that tilt toward the cursor, art you can grab and fling (Motion `motion/mini`), and pixel-wipe page transitions. All of it stops under reduced motion
+- **Spray paint**: tap the can in the bottom-right corner (or press **P**) and paint over the site in its own
+  ANSI style: dithered `░▒▓█` spray, five caps (soft, fat, skinny, splatter, block pen), theme or custom colours, and
+  drips that run when you hold the can still. Paint fades by default, or keep it for the visit. In paint mode the
+  cursor is a hollow ring the size of the spray (**Shift + scroll** resizes it); on touch, one finger sprays and two
+  scroll. Off under reduced motion
 - A pixel-block scroll progress strip, and on touch screens a grip on the right edge to drag through long pages
 - SEO and AI-search ready, all generated from the typed data:
   - canonical URLs, Open Graph/Twitter cards, and an OG image drawn from the ANSI art;
@@ -37,6 +42,13 @@ Press **Ctrl+K** / **⌘K** (or the `>_` button) on any page; the homepage hero 
 `help` · `whoami` · `ls pages` · `cd <page>` · `skills` · `projects` · `experience` · `education` · `contact` ·
 `theme <burner|mint|defcon|sunset|phosphor>` · `style <bubble|wildstyle>` · `matrix` · `clear` · `exit` · and `sudo`, if you must. Tab completes and
 ↑/↓ walks history.
+
+## Spray paint
+
+The can in the bottom-right corner (or **P**) switches paint mode on; **Esc**, **P** or the can again switch it off.
+The sliders button beside it opens the menu: colour (the theme's palette, a colour wheel or a hex), cap, size, drips
+(off / some / lots), keep paint, and clear. **Shift + scroll** or **[ ]** resize the spray. On touch, one finger
+sprays and two fingers scroll; with paint off, nothing you do paints.
 
 ## Develop
 

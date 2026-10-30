@@ -129,7 +129,7 @@ pnpm preview        # serve dist/
   overlaps), `terminal` (incl. window drips), `scroll` (progress strip, touch scrubber drag), `drips` (incl. touch
   focus), `urls` (clean directory URLs, nested 404), `wall` (pieces never over content, spray once), `motion`
   (tilt, draggable art), `accessibility-menu`, `headings` (style/colour switching, both styles fit and pass axe),
-  `seo`, `gallery`, `ux` (axe WCAG 2.2 AA, nav, mobile menu, keyboard, reduced motion, no idle rAF),
+  `seo`, `gallery`, `paint` (paint mode, fade, drips, Shift + wheel, kept paint, touch), `ux` (axe WCAG 2.2 AA, nav, mobile menu, keyboard, reduced motion, no idle rAF),
   `budget` (bytes per page by kind vs `e2e/budget.json`, plus LCP/CLS/blocking time on a throttled phone) and
   `perf` (scroll frame timing, composited layers at rest).
   - The last two run after the functional tests, in the `budget-*` and then `perf-*` projects, so they measure
@@ -142,11 +142,15 @@ pnpm preview        # serve dist/
 
 - `src/layouts/BaseLayout.astro` wraps every page (`fixedFooter`, `fullFooter`, `showHeader`,
   `showScrollProgress` props; the last also gives touch screens the right-edge scrub grip). Pages: `index`, `about`, `projects`, `contact`, `404`.
-- `src/scripts/site.ts`, `terminal.ts`, `fx.ts` and `wall.ts` are bundled by **esbuild** (not Astro) into IIFEs at
+- `src/scripts/site.ts`, `terminal.ts`, `fx.ts`, `wall.ts` and `paint.ts` are bundled by **esbuild** (not Astro) into IIFEs at
   `public/scripts/` (generated, git-ignored).
   - Only `site.js` is in the page (`<script is:inline defer>`).
   - It loads `terminal.js` on idle or first use.
   - It loads `wall.js` (random wall pieces, R32) on idle, unless the wall is hidden.
+  - It loads `paint.js` (spray paint, R53) on first use of the corner kit, its menu or the P key, or on idle
+    when the page has kept paint. Never under reduced motion. Its rAF loop runs only while a can is held, a drip
+    runs or paint fades, then stops. Paint logic (caps, surface, drips) is pure and unit-tested in
+    `src/lib/paint/`; options in `src/data/paint.ts`; the kit and menu are static in `PaintKit.astro`.
   - It loads `fx.js` (Motion's `motion/mini` + `spring`: card tilt, draggable art, touch focus) on idle,
     only on pages with something to animate and never under reduced motion. Animation code goes in `fx.ts`
     or CSS, compositor-only (transform/opacity), and stops under `data-reduce-motion`.
