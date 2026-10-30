@@ -135,7 +135,10 @@ function initDrag() {
         el.addEventListener('pointerdown', (e) => {
             if (stopped || (fineOnly && e.pointerType === 'touch') || e.button > 0) return;
             // Plain headings: the title is readable text now, so leave it selectable and still.
-            if (root.hasAttribute('data-a11y-plain') && el.querySelector('.ansi-title__text'))
+            if (
+                root.hasAttribute('data-accessibility-plain') &&
+                el.querySelector('.ansi-title__text')
+            )
                 return;
             back?.stop();
             start = { x: e.clientX, y: e.clientY, id: e.pointerId };
@@ -174,7 +177,7 @@ function start() {
     initCards();
     initDrag();
 
-    // Reduced motion switched on (a11y menu): stop at once and leave everything still. Switched
+    // Reduced motion switched on (accessibility menu): stop at once and leave everything still. Switched
     // off again: carry on.
     new MutationObserver(() => {
         if (!calm()) {

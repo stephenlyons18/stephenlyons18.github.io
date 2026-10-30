@@ -4,13 +4,13 @@
  * cells: zero runtime JS.
  *
  * Every title is drawn in both styles (R30): bubble (the default) and wildstyle, as two sets.
- * `html[data-title-style]` (the a11y menu or the terminal's `style`, applied before first paint)
+ * `html[data-title-style]` (the accessibility menu or the terminal's `style`, applied before first paint)
  * shows one by CSS, so switching never re-renders anything; the hidden set is display:none and costs
  * no layout or paint, only its bytes. Colours come from theme tokens, so a theme change recolours
  * both. A decorative piece (the avatar) can pin one style.
  *
  * The art is aria-hidden; a real heading carries the text for screen readers, search, copy/paste and
- * the a11y menu's Plain headings. The art scales to its container. For multi-word text, stacked
+ * the accessibility menu's Plain headings. The art scales to its container. For multi-word text, stacked
  * variants (2 lines, or up to `lines`) take over by container query whenever the one-line piece
  * would drop below a legible cell size.
  */
@@ -111,7 +111,7 @@ const queries = sets.map((s) => s.queries).join(' ');
     style={`--ansi-max:${maxFont}px`}
 >
     {
-        /* Screen-reader text; the a11y menu's "plain headings" makes it the visible title. */
+        /* Screen-reader text; the accessibility menu's "plain headings" makes it the visible title. */
         !decorative && <Tag class="sr-only ansi-title__text">{label ?? text}</Tag>
     }
     {sets.map((s) => (

@@ -151,7 +151,7 @@ function streamLines(
 ): void {
     const clsAt = typeof cls === 'function' ? cls : () => cls;
     if (streamTimer) clearTimeout(streamTimer);
-    // Reduced motion (OS or a11y menu): print everything at once instead of typing it out.
+    // Reduced motion (OS or accessibility menu): print everything at once instead of typing it out.
     if (document.documentElement.hasAttribute('data-reduce-motion')) {
         lines.forEach((text, n) => appendLine(outputEl, text, clsAt(n)));
         onDone?.();
@@ -593,7 +593,7 @@ function cmdExit(_args: string[], _outputEl: HTMLElement): void {
     closeTerminal();
 }
 
-/** Themes (src/data/themes.ts): by id, menu label or alias. Same attribute and key as the a11y menu. */
+/** Themes (src/data/themes.ts): by id, menu label or alias. Same attribute and key as the accessibility menu. */
 function cmdTheme(args: string[], outputEl: HTMLElement, onDone?: () => void): void {
     const t = args[0] ? findTheme(args[0]) : undefined;
     if (!t) {
@@ -622,7 +622,7 @@ function cmdTheme(args: string[], outputEl: HTMLElement, onDone?: () => void): v
     onDone?.();
 }
 
-/** Heading letter style (bubble | wildstyle): the same attribute and key as the a11y menu. */
+/** Heading letter style (bubble | wildstyle): the same attribute and key as the accessibility menu. */
 function cmdStyle(args: string[], outputEl: HTMLElement, onDone?: () => void): void {
     const s = args[0] ? findTitleStyle(args[0]) : undefined;
     const root = document.documentElement;

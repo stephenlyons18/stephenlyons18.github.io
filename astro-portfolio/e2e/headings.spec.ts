@@ -4,7 +4,7 @@ import { expect, test, type Page } from '@playwright/test';
 import { PAGES } from './pages';
 
 // Heading style + colours (R30): both styles are in the page; <html data-title-style> and
-// <html data-theme> pick, set by the a11y menu or the terminal, saved, applied before first paint.
+// <html data-theme> pick, set by the accessibility menu or the terminal, saved, applied before first paint.
 
 test.beforeEach(async ({ context }) => {
     await context.addInitScript(() => sessionStorage.setItem('sl-booted', '1'));
@@ -24,11 +24,11 @@ const fillOf = (page: Page) =>
         (el) => getComputedStyle(el).fill,
     );
 async function openMenu(page: Page) {
-    await page.locator('.a11y-btn').click();
-    await expect(page.locator('#a11y-menu')).toBeVisible();
+    await page.locator('.accessibility-btn').click();
+    await expect(page.locator('#accessibility-menu')).toBeVisible();
 }
 const option = (page: Page, name: string) =>
-    page.locator('#a11y-menu label', { hasText: new RegExp(`^${name}$`) });
+    page.locator('#accessibility-menu label', { hasText: new RegExp(`^${name}$`) });
 
 for (const style of ['bubble', 'wild'] as const)
     test(`${style}: every title shows only that style, fits its box, no overflow`, async ({
@@ -63,8 +63,12 @@ test('the menu switches style and colours at once, previews, and both persist', 
     await page.goto('/about/');
     const before = await fillOf(page);
     await openMenu(page);
-    await expect(page.locator('#a11y-menu [data-title-style-opt][value="bubble"]')).toBeChecked();
-    await expect(page.locator('#a11y-menu [data-theme-opt][value="wildstyle"]')).toBeChecked();
+    await expect(
+        page.locator('#accessibility-menu [data-title-style-opt][value="bubble"]'),
+    ).toBeChecked();
+    await expect(
+        page.locator('#accessibility-menu [data-theme-opt][value="wildstyle"]'),
+    ).toBeChecked();
 
     // Style: applied the moment it is picked.
     await option(page, 'Wildstyle').click();
@@ -72,7 +76,7 @@ test('the menu switches style and colours at once, previews, and both persist', 
     expect(await visibleStyles(page)).toEqual(['wild']);
 
     // Colours: hovering previews in the box only; picking applies to the page.
-    const swatch = page.locator('.a11y-preview__swatch');
+    const swatch = page.locator('.accessibility-preview__swatch');
     const box0 = await swatch.evaluate((e) => getComputedStyle(e).backgroundImage);
     await option(page, 'Phosphor').hover();
     await expect
@@ -81,7 +85,9 @@ test('the menu switches style and colours at once, previews, and both persist', 
     await expect(html(page)).not.toHaveAttribute('data-theme', /.+/);
     await option(page, 'Sunset').click();
     await expect(html(page)).toHaveAttribute('data-theme', 'sunset');
-    await expect(page.locator('[data-a11y-preview-name]')).toHaveText('Sunset · Wildstyle');
+    await expect(page.locator('[data-accessibility-preview-name]')).toHaveText(
+        'Sunset · Wildstyle',
+    );
     expect(await fillOf(page)).not.toBe(before);
 
     // Saved, and applied before first paint on the next page.
@@ -96,7 +102,7 @@ test('the menu switches style and colours at once, previews, and both persist', 
 
     // Reset puts both back.
     await openMenu(page);
-    await page.locator('[data-a11y-reset]').click();
+    await page.locator('[data-accessibility-reset]').click();
     await expect(html(page)).not.toHaveAttribute('data-title-style', /.+/);
     await expect(html(page)).not.toHaveAttribute('data-theme', /.+/);
 });
@@ -114,8 +120,12 @@ test('the terminal sets the same choices, and the menu follows', async ({ page }
     await expect(html(page)).toHaveAttribute('data-title-style', 'wild');
     await expect(html(page)).toHaveAttribute('data-theme', 'bubble');
     await openMenu(page);
-    await expect(page.locator('#a11y-menu [data-title-style-opt][value="wild"]')).toBeChecked();
-    await expect(page.locator('#a11y-menu [data-theme-opt][value="bubble"]')).toBeChecked();
+    await expect(
+        page.locator('#accessibility-menu [data-title-style-opt][value="wild"]'),
+    ).toBeChecked();
+    await expect(
+        page.locator('#accessibility-menu [data-theme-opt][value="bubble"]'),
+    ).toBeChecked();
 });
 
 test('wildstyle titles pass axe on every page; the new menu controls are ≥ 44px', async ({
@@ -142,6 +152,6 @@ test('wildstyle titles pass axe on every page; the new menu controls are ≥ 44p
         expect(serious, path).toEqual([]);
     }
     await openMenu(page);
-    for (const tile of await page.locator('.a11y-seg__opt, .a11y-theme').all())
+    for (const tile of await page.locator('.accessibility-seg__opt, .accessibility-theme').all())
         expect(Math.round((await tile.boundingBox())!.height)).toBeGreaterThanOrEqual(44);
 });

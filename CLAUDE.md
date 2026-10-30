@@ -128,7 +128,7 @@ pnpm preview        # serve dist/
 - **Suites:** `smoke` (load, console, overflow, art fits its box), `skill-graph` (card anchoring, 0 label
   overlaps), `terminal` (incl. window drips), `scroll` (progress strip, touch scrubber drag), `drips` (incl. touch
   focus), `urls` (clean directory URLs, nested 404), `wall` (pieces never over content, spray once), `motion`
-  (tilt, draggable art), `a11y-menu`, `headings` (style/colour switching, both styles fit and pass axe),
+  (tilt, draggable art), `accessibility-menu`, `headings` (style/colour switching, both styles fit and pass axe),
   `seo`, `gallery`, `ux` (axe WCAG 2.2 AA, nav, mobile menu, keyboard, reduced motion, no idle rAF),
   `budget` (bytes per page by kind vs `e2e/budget.json`, plus LCP/CLS/blocking time on a throttled phone) and
   `perf` (scroll frame timing, composited layers at rest).
@@ -136,7 +136,7 @@ pnpm preview        # serve dist/
     the site rather than other tests' CPU. `perf-*` runs one device at a time.
   - Raising a budget needs a reason in the PR; lower it when a PR wins bytes back.
 - **Measure feel with numbers:** frame-interval p95 from rAF during scroll and graph interaction, JS bytes per
-  page from `dist/`, and Lighthouse for LCP/a11y. Quote before/after in perf PRs.
+  page from `dist/`, and Lighthouse for LCP/accessibility. Quote before/after in perf PRs.
 
 ## Architecture
 
@@ -233,13 +233,13 @@ Workflow rules: pin third-party actions to a **SHA with a version comment**; set
 
   The terminal `theme` command switches them (persisted in `localStorage`). Never hard-code a palette colour
   or font in a component. Canvas code reads tokens once per theme change, not per frame.
-- **The accessibility menu is a contract.** The header popover sets `data-a11y-<key>` on `<html>` (plain,
-  motion, font, large, contrast, wall), persisted in `localStorage` (`sl-a11y`) and re-applied before first
+- **The accessibility menu is a contract.** The header popover sets `data-accessibility-<key>` on `<html>` (plain,
+  motion, font, large, contrast, wall), persisted in `localStorage` (`sl-accessibility`) and re-applied before first
   paint.
   - `data-reduce-motion` is the single motion switch, set by the OS preference or the menu. JS checks that
     attribute, never `matchMedia` alone. Every new animation must stop under it.
   - Every new art heading must keep its real heading (`AnsiTitle` does this) so **Plain headings** works.
-  - `a11y-menu.spec` checks each mode with axe.
+  - `accessibility-menu.spec` checks each mode with axe.
   - It also holds **Heading style** and **Colours** (R30): radio groups that set `data-title-style`
     (`wild`, or none for bubble) and `data-theme` on `<html>`, saved as `sl-title-style` / `sl-theme`,
     shared with the terminal's `style` and `theme` (names in `src/data/themes.ts`). Titles carry both

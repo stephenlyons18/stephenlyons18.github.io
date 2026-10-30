@@ -10,7 +10,7 @@ declare global {
     }
 }
 
-/** Reduced motion: the OS setting or the a11y menu (BaseLayout's head script sets the attribute). */
+/** Reduced motion: the OS setting or the accessibility menu (BaseLayout's head script sets the attribute). */
 const motionOff = () => document.documentElement.hasAttribute('data-reduce-motion');
 
 interface HeroLine {
@@ -83,7 +83,7 @@ function initFx(): void {
         document.head.appendChild(s);
     };
     idle(load);
-    // Reduced motion turned off from the a11y menu later on: load it then.
+    // Reduced motion turned off from the accessibility menu later on: load it then.
     new MutationObserver(load).observe(document.documentElement, {
         attributes: true,
         attributeFilter: ['data-reduce-motion'],
@@ -504,7 +504,7 @@ let wallLoaded = false;
 function initWallPieces(): void {
     if (!WALL_SRC) return;
     const load = () => {
-        if (wallLoaded || document.documentElement.hasAttribute('data-a11y-wall')) return;
+        if (wallLoaded || document.documentElement.hasAttribute('data-accessibility-wall')) return;
         wallLoaded = true;
         const s = document.createElement('script');
         s.src = WALL_SRC;
@@ -513,40 +513,41 @@ function initWallPieces(): void {
     idle(load);
     new MutationObserver(load).observe(document.documentElement, {
         attributes: true,
-        attributeFilter: ['data-a11y-wall'],
+        attributeFilter: ['data-accessibility-wall'],
     });
 }
 
 // ── Accessibility menu (Header.astro) ────────────────────────────────────────
-// Each switch mirrors a data-a11y-<key> attribute on <html>, persisted as JSON in localStorage.
+// Each switch mirrors a data-accessibility-<key> attribute on <html>, persisted as JSON in localStorage.
 // "motion" also drives data-reduce-motion, which stays on regardless when the OS asks for it.
-const A11Y_KEY = 'sl-a11y';
+const ACCESSIBILITY_KEY = 'sl-accessibility';
 
-function initA11yMenu(): void {
-    const menu = document.getElementById('a11y-menu');
+function initAccessibilityMenu(): void {
+    const menu = document.getElementById('accessibility-menu');
     if (!menu) return;
     const root = document.documentElement;
-    const switches = [...menu.querySelectorAll<HTMLInputElement>('input[data-a11y]')];
+    const switches = [...menu.querySelectorAll<HTMLInputElement>('input[data-accessibility]')];
     const osCalm = matchMedia('(prefers-reduced-motion: reduce)');
 
     const save = () => {
         const prefs: Record<string, boolean> = {};
-        for (const s of switches) if (s.checked && !s.disabled) prefs[s.dataset['a11y']!] = true;
+        for (const s of switches)
+            if (s.checked && !s.disabled) prefs[s.dataset['accessibility']!] = true;
         try {
-            localStorage.setItem(A11Y_KEY, JSON.stringify(prefs));
+            localStorage.setItem(ACCESSIBILITY_KEY, JSON.stringify(prefs));
         } catch {
             /* private mode: the choice still applies to this page */
         }
     };
     const apply = (key: string, on: boolean) => {
-        root.toggleAttribute(`data-a11y-${key}`, on);
+        root.toggleAttribute(`data-accessibility-${key}`, on);
         if (key === 'motion') root.toggleAttribute('data-reduce-motion', on || osCalm.matches);
     };
     const sync = () => {
         for (const s of switches) {
-            const key = s.dataset['a11y']!;
+            const key = s.dataset['accessibility']!;
             const forced = key === 'motion' && osCalm.matches;
-            s.checked = forced || root.hasAttribute(`data-a11y-${key}`);
+            s.checked = forced || root.hasAttribute(`data-accessibility-${key}`);
             s.disabled = forced;
             const hint = menu.querySelector<HTMLElement>(`[data-hint="${key}"]`);
             if (hint && key === 'motion')
@@ -558,15 +559,15 @@ function initA11yMenu(): void {
 
     for (const s of switches)
         s.addEventListener('change', () => {
-            apply(s.dataset['a11y']!, s.checked);
+            apply(s.dataset['accessibility']!, s.checked);
             save();
         });
     const headings = initHeadingPicker(menu);
-    menu.querySelector('[data-a11y-reset]')?.addEventListener('click', () => {
+    menu.querySelector('[data-accessibility-reset]')?.addEventListener('click', () => {
         headings.reset();
-        for (const s of switches) apply(s.dataset['a11y']!, false);
+        for (const s of switches) apply(s.dataset['accessibility']!, false);
         try {
-            localStorage.removeItem(A11Y_KEY);
+            localStorage.removeItem(ACCESSIBILITY_KEY);
         } catch {
             /* ignore */
         }
@@ -575,7 +576,7 @@ function initA11yMenu(): void {
     osCalm.addEventListener('change', () => {
         root.toggleAttribute(
             'data-reduce-motion',
-            osCalm.matches || root.hasAttribute('data-a11y-motion'),
+            osCalm.matches || root.hasAttribute('data-accessibility-motion'),
         );
         sync();
     });
@@ -591,8 +592,8 @@ function initHeadingPicker(menu: HTMLElement): { reset: () => void } {
     const root = document.documentElement;
     const styles = [...menu.querySelectorAll<HTMLInputElement>('[data-title-style-opt]')];
     const themes = [...menu.querySelectorAll<HTMLInputElement>('[data-theme-opt]')];
-    const preview = menu.querySelector<HTMLElement>('[data-a11y-preview]');
-    const name = menu.querySelector<HTMLElement>('[data-a11y-preview-name]');
+    const preview = menu.querySelector<HTMLElement>('[data-accessibility-preview]');
+    const name = menu.querySelector<HTMLElement>('[data-accessibility-preview-name]');
     const store = (key: string, value: string | null) => {
         try {
             if (value) localStorage.setItem(key, value);
@@ -649,7 +650,7 @@ function initHeadingPicker(menu: HTMLElement): { reset: () => void } {
 }
 
 function init(): void {
-    initA11yMenu();
+    initAccessibilityMenu();
     initBootSequence();
     initActiveNav();
     initMobileNav();
