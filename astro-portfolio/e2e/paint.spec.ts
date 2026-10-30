@@ -62,7 +62,7 @@ test.describe('mouse', () => {
             await art.evaluate((svg) => {
                 const paths = [...svg.querySelectorAll('path')];
                 const at = (x: number) => paths.some((p) => p.isPointInFill(new DOMPoint(x, 0)));
-                const edge = Math.abs(svg.viewBox.baseVal.x) - 2;
+                const edge = Math.abs((svg as SVGSVGElement).viewBox.baseVal.x) - 2;
                 return {
                     centre: at(0),
                     inside: at(edge - 2),
