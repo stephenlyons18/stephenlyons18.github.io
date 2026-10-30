@@ -2,13 +2,15 @@
    Site Interactivity (TypeScript port of main.js)
    ============================================================ */
 
+import { DEFAULT_THEME, THEME_KEY, TITLE_STYLE_KEY } from '../data/themes';
+
 declare global {
     interface Window {
         openTerminal?: () => void;
     }
 }
 
-/** Reduced motion: the OS setting or the a11y menu (BaseLayout's head script sets the attribute). */
+/** Reduced motion: the OS setting or the accessibility menu (BaseLayout's head script sets the attribute). */
 const motionOff = () => document.documentElement.hasAttribute('data-reduce-motion');
 
 interface HeroLine {
@@ -19,13 +21,11 @@ interface HeroLine {
 }
 
 function initActiveNav(): void {
-    // Astro routes don't have .html — match by pathname
-    const path = window.location.pathname.replace(/\/$/, '') || '/';
+    // Compare resolved paths (hrefs are relative after postbuild: "../about/"), slash-insensitive.
+    const norm = (p: string) => p.replace(/(index)?\.html$/, '').replace(/\/$/, '') || '/';
+    const here = norm(window.location.pathname);
     document.querySelectorAll<HTMLAnchorElement>('.nav-links a').forEach((a) => {
-        const href = a.getAttribute('href') || '';
-        const norm = href.replace(/\/$/, '') || '/';
-        if (norm === path) a.classList.add('active');
-        else a.classList.remove('active');
+        a.classList.toggle('active', norm(a.pathname) === here);
     });
 }
 
@@ -83,7 +83,7 @@ function initFx(): void {
         document.head.appendChild(s);
     };
     idle(load);
-    // Reduced motion turned off from the a11y menu later on: load it then.
+    // Reduced motion turned off from the accessibility menu later on: load it then.
     new MutationObserver(load).observe(document.documentElement, {
         attributes: true,
         attributeFilter: ['data-reduce-motion'],
@@ -497,36 +497,57 @@ function initReveal(): void {
     });
 }
 
-// ── Accessibility menu (Header.astro) ────────────────────────────────────────
-// Each switch mirrors a data-a11y-<key> attribute on <html>, persisted as JSON in localStorage.
-// "motion" also drives data-reduce-motion, which stays on regardless when the OS asks for it.
-const A11Y_KEY = 'sl-a11y';
+// ── Wall pieces (wall.ts, R32): random graffiti in the free wall, generated in the browser on idle.
+// Never under "Hide wall texture"; turning it off later loads it then.
+const WALL_SRC = TERMINAL_SRC?.replace(/terminal\.js$/, 'wall.js');
+let wallLoaded = false;
+function initWallPieces(): void {
+    if (!WALL_SRC) return;
+    const load = () => {
+        if (wallLoaded || document.documentElement.hasAttribute('data-accessibility-wall')) return;
+        wallLoaded = true;
+        const s = document.createElement('script');
+        s.src = WALL_SRC;
+        document.head.appendChild(s);
+    };
+    idle(load);
+    new MutationObserver(load).observe(document.documentElement, {
+        attributes: true,
+        attributeFilter: ['data-accessibility-wall'],
+    });
+}
 
-function initA11yMenu(): void {
-    const menu = document.getElementById('a11y-menu');
+// ── Accessibility menu (Header.astro) ────────────────────────────────────────
+// Each switch mirrors a data-accessibility-<key> attribute on <html>, persisted as JSON in localStorage.
+// "motion" also drives data-reduce-motion, which stays on regardless when the OS asks for it.
+const ACCESSIBILITY_KEY = 'sl-accessibility';
+
+function initAccessibilityMenu(): void {
+    const menu = document.getElementById('accessibility-menu');
     if (!menu) return;
     const root = document.documentElement;
-    const switches = [...menu.querySelectorAll<HTMLInputElement>('input[data-a11y]')];
+    const switches = [...menu.querySelectorAll<HTMLInputElement>('input[data-accessibility]')];
     const osCalm = matchMedia('(prefers-reduced-motion: reduce)');
 
     const save = () => {
         const prefs: Record<string, boolean> = {};
-        for (const s of switches) if (s.checked && !s.disabled) prefs[s.dataset['a11y']!] = true;
+        for (const s of switches)
+            if (s.checked && !s.disabled) prefs[s.dataset['accessibility']!] = true;
         try {
-            localStorage.setItem(A11Y_KEY, JSON.stringify(prefs));
+            localStorage.setItem(ACCESSIBILITY_KEY, JSON.stringify(prefs));
         } catch {
             /* private mode: the choice still applies to this page */
         }
     };
     const apply = (key: string, on: boolean) => {
-        root.toggleAttribute(`data-a11y-${key}`, on);
+        root.toggleAttribute(`data-accessibility-${key}`, on);
         if (key === 'motion') root.toggleAttribute('data-reduce-motion', on || osCalm.matches);
     };
     const sync = () => {
         for (const s of switches) {
-            const key = s.dataset['a11y']!;
+            const key = s.dataset['accessibility']!;
             const forced = key === 'motion' && osCalm.matches;
-            s.checked = forced || root.hasAttribute(`data-a11y-${key}`);
+            s.checked = forced || root.hasAttribute(`data-accessibility-${key}`);
             s.disabled = forced;
             const hint = menu.querySelector<HTMLElement>(`[data-hint="${key}"]`);
             if (hint && key === 'motion')
@@ -538,13 +559,15 @@ function initA11yMenu(): void {
 
     for (const s of switches)
         s.addEventListener('change', () => {
-            apply(s.dataset['a11y']!, s.checked);
+            apply(s.dataset['accessibility']!, s.checked);
             save();
         });
-    menu.querySelector('[data-a11y-reset]')?.addEventListener('click', () => {
-        for (const s of switches) apply(s.dataset['a11y']!, false);
+    const headings = initHeadingPicker(menu);
+    menu.querySelector('[data-accessibility-reset]')?.addEventListener('click', () => {
+        headings.reset();
+        for (const s of switches) apply(s.dataset['accessibility']!, false);
         try {
-            localStorage.removeItem(A11Y_KEY);
+            localStorage.removeItem(ACCESSIBILITY_KEY);
         } catch {
             /* ignore */
         }
@@ -553,19 +576,86 @@ function initA11yMenu(): void {
     osCalm.addEventListener('change', () => {
         root.toggleAttribute(
             'data-reduce-motion',
-            osCalm.matches || root.hasAttribute('data-a11y-motion'),
+            osCalm.matches || root.hasAttribute('data-accessibility-motion'),
         );
         sync();
     });
     sync();
 }
 
+// ── Heading style + colours (Header.astro, R30) ─────────────────────────────
+// Two radio groups that set <html data-title-style> and <html data-theme>, the same attributes and
+// localStorage keys as the terminal's `style` and `theme` (src/data/themes.ts). CSS does the rest:
+// both title styles are already in the page, and every colour is a token, so nothing re-renders.
+// The preview box is drawn from the same tokens; hovering or focusing a colour previews it there.
+function initHeadingPicker(menu: HTMLElement): { reset: () => void } {
+    const root = document.documentElement;
+    const styles = [...menu.querySelectorAll<HTMLInputElement>('[data-title-style-opt]')];
+    const themes = [...menu.querySelectorAll<HTMLInputElement>('[data-theme-opt]')];
+    const preview = menu.querySelector<HTMLElement>('[data-accessibility-preview]');
+    const name = menu.querySelector<HTMLElement>('[data-accessibility-preview-name]');
+    const store = (key: string, value: string | null) => {
+        try {
+            if (value) localStorage.setItem(key, value);
+            else localStorage.removeItem(key);
+        } catch {
+            /* private mode: the choice still applies to this page */
+        }
+    };
+    const label = (input: HTMLInputElement | undefined) =>
+        input?.closest('label')?.textContent?.trim() ?? '';
+    const sync = () => {
+        const style = root.getAttribute('data-title-style') || 'bubble';
+        const theme = root.getAttribute('data-theme') || DEFAULT_THEME;
+        for (const r of styles) r.checked = r.value === style;
+        for (const r of themes) r.checked = r.value === theme;
+        if (name)
+            name.textContent = `${label(themes.find((r) => r.checked))} · ${label(styles.find((r) => r.checked))}`;
+    };
+    const setStyle = (v: string) => {
+        if (v === 'wild') root.setAttribute('data-title-style', 'wild');
+        else root.removeAttribute('data-title-style');
+        store(TITLE_STYLE_KEY, v === 'wild' ? 'wild' : null);
+    };
+    const setTheme = (v: string) => {
+        if (v === DEFAULT_THEME) root.removeAttribute('data-theme');
+        else root.setAttribute('data-theme', v);
+        store(THEME_KEY, v);
+    };
+    for (const r of styles) r.addEventListener('change', () => r.checked && setStyle(r.value));
+    for (const r of themes) {
+        r.addEventListener('change', () => r.checked && setTheme(r.value));
+        // Preview a colour before picking it: the box takes that theme's tokens.
+        const tile = r.closest('label')!;
+        const show = () => preview?.setAttribute('data-theme', r.value);
+        const hide = () => preview?.removeAttribute('data-theme');
+        tile.addEventListener('pointerenter', show);
+        tile.addEventListener('pointerleave', hide);
+        r.addEventListener('focus', show);
+        r.addEventListener('blur', hide);
+    }
+    // The terminal can change either one while the menu exists: keep the radios true.
+    new MutationObserver(sync).observe(root, {
+        attributes: true,
+        attributeFilter: ['data-theme', 'data-title-style'],
+    });
+    sync();
+    return {
+        reset: () => {
+            setStyle('bubble');
+            setTheme(DEFAULT_THEME);
+            store(THEME_KEY, null);
+        },
+    };
+}
+
 function init(): void {
-    initA11yMenu();
+    initAccessibilityMenu();
     initBootSequence();
     initActiveNav();
     initMobileNav();
     initReveal();
+    initWallPieces();
     initHeroTyping();
     initHeroTerminalInteractive();
     initHeaderScroll();

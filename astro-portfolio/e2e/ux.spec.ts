@@ -32,7 +32,7 @@ test('header nav reaches every page', async ({ page, isMobile }) => {
         ['About', /\/about\//],
         ['Projects', /\/projects\//],
         ['Contact', /\/contact\//],
-        ['Home', /\/(index\.html)?$/],
+        ['Home', /\/$/],
     ] as const) {
         if (isMobile) {
             await page.locator('.nav-toggle').click();
@@ -111,4 +111,37 @@ test('no rAF loop runs while the page is idle (no background animation)', async 
             }),
     );
     expect(callbacks, 'rAF callbacks scheduled in 1s of idle').toBeLessThanOrEqual(2);
+});
+
+// ── Touch vs keyboard ────────────────────────────────────────────────────────
+test('keyboard-only hints show only where there is a keyboard', async ({ page, isMobile }) => {
+    await page.goto('/contact/');
+    const ctrlK = page.getByText('Ctrl+K', { exact: true }).first();
+    if (isMobile) {
+        await expect(ctrlK).toBeHidden();
+        await expect(page.getByText('Tap the button below')).toBeVisible();
+        // The pixel scrubber is the scrollbar on touch; the native one is hidden.
+        expect(
+            await page.evaluate(() => getComputedStyle(document.documentElement).scrollbarWidth),
+        ).toBe('none');
+    } else {
+        await expect(ctrlK).toBeVisible();
+        await expect(page.locator('.accessibility-btn')).toContainText('Accessibility'); // label shown above 1100px
+    }
+    // Either way, the terminal is one button away.
+    await page.locator('.card [data-open-terminal]').click();
+    await expect(page.locator('.terminal-overlay')).toHaveClass(/active/);
+});
+
+// ── Hero ─────────────────────────────────────────────────────────────────────
+test('hero: name and subheader have real text, and the terminal sits below the buttons', async ({
+    page,
+}) => {
+    await page.goto('/');
+    await expect(page.locator('h1')).toHaveText('Stephen Lyons');
+    await expect(page.locator('.hero-sub .ansi-title__text')).toHaveText('Cyber Security Engineer');
+    await expect(page.locator('.hero-sub svg').first()).toHaveAttribute('aria-hidden', 'true');
+    const cta = (await page.locator('.hero-cta').boundingBox())!;
+    const term = (await page.locator('.hero-terminal').boundingBox())!;
+    expect(term.y).toBeGreaterThan(cta.y + cta.height);
 });

@@ -174,3 +174,30 @@ test('initial layout: every label readable, none overlapping', async ({ page }) 
         'camera scale (labels shrink relative to nodes below ~0.7)',
     ).toBeGreaterThanOrEqual(0.7);
 });
+
+test('a drag while a resized layout settles never reheats it (R42)', async ({ page }) => {
+    test.skip(!(await canHover(page)), 'mouse drag');
+    await openSkills(page, 'graph');
+    const canvas = page.locator('.sg-canvas-wrap canvas');
+    await canvas.scrollIntoViewIfNeeded();
+    await expect(canvas).toHaveAttribute('data-overlaps', '0');
+    await findNode(page, canvas, false);
+    const [ax, ay] = (await canvas.getAttribute('data-anchor'))!.split(',').map(Number);
+    // A new size starts a new, time-sliced settle (over a second on a phone-class CPU); press on the
+    // node at once and drag it about.
+    const cdp = await page.context().newCDPSession(page);
+    await cdp.send('Emulation.setCPUThrottlingRate', { rate: 6 });
+    // A width where the graph's container changes size (still the desktop layout).
+    await page.setViewportSize({ width: 900, height: page.viewportSize()!.height });
+    const c = await box(canvas);
+    const at = { x: c.x + ax!, y: c.y + ay! };
+    await page.mouse.move(at.x, at.y);
+    await page.mouse.down();
+    for (let i = 1; i <= 30; i++) await page.mouse.move(at.x + (i % 10) * 6, at.y + (i % 7) * 5);
+    await page.mouse.up();
+    await page.mouse.move(0, 0);
+    await cdp.send('Emulation.setCPUThrottlingRate', { rate: 1 });
+    // Any reheat would run every force for seconds and report again when it ends; wait it out.
+    await page.waitForTimeout(12000);
+    await expect(canvas).toHaveAttribute('data-overlaps', '0');
+});

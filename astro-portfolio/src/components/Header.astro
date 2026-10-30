@@ -1,10 +1,34 @@
 ---
-const pathname = Astro.url.pathname;
-const isActive = (href: string) => {
-    const norm = pathname.replace(/\/index\.html$/, '/').replace(/\.html$/, '');
-    if (href === '/') return norm === '/' || norm === '';
-    return norm === href || norm === href + '/';
-};
+import { ROUTES } from '../data/site';
+import { THEMES, TITLE_STYLES } from '../data/themes';
+import { pieceToSvg, renderPiece } from '../lib/ansi/piece';
+
+// Routes are directory URLs ("/about/"); compare without the trailing slash.
+const trim = (p: string) => p.replace(/(index)?\.html$/, '').replace(/\/$/, '') || '/';
+const isActive = (href: string) => trim(Astro.url.pathname) === trim(href);
+
+// The menu's preview: a tiny "SL" in each style, coloured by the same tokens as the titles, so it
+// shows exactly what the headings will look like (CSS picks the style; a hovered theme recolours it).
+const mini = (style: 'bubble' | 'wild') =>
+    pieceToSvg(
+        renderPiece('SL', {
+            style,
+            seed: 2,
+            sparkles: 0,
+            overspray: 0,
+            cloud: 0,
+            arrow: false,
+            blades: 0,
+            drips: 0.2,
+        }),
+        {
+            attrs: {
+                class: 'accessibility-preview__piece',
+                'aria-hidden': 'true',
+                focusable: 'false',
+            },
+        },
+    );
 ---
 
 <header class="site-header" role="banner">
@@ -13,23 +37,16 @@ const isActive = (href: string) => {
             <span class="logo-bracket">[</span>SL<span class="logo-bracket">]</span>
         </a>
         <nav class="nav-links" role="navigation" aria-label="Main navigation">
-            <a href="/" class:list={[isActive('/') && 'active']}>
-                Home
-            </a>
-            <a href="/about" class:list={[isActive('/about') && 'active']}>
-                About
-            </a>
-            <a href="/projects" class:list={[isActive('/projects') && 'active']}>
-                Projects
-            </a>
-            <a href="/contact" class:list={[isActive('/contact') && 'active']}>
-                Contact
-            </a>
+            {ROUTES.map((r) => (
+                <a href={r.path} class:list={[isActive(r.path) && 'active']}>
+                    {r.name}
+                </a>
+            ))}
         </nav>
         <div class="header-actions">
             <button
-                class="nav-icon-btn a11y-btn"
-                popovertarget="a11y-menu"
+                class="nav-icon-btn accessibility-btn"
+                popovertarget="accessibility-menu"
                 aria-label="Accessibility options"
                 title="Accessibility options"
             >
@@ -46,7 +63,7 @@ const isActive = (href: string) => {
                         d="M3 0h2v2H3zM0 2h8v1H0zM3 3h2v2H3zM2 5h1v3H2zM5 5h1v3H5zM3 5h2v1H3z"
                     ></path>
                 </svg>
-                <span class="nav-icon-btn__label">A11y</span>
+                <span class="nav-icon-btn__label">Accessibility</span>
             </button>
             <button class="nav-terminal-btn" aria-label="Open terminal" data-open-terminal>
                 <span class="nav-terminal-btn__icon" aria-hidden="true">
@@ -64,13 +81,58 @@ const isActive = (href: string) => {
 </header>
 
 <!-- Accessibility menu: a native popover (top layer, light dismiss, Escape) opened from the header.
-     Each switch sets a data-a11y-* attribute on <html>; global.css does the rest. site.ts wires it
+     Each switch sets a data-accessibility-* attribute on <html>; global.css does the rest. site.ts wires it
      up and saves to localStorage; BaseLayout's head script re-applies it before first paint. -->
-<div id="a11y-menu" class="a11y-menu" popover role="dialog" aria-labelledby="a11y-menu-title">
-    <p class="a11y-menu__title" id="a11y-menu-title">
+<div
+    id="accessibility-menu"
+    class="accessibility-menu"
+    popover
+    role="dialog"
+    aria-labelledby="accessibility-menu-title"
+>
+    <p class="accessibility-menu__title" id="accessibility-menu-title">
         Accessibility
     </p>
-    <ul class="a11y-menu__list">
+    <!-- Headings (R30): letter style and colour theme. Both apply at once (data-title-style and
+         data-theme on <html>), are saved, and match the terminal's `style` and `theme`. -->
+    <div class="accessibility-preview" data-accessibility-preview aria-hidden="true">
+        <span class="accessibility-preview__swatch"></span>
+        <span class="accessibility-preview__art" set:html={mini('bubble') + mini('wild')} />
+        <span class="accessibility-preview__name" data-accessibility-preview-name></span>
+    </div>
+    <fieldset class="accessibility-group">
+        <legend class="accessibility-group__label">Heading style</legend>
+        <div class="accessibility-seg">
+            {TITLE_STYLES.map((t) => (
+                <label class="accessibility-seg__opt">
+                    <input
+                        type="radio"
+                        name="accessibility-title-style"
+                        value={t.id}
+                        data-title-style-opt
+                    />
+                    <span>{t.label}</span>
+                </label>
+            ))}
+        </div>
+    </fieldset>
+    <fieldset class="accessibility-group">
+        <legend class="accessibility-group__label">Colours</legend>
+        <div class="accessibility-themes">
+            {THEMES.map((t) => (
+                <label class="accessibility-theme" title={t.desc}>
+                    <input type="radio" name="accessibility-theme" value={t.id} data-theme-opt />
+                    <span
+                        class="accessibility-theme__swatch"
+                        data-theme={t.id}
+                        aria-hidden="true"
+                    />
+                    <span class="accessibility-theme__label">{t.label}</span>
+                </label>
+            ))}
+        </div>
+    </fieldset>
+    <ul class="accessibility-menu__list">
         {[
             ['plain', 'Plain headings', 'Swap graffiti titles for plain text'],
             ['motion', 'Reduce motion', 'Stop animations and transitions'],
@@ -80,27 +142,27 @@ const isActive = (href: string) => {
             ['wall', 'Hide wall texture', 'Plain background behind content'],
         ].map(([key, label, hint]) => (
             <li>
-                <label class="a11y-switch">
-                    <input type="checkbox" role="switch" data-a11y={key} />
-                    <span class="a11y-switch__text">
-                        <span class="a11y-switch__label">{label}</span>
-                        <span class="a11y-switch__hint" data-hint={key}>
+                <label class="accessibility-switch">
+                    <input type="checkbox" role="switch" data-accessibility={key} />
+                    <span class="accessibility-switch__text">
+                        <span class="accessibility-switch__label">{label}</span>
+                        <span class="accessibility-switch__hint" data-hint={key}>
                             {hint}
                         </span>
                     </span>
-                    <span class="a11y-switch__track" aria-hidden="true" />
+                    <span class="accessibility-switch__track" aria-hidden="true" />
                 </label>
             </li>
         ))}
     </ul>
-    <div class="a11y-menu__foot">
-        <button type="button" class="a11y-menu__reset" data-a11y-reset>
+    <div class="accessibility-menu__foot">
+        <button type="button" class="accessibility-menu__reset" data-accessibility-reset>
             Reset
         </button>
         <button
             type="button"
-            class="a11y-menu__close"
-            popovertarget="a11y-menu"
+            class="accessibility-menu__close"
+            popovertarget="accessibility-menu"
             popovertargetaction="hide"
         >
             Done

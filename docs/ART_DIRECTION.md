@@ -26,9 +26,11 @@ This doc outranks prose elsewhere on style. Change it deliberately, with the use
 
 **Roles (user direction, 2026-10-12):** the site is mostly **blues and greens** on a navy/teal wall.
 **Pink is the accent**, used sparingly: the typed cursor, text selection, the active-nav mark, the scroll bar,
-the primary CTA's hover, and title art. Never use it for body text, borders or large fills. **Title art keeps
-the cyan → magenta burner gradient** with a white bubble outline and purple 3D. Don't change the headers
-without asking.
+the primary CTA's hover, and title art. Never use it for body text, borders or large fills.
+
+**Title pieces (user direction, 2026-10-13): palettes borrowed from the reference burners, minus yellow.** A
+five-stop fill (ice → cyan → royal blue → violet → magenta), lime accent cuts, a dark ink line, a white outline
+that wraps every letter, deep indigo 3D. Don't change the headers without asking.
 
 Contrast is measured against `--bg-primary` `#070b12` / `--bg-card` `#0e1724`. Every text colour passes WCAG AA.
 
@@ -47,9 +49,11 @@ Contrast is measured against `--bg-primary` `#070b12` / `--bg-card` `#0e1724`. E
 | `--ui-3`           | `#4cc38a` | forest: tertiary accents (timeline, tags)                | 8.9 / 8.1    |
 | `--ansi-blue`      | `#4d9dff` | blue fills / graph category                              | 7.1 / 6.5    |
 | `--accent`         | `#ff3d9a` | **pink accent: sparingly** (list above)                  | 6.0 / 5.5    |
-| `--title-top/bottom` | `#22c7ff` → `#ff3d9a` | title art gradient                          | —            |
-| `--title-outline`  | `#eef6ff` | bubble outline                                           | —            |
-| `--title-x1/x2`    | `#7b3fe4` / `#3b2385` | 3D extrusion                                 | —            |
+| `--title-top` · `--title-hi` · `--title-mid` · `--title-lo` · `--title-bottom` | `#9ff0ff` · `#22c7ff` · `#2f6bff` · `#8a3ffc` · `#ff3d9a` | title fill, top → bottom (10 bands) | — |
+| `--title-cut`      | `#9dff6a` | lime accent cuts in wildstyle letters                    | —            |
+| `--title-ink`      | `#060914` | the dark line round each letter; counters                | —            |
+| `--title-outline`  | `#eef6ff` | the white outline round each letter                      | —            |
+| `--title-x1/x2`    | `#7b3fe4` / `#3b2385` | UI shadows; piece 3D is `--title-x2` and a deeper mix with ink | — |
 
 Skill-graph categories: languages sky `#3CC4FF`, frameworks aqua `#36E2C6`, cloud blue `#4D9DFF`, security
 skills forest `#4CC38A`, security tools lavender `#B99CFF`.
@@ -59,16 +63,73 @@ Themes (terminal `theme <name>`, persisted, applied before first paint): **`wild
 (orange/yellow), **`green`** (the original phosphor). A theme swaps the `--ui*`, `--accent` and `--title-*`
 slots only; the wall and text stay.
 
+**Heading style and colours are the user's (R30, user direction 2026-10-20).** The Accessibility menu
+has a **Heading style** pair (Bubble, the default, or Wildstyle) and a **Colours** picker of the five themes,
+shown by label so they never share a name with a style: Burner (`wildstyle`), Mint (`bubble`), DEFCON
+(`ansi`), Sunset, Phosphor (`green`). The terminal's `style` and `theme` set the same things and take ids,
+labels or aliases (`src/data/themes.ts`). Every art title (hero, subheader, page titles, 404) is drawn in
+both styles at build time; `<html data-title-style>` shows one by CSS, so a switch never re-renders. A small
+preview box in the menu (a gradient of the title ramp plus a mini "SL" in the chosen style) is painted from
+the live tokens, and a hovered or focused colour previews there before it is picked. The decorative "SL"
+avatar stays bubble.
+
 ## Glyph rules
 
 - **Fills:** `█` solid; shading ramp `█ ▓ ▒ ░` (dark→light or core→fade). Half-pixel edges `▀ ▄ ▌ ▐`.
 - **Pixels are 2 cells wide** (`██`) so a pixel is close to square in a monospace cell (≈0.6em × 1.2em ÷ 2).
 - **Drips** hang only from the bottom edge of fills: 1–4 cells, `▓` → `▒` → `░`, seeded so every build is
-  identical (no `Math.random` at runtime).
+  identical (no `Math.random` at runtime; the wall pieces' per-visit seed, R32, is the one exception).
 - **Extrusion** goes down-right, 1–2 cells, in the theme's shading ramp (`--ansi-blue` → `--ansi-steel`).
 - **Outline (bubble)**: a 1-pixel dilation of the letter mask in ink or white, shared across letters so they
   merge into one silhouette.
 - **Highlight**: a short white `▀` glint on the top-left of a bowl or stem, at most one per letter.
+- **Pieces (titles, R25) work on half-block units**: one unit is one cell wide and half a cell tall (an ANSI
+  `▀`/`▄`), so units are square and a font pixel is 2 × 2 units. Per letter, back to front: fill → 1-unit dark
+  ink line (counters and slots go dark, so letters stay readable) → 1-unit white outline that wraps the letter.
+  A later letter paints over an earlier one, so in wildstyle the front letter's outline bites into the one
+  behind. Then 3D extrusion (down-right, 3–4 units), thin 1-unit drips, 4-point sparkles and fine overspray.
+  - **Wildstyle** (v3, R29, from the reference burners in the user's examples: MUSTER, SHAPER, TALE, SENK):
+    chamfered leading corners, a lean, letters butted up so each one's outline bites into the last
+    (interlock), tapered blades off top-right corners, a long tapered **swoosh** off the first letter's foot,
+    and an arrow off the last letter.
+    - **Rules (R37, from wildstyle guides; user direction 2026-10-28):** a readable block skeleton first,
+      one baseline (bounce ≤ 1 unit), each letter overlapping the next with the first letter in front (R35),
+      all caps (R36), extensions and arrows growing from strokes without covering the next letter's
+      identifying part, and nothing that cuts a bowl, leg or bar. No bar-to-bar connectors: at gap 0 the
+      letters already butt, and a bridge would fuse them. Test: the three-second read.
+    - **Breaks/splits:** a 1-unit dark break line across each letter's lower third (below the H, A and E bars,
+      so letters stay readable), leaning alternately; below it the letter is one solid second tone (the
+      ramp's foot), so it reads as two-tone segments. Letters with a counter low down (B, D, O, Q, 6, 8,
+      0) or legs that identify them (A, R, K, X) keep the colour split but no dark line, which would cut
+      the bowl or leg (R37).
+    - A bevel shine under each top edge and a highlight dot.
+    - **Striped 3D:** 5 units deep, in 2-unit bands of near/far.
+    - **Backdrop cloud:** a scalloped blob 3–5 units round the piece with bubbles spraying off it, a thin
+      coat of `--title-hi` (24%) so the wall shows through. It gives the piece depth, sitting it in front of
+      the wall. It uses a chamfer distance transform, which is linear and cheap enough for the browser.
+      Wall pieces skip it for now.
+  - **Bubble** (user direction, 2026-10-20: "the heading as it looks on stephenlyons.dev is the bubble style",
+    `bubble.ts`): the original R6/R7 generator's look, kept exactly. Font pixels are 2 cells wide and 1 tall,
+    with a lean of 1 pixel per 4 rows, a 0–1 pixel bounce, a 1-pixel white outline (4-neighbour, so corners
+    notch round), 2-pixel violet 3D, one white glint per letter, thin pink drips and lavender mist, on a 2-stop
+    ramp (`--bubble-top` → `--bubble-bottom`, per theme). Its random draws are made in the original's order,
+    so drips land where they always did. Units are drawn 0.6em × 0.5em, as the original text cells were.
+    **Overlap** (bubble convention, references STKES / HONK / PIMO): letters are painted last → first, so each
+    letter lies over the one after it, the first letter of a word in front. Each letter tucks 1 cell under the
+    one before, so the front letter's white outline runs over the next letter's edge. (R28 also drew a 1-unit
+    dark seam there; R34 dropped it on the user's review: it looked off in places, and the overlap reads
+    without it, as on the live site.) Words never overlap across a space. Counters and slots stay bare wall.
+    **Legibility (R33, user direction and review 2026-10-28):** the original keeps every outline out of a
+    letter's whole glyph box, which suits most letters (S, T, P keep their dark corners and undersides, as
+    live) but left the **Y**'s stem without an outline, so it melted into its neighbours: the Y alone now
+    keeps dark only what lies between its strokes, and its stem is outlined. Outlining every letter's open
+    sides was tried and rejected (white blocks under the T's bar and the P's bowl, squared S corners). The
+    **I** is a full-width capital (serifs as wide as a letter): the old 4-wide I read as a lump, a plain
+    bar as an l.
+  - Pieces are drawn as an **inline SVG of those cells** (`pieceToSvg`: one `<path>` per colour class,
+    `crispEdges`), not as text: the art font's blocks are 1.32em tall on a 1em row, so half blocks can't land
+    on the grid as glyphs. Same cells, exact halves, no seams, and about 20 paths instead of thousands of spans.
+    Still build-time, `aria-hidden` and themed by class.
 - Frames and UI chrome use box drawing (`╔═╗ ║ ╚═╝ ┌─┐`) and CP437-style separators (`─▬═`); prompts keep `$`
   and `>`.
 - Art font: self-hosted **JetBrains Mono**, subset to the art's cells only (space, `·`, U+2580–259F; ~1 KB,
@@ -87,27 +148,32 @@ slots only; the wall and text stay.
   for emphasis instead.
 - Press Start 2P carries its own wide spacing, so keep `letter-spacing` at about 0.02em. It is too wide for
   paragraphs and never sets body copy.
-- The a11y menu's **Readable font** swaps `--font-display`/`--font-body` for the platform sans. Art keeps its
+- The accessibility menu's **Readable font** swaps `--font-display`/`--font-body` for the platform sans. Art keeps its
   cells.
 
 ## Site-wide pieces (all build-time, zero JS)
 
-- **Wall** (`AnsiWall.astro`, `renderWallTile`): a running-bond brick wall of `▓`/`░`/`▒` behind every page
-  at 7% opacity. It **scrolls with the content**, like paint on a real wall. The cells are drawn as a seamless
-  80 × 30-cell SVG tile, where each shade glyph becomes its 2 × 2 dither. The tile is served as three CSS masks
-  (`/art/wall.css`, generated at build) over theme-coloured layers, so there are no glyphs in the DOM. It replaces the matrix rain, which ran a rAF loop forever. The `matrix`
-  terminal command still plays the rain once, as an easter egg.
+- **Wall** (`AnsiWall.astro`, `wallPixels`): a running-bond brick wall of `▓`/`░`/`▒` behind every page
+  at 7% strength. It **scrolls with the content**, like paint on a real wall. The cells are drawn as a seamless
+  80 × 30-cell tile, where each shade glyph becomes its 2 × 2 dither, baked per theme into a ~2 KB PNG
+  (`/art/wall-<theme>.png`) and tiled with `image-rendering: pixelated`. There are no glyphs in the DOM and no
+  masks: a tiled bitmap is nearly free to raster, and the old theme-coloured masks cost most of a phone's raster
+  time while scrolling (R22). It replaced the matrix rain, which ran a rAF loop forever. The `matrix` terminal
+  command still plays the rain once, as an easter egg.
 - **Drips** (`AnsiDrips.astro`, `renderDripStrip`): a 1-cell stem ending in a **teardrop** of quadrant blocks
   (`▗█▖` / `▟█▙` / `▜█▛`). It is 2-4-4-6-6-4 half-cell pixels wide: a gentle taper from the stem, then a
   rounded bottom. **Title drips don't get the teardrop** (user direction, 2026-10-12): they stay thin 1-cell
   runs fading `█` → `▓` → `▒` → `░`, as in the original pieces. Strips only.
   - **Like spray paint running down a wall** (user direction, 2026-10-12): paint runs out of the edge, catches,
-    runs again and creeps to a stop. It never detaches, falls or splats.
+    runs again and creeps to a stop. It never detaches, falls or splats. The "catch" is a slow-down, never a
+    stop: the easing (`--drip-ease`) is sampled from a speed curve that swells and eases without ever hitting
+    zero or jumping, because a dead stop followed by a lurch reads as stutter (R22).
   - **The whole strip animates together, never drip by drip.** Drips are dealt into 4 runs (`.drip-run`).
     On hover/focus every run slides out at its own pace (a beat later and a little slower than the last), so
     the strip pours without moving in step. Each run is one compositor layer: CSS transitions, no JS.
   - **Divider** (`AnsiDivider.astro`): drips under a sprayed `▄` bar, **always visible**, about halfway out.
-    Stems are 2–6 cells. Hover (or a tap on touch) runs them all out to full length; they creep back slowly
+    Stems are 2–6 cells. Hover (on touch: the divider crossing the middle of the screen) runs them all out to
+    full length; they creep back slowly
     after. Dividers below the fold start tucked in the bar and run out on first view. Used under page headers
     and between home sections.
   - **Card drips** (`.card-drips`): **only while the card is hovered or focused** (user direction,
@@ -117,9 +183,42 @@ slots only; the wall and text stay.
     - Fixed 7px cells and 1–4-cell stems. Grids with drip cards get a wider row gap so the drips stay inside
       it (e2e checks this).
     - Under reduced motion they simply appear on hover.
-- **Headers** (`AnsiTitle.astro`): lean wildstyle for page titles, bubble for the 404 and the "SL" avatar.
-  With the a11y menu's **Plain headings**, the art hides and its real heading shows instead: Press Start 2P,
+  - **Terminal drips** (`terminal.ts` `termDrips`, user direction 2026-10-13): the same 7px strip runs off the
+    terminal window's bottom edge when it opens, a beat after the window lands, and hangs there until it
+    closes. They're below the frame, never over the terminal's text.
+  - **Touch: focus follows the scroll, not the finger** (user direction, 2026-10-13). Phones have no hover,
+    so the card or divider crossing the middle 30% of the screen gets its hover state (`.is-focus`: lift, skin,
+    drips pouring) as it arrives and lets go as it leaves (`fx.ts`, one IntersectionObserver). Taps don't
+    trigger it.
+- **Headers** (`AnsiTitle.astro`, `piece.ts`): bubble (the original look) for the hero, its subheader, the
+  page titles, the 404 and the "SL" avatar. Long titles stack into 2 (or up to `lines`) balanced lines by container query when one line
+  would drop below a legible unit size; only the last line keeps the arrow.
+  With the accessibility menu's **Plain headings**, the art hides and its real heading shows instead: Press Start 2P,
   the same burner gradient and a two-step block extrusion (`drop-shadow` in `--title-x1`/`--title-x2`).
+- **Wall pieces** (`wall.ts`, R32; user direction 2026-10-20 replacing R27's fixed spots): original leet
+  pieces painted on the brick wall, **different on every visit**. Words: PWN, PWN3D, H4CK, CV3, LY0NS, SL,
+  r00t, 0DAY, SUD0, 1337 (slashed `0`, lowercase `r`).
+  - **Random, on purpose:** each page load draws a seed, and from it each piece's word, style (bubble or
+    wildstyle), colour variant, size and tilt. It is the one place art is random at runtime; titles never
+    are. The wall changes only on a new load or a new theme (which re-rolls it), never on a heading-style
+    switch. A layout change keeps the same pieces and moves only one that content now covers. A width
+    change places the same pieces again.
+  - **Colour:** always the current theme's, in one of six variants: as is, upside down, cool (the UI's
+    blues and greens), dark-ink outline, accent outline, or the ramp rotated one stop.
+  - **Where:** only free wall. Every text line, control, card, art title, divider and image is measured
+    once and kept 20px clear (an occupancy grid with a summed-area table). Pieces keep 28px apart, sit
+    inside one section each so they move with it, and never push the page sideways. e2e `wall.spec`
+    checks every page at every size.
+  - **Depth:** small pieces are further back (dimmer, painted first); big ones nearer (up to 62%
+    strength). All of them sit behind content (`z-index: -1`), are never interactive, and are
+    `aria-hidden`. Wildstyle pieces bring their backdrop cloud.
+  - **Cost:** the pieces are drawn at build time (every word in both styles, `wallPool.ts` →
+    `/art/wall-pieces.json`, ~17 KB gzipped, fetched once and cached across pages). `wall.js` (~5 KB) only
+    picks, colours and places them on idle, after fonts settle: measuring is one idle slice, tries run while
+    a slice has time, and one piece is added per slice. Rendering them in the browser instead cost
+    100–170 ms tasks on a throttled phone. No rAF, nothing per frame.
+  - **Motion:** each piece sprays on **once**, when first seen (six stepped coats, transform/opacity).
+    Reduced motion: simply there. **Hide wall texture**: not even loaded.
 - **Components**: buttons and cards carry the art's hard down-right offset shadow (`--title-x2`); section
   labels start with a `▓▒░` ramp; the timeline is a sprayed sky→forest stripe with square pixel markers; the
   terminal banner uses the title gradient.
@@ -130,7 +229,7 @@ slots only; the wall and text stay.
   hero, on its own rows.
 - Move under the pointer on its own, or shift layout after load. No CLS from art. Movement the user starts is
   fine: grabbing `[data-drag]` art, hovering a card or a divider to pour its drips.
-- Animate when motion is off. Every animation stops under `data-reduce-motion` (the OS setting or the a11y
+- Animate when motion is off. Every animation stops under `data-reduce-motion` (the OS setting or the accessibility
   menu).
   - Allowed (user OK, 2026-10-12): drips pouring on hover/focus (R12, R17), page transitions, card
     tilt/press, and draggable art (R13).

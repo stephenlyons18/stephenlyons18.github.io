@@ -1,6 +1,16 @@
 import { describe, expect, test } from 'vitest';
 import { GLYPHS, GLYPH_HEIGHT } from '../lib/ansi/font';
-import { balanceLines, renderAnsi, toPlainText } from '../lib/ansi/generator';
+import { renderBubble } from '../lib/ansi/bubble';
+import { hash } from '../lib/ansi/grid';
+import {
+    PIECE_CLASSES,
+    balanceLines,
+    pieceChars,
+    pieceToSvg,
+    pieceToText,
+    renderPiece,
+    type Piece,
+} from '../lib/ansi/piece';
 import {
     BRICK,
     CELL_H,
@@ -10,10 +20,12 @@ import {
     DRIP_RUNS,
     dripRows,
     renderDripStrip,
-    renderWallTile,
-    svgDataUrl,
+    WALL_ALPHA,
+    WALL_THEMES,
     wallCells,
+    wallPixels,
 } from '../lib/ansi/wall';
+import { readFileSync } from 'node:fs';
 import { dripsToHtml } from '../lib/ansi/html';
 
 const TITLES = [
@@ -39,118 +51,407 @@ describe('ansi font', () => {
     });
 });
 
-describe('renderAnsi', () => {
-    test('is deterministic (same input → identical art)', () => {
-        for (const t of TITLES) expect(toPlainText(renderAnsi(t))).toBe(toPlainText(renderAnsi(t)));
-    });
+const cls = (p: Piece, x: number, y: number) => PIECE_CLASSES[p.cells[y * p.w + x]!]!;
+const count = (p: Piece, c: string) => [...p.cells].filter((v) => PIECE_CLASSES[v] === c).length;
+const isFill = (c: string) => /^p-f\d$/.test(c);
 
-    test('seed changes drips/overspray but not the letter shapes', () => {
-        const a = renderAnsi('Projects', { seed: 1 });
-        const b = renderAnsi('Projects', { seed: 2 });
-        expect(toPlainText(a)).not.toBe(toPlainText(b));
-        const fill = (art: typeof a) =>
-            art.lines
-                .map((l) =>
-                    l
-                        .filter((r) => r.c.startsWith('a-f'))
-                        .map((r) => r.t)
-                        .join(''),
-                )
-                .join('|');
-        expect(fill(a).length).toBeGreaterThan(0);
-    });
-
-    test('only block, shade, half/quadrant-block and dot glyphs are used', () => {
-        for (const style of ['bubble', 'wild', 'block'] as const) {
+describe('renderPiece', () => {
+    test('is deterministic, and the seed changes it', { timeout: 30000 }, () => {
+        for (const style of ['wild', 'bubble'] as const)
             for (const t of TITLES) {
-                const s = toPlainText(renderAnsi(t, { style })).replace(/\n/g, '');
-                expect(s).toMatch(/^[ █▓▒░▀▖▗▘▝·]*$/);
+                expect(renderPiece(t, { style })).toEqual(renderPiece(t, { style }));
+                expect(pieceToText(renderPiece(t, { style, seed: 1 }))).not.toBe(
+                    pieceToText(renderPiece(t, { style, seed: 2 })),
+                );
             }
+    });
+
+    test('wildstyle: every fill unit is wrapped: ink touches fill, outline wraps ink, nothing fill touches the wall', () => {
+        for (const style of ['wild'] as const)
+            for (const t of TITLES) {
+                const p = renderPiece(t, { style, drips: 0, sparkles: 0, overspray: 0 });
+                for (let y = 0; y < p.h; y++)
+                    for (let x = 0; x < p.w; x++) {
+                        if (!isFill(cls(p, x, y))) continue;
+                        // A fill unit's 4 neighbours are fill, highlights, ink or outline — never
+                        // bare wall: the letter is always closed by its ink line.
+                        for (const [dx, dy] of [
+                            [1, 0],
+                            [-1, 0],
+                            [0, 1],
+                            [0, -1],
+                        ]) {
+                            const n = cls(p, x + dx!, y + dy!) ?? '';
+                            expect(n, `${style} ${t} @${x},${y}`).not.toBe('');
+                        }
+                    }
+            }
+    });
+
+    test('wildstyle counters stay dark: the O, A, 4… holes are ink, never fill or outline', () => {
+        const p = renderPiece('O', {
+            style: 'wild',
+            drips: 0,
+            sparkles: 0,
+            overspray: 0,
+            shine: false,
+            splits: false,
+            cloud: 0,
+        });
+        const mid = Math.floor(p.h / 2) - 2;
+        const row = Array.from({ length: p.w }, (_, x) => cls(p, x, mid));
+        // Across the middle of an O: outline, ink, fill, ink (the counter), fill, ink, outline.
+        const runs = row
+            .filter((c, i) => c && c !== row[i - 1])
+            .filter((c) => !c.startsWith('p-x'));
+        expect(runs.slice(0, 7).map((c) => (isFill(c) ? 'f' : c))).toEqual([
+            'p-ol',
+            'p-ik',
+            'f',
+            'p-ik',
+            'f',
+            'p-ik',
+            'p-ol',
+        ]);
+    });
+
+    test('has the parts of a piece: outline, ink, 3D, highlights, drips', () => {
+        for (const style of ['wild', 'bubble'] as const) {
+            const p = renderPiece('Stephen Lyons', { style, drips: 0.6 });
+            // Ink lines are wildstyle's; bubble's outline is white on the wall (no seams, R34).
+            for (const c of ['p-ol', ...(style === 'wild' ? ['p-ik'] : []), 'p-x1', 'p-sh', 'p-dr'])
+                expect(count(p, c), `${style} ${c}`).toBeGreaterThan(0);
         }
+        expect(
+            count(renderPiece('Projects', { style: 'wild', splits: false }), 'p-cu'),
+        ).toBeGreaterThan(0);
     });
 
-    test('cols and rows match the rendered text', () => {
-        const art = renderAnsi('Stephen Lyons', { style: 'wild' });
-        const lines = toPlainText(art).split('\n');
-        expect(art.rows).toBe(lines.length);
-        expect(art.cols).toBe(Math.max(...lines.map((l) => [...l].length)));
+    test('wildstyle v3: splits, a swoosh, striped 3D and a backdrop cloud', () => {
+        const p = renderPiece('Stephen Lyons', { style: 'wild' });
+        const flat = renderPiece('Stephen Lyons', {
+            style: 'wild',
+            splits: false,
+            swoosh: false,
+            cloud: 0,
+        });
+        // Splits: a second tone (the ramp's foot) below a dark break, on most letters.
+        expect(count(p, 'p-f8')).toBeGreaterThan(count(flat, 'p-f8'));
+        expect(count(p, 'p-ik')).toBeGreaterThan(count(flat, 'p-ik'));
+        // The cloud sits behind: never between a letter's fill and its outline, and it surrounds
+        // the piece (some on every side).
+        expect(count(p, 'p-bg')).toBeGreaterThan(200);
+        const rows = Array.from({ length: p.h }, (_, y) =>
+            Array.from({ length: p.w }, (_, x) => cls(p, x, y)),
+        );
+        const q = Math.floor(p.h / 4);
+        expect(rows.slice(0, q).some((r) => r.includes('p-bg'))).toBe(true);
+        expect(rows.slice(-q).some((r) => r.includes('p-bg'))).toBe(true);
+        for (let y = 0; y < p.h; y++)
+            for (let x = 0; x < p.w; x++)
+                if (isFill(cls(p, x, y)))
+                    for (const [dx, dy] of [
+                        [1, 0],
+                        [-1, 0],
+                        [0, 1],
+                        [0, -1],
+                    ])
+                        expect(cls(p, x + dx!, y + dy!)).not.toBe('p-bg');
+        // Striped 3D: both steps alternate in depth.
+        expect(count(p, 'p-x1')).toBeGreaterThan(0);
+        expect(count(p, 'p-x2')).toBeGreaterThan(0);
+        // The swoosh reaches out left of the first letter.
+        expect(p.w).toBeGreaterThan(flat.w);
     });
 
-    test('pixels are two cells wide (fill runs have even length on fully filled rows)', () => {
-        const art = renderAnsi('I', { style: 'block', drips: 0, overspray: 0 });
-        const fillRow = art.lines.find((l) => l.some((r) => r.c === 'a-f0'))!;
-        const len = fillRow
-            .filter((r) => r.c.startsWith('a-f') || r.c === 'a-gl')
-            .reduce((n, r) => n + r.t.length, 0);
-        expect(len % 2).toBe(0);
+    test('wildstyle: the first letter of a word is in front, each letter over the next (R35)', () => {
+        const p = renderPiece('HH', {
+            style: 'wild',
+            gap: -3,
+            lean: 0,
+            bounce: 0,
+            blades: 0,
+            arrow: false,
+            swoosh: false,
+            splits: false,
+            shine: false,
+            cloud: 0,
+            drips: 0,
+            sparkles: 0,
+            overspray: 0,
+        });
+        const rows = Array.from({ length: p.h }, (_, y) => {
+            const row = Array.from({ length: p.w }, (_, x) => cls(p, x, y));
+            return row
+                .filter((c, i) => c !== row[i - 1])
+                .filter((c) => !c.startsWith('p-x'))
+                .map((c) => (isFill(c) ? 'f' : c))
+                .join(' ');
+        });
+        // Left H's fill, its ink and outline, then the right H's fill: the left one is on top.
+        expect(rows.some((r) => r.includes('f p-ik p-ol f'))).toBe(true);
+        expect(rows.some((r) => r.includes('f p-ol p-ik f'))).toBe(false);
     });
 
-    test('art is reasonably sized for page titles', () => {
-        // ≤ 125 cells keeps one-word page titles at ≥ 4px font (≈32px-tall letters) on a 320px phone.
-        for (const t of ['About', 'Projects', 'Contact', '404'])
-            expect(renderAnsi(t).cols).toBeLessThanOrEqual(125);
+    test('wildstyle breaks never cut a bowl or leg (R37): letters with a low counter keep the colour split only', () => {
+        const o = {
+            style: 'wild',
+            blades: 0,
+            arrow: false,
+            swoosh: false,
+            shine: false,
+            cloud: 0,
+            drips: 0,
+            sparkles: 0,
+            overspray: 0,
+        } as const;
+        const ink = (t: string, splits: boolean) => count(renderPiece(t, { ...o, splits }), 'p-ik');
+        // B, D, O (a low counter) and A, R (their legs): no dark line through them.
+        for (const t of ['B', 'R', 'A', 'D', 'O']) expect(ink(t, true), t).toBe(ink(t, false));
+        // E, S, T: a break line.
+        for (const t of ['E', 'S', 'T']) expect(ink(t, true), t).toBeGreaterThan(ink(t, false));
     });
 
-    test('drips only hang below the fill (never above the first letter row)', () => {
-        const art = renderAnsi('About', { drips: 1 });
-        const firstFill = art.lines.findIndex((l) => l.some((r) => r.c.startsWith('a-f')));
-        const firstDrip = art.lines.findIndex((l) => l.some((r) => r.c === 'a-dr'));
-        expect(firstDrip).toBeGreaterThan(firstFill);
+    test('drips are thin (1u) runs that hang below a fill and fade at the tip', () => {
+        const p = renderPiece('About', { style: 'wild', drips: 1, dripMax: 8 });
+        for (let y = 0; y < p.h; y++)
+            for (let x = 0; x < p.w; x++) {
+                const c = cls(p, x, y);
+                if (c !== 'p-d2') continue;
+                // Walk up the drip to a fill; never two drips side by side.
+                let yy = y;
+                while (/^p-d[r12]$/.test(cls(p, x, yy - 1)!)) yy--;
+                expect(isFill(cls(p, x, yy - 1)!), `drip @${x},${y}`).toBe(true);
+                expect(cls(p, x - 1, y)).not.toMatch(/^p-d/);
+                expect(cls(p, x + 1, y)).not.toMatch(/^p-d/);
+            }
+    });
+
+    test('height is a whole number of text rows, and page titles fit a phone', () => {
+        for (const t of TITLES) {
+            const p = renderPiece(t);
+            expect(p.h % 2).toBe(0);
+            expect(pieceToText(p).split('\n').length).toBe(p.h / 2);
+        }
+        // ≤ 140u keeps one-word page titles at ≥ 2.2px per unit (≈36px-tall letters) at 320px.
+        for (const style of ['wild', 'bubble'] as const)
+            for (const t of ['About', 'Projects', 'Contact', '404'])
+                expect(renderPiece(t, { style }).w, `${style} ${t}`).toBeLessThanOrEqual(140);
+    });
+
+    test('titles are all caps (R36): lowercase glyphs only for leet words that ask', () => {
+        expect(pieceChars('Cyber Security Engineer')).toEqual([...'CYBER SECURITY ENGINEER']);
+        expect(pieceChars('r00t', true)).toEqual(['r', '0', '0', 'T']);
+        expect(pieceChars('Cyber', true)).toEqual(['C', 'Y', 'B', 'E', 'r']);
+    });
+
+    test('text view uses only half and full blocks', () => {
+        expect(pieceToText(renderPiece('SL', { style: 'bubble' }))).toMatch(/^[ ▀▄█\n]*$/);
     });
 });
 
-describe('balanceLines', () => {
-    test('splits two words into two lines', () => {
-        expect(balanceLines('Stephen Lyons')).toEqual(['Stephen', 'Lyons']);
+describe('bubble pieces (the original title look, R28)', () => {
+    const at = (p: Piece, y: number) => Array.from({ length: p.w }, (_, x) => cls(p, x, y));
+    const runs = (row: string[]) =>
+        row.filter((c, i) => c !== row[i - 1]).map((c) => (isFill(c) ? 'f' : c));
+
+    test('locked: the titles render exactly as reviewed (a change here is a visible change)', () => {
+        // R28 matched the R6/R7 generator unit for unit (overlap 0, no seams); R33 outlines the Y's
+        // stem and draws a capital I; R34 drops the dark overlap seams.
+        const want: Record<string, [number, number, number]> = {
+            'Stephen Lyons': [175, 34, 1267248091],
+            About: [74, 36, 3598178463],
+            Projects: [115, 34, 981169389],
+            Contact: [100, 36, 4232679747],
+            '404': [46, 36, 1436139175],
+        };
+        for (const [t, [w, h, sum]] of Object.entries(want)) {
+            const p = renderPiece(t, { style: 'bubble' });
+            expect([p.w, p.h, hash(String.fromCharCode(...p.cells))], t).toEqual([w, h, sum]);
+        }
     });
-    test('balances by length', () => {
-        expect(balanceLines('Interested in Working Together')).toEqual([
-            'Interested in',
-            'Working Together',
-        ]);
+
+    test('each letter lies over the next: its outline, a dark seam, then the letter behind', () => {
+        const p = renderBubble('HH', { drips: 0, overspray: 0, seams: 'all' });
+        // A row through the crossbar: front H's fill → its outline → seam → back H's fill.
+        const rows = Array.from({ length: p.h }, (_, y) => runs(at(p, y)).join(' '));
+        expect(rows.some((r) => r.includes('f p-ol p-ik f'))).toBe(true);
+        expect(rows.some((r) => r.includes('f p-ik p-ol f'))).toBe(false);
     });
-    test('single word stays on one line', () => {
-        expect(balanceLines('Projects')).toEqual(['Projects']);
+
+    test('no dark seams by default (R34): the overlap reads by the front letter outline alone', () => {
+        for (const t of ['Stephen Lyons', 'Cyber Security Engineer'])
+            expect(count(renderBubble(t), 'p-ik'), t).toBe(0);
+        const p = renderBubble('HH', { drips: 0, overspray: 0 });
+        const rows = Array.from({ length: p.h }, (_, y) => runs(at(p, y)).join(' '));
+        // Front H's fill, its outline, then straight onto the back H's fill.
+        expect(rows.some((r) => r.includes('f p-ol f'))).toBe(true);
+    });
+
+    test('words never overlap across a space; counters are bare wall, not outline', () => {
+        expect(count(renderBubble('H H', { drips: 0, overspray: 0 }), 'p-ik')).toBe(0);
+        const o = renderBubble('O', { drips: 0, overspray: 0 });
+        const mid = runs(at(o, Math.floor(o.h / 2) - 2)).filter((c) => !c.startsWith('p-x'));
+        expect(mid.slice(0, 5)).toEqual(['p-ol', 'f', '', 'f', 'p-ol']);
+    });
+
+    test('legible at a glance (R33): the Y stem is outlined, the I is a capital, the rest as live', () => {
+        const o = { drips: 0, overspray: 0 } as const;
+        const lowerRow = (ch: string) => {
+            const p = renderBubble(ch, o);
+            return runs(at(p, p.h - 8))
+                .filter((c) => c && !c.startsWith('p-x'))
+                .slice(0, 3);
+        };
+        // Y: outline, stem, outline (it melted into its neighbours without). T keeps the original
+        // dark sides under its bar (white blocks there read badly, user review).
+        expect(lowerRow('Y')).toEqual(['p-ol', 'f', 'p-ol']);
+        expect(lowerRow('T')).not.toEqual(['p-ol', 'f', 'p-ol']);
+        // The I is a full-width capital: its top and bottom bars are wider than its stem.
+        const i = renderBubble('I', o);
+        const paint = (c: string) => isFill(c) || c === 'p-sh';
+        const widths = Array.from({ length: i.h }, (_, y) => at(i, y).filter(paint).length).filter(
+            (n) => n > 0,
+        );
+        expect(Math.max(...widths)).toBeGreaterThanOrEqual(3 * Math.min(...widths));
+    });
+
+    test('drawn on the original 0.6em × 0.5em cells: units stretch to the drawn ratio', () => {
+        const p = renderPiece('SL', { style: 'bubble' });
+        expect(p.aspect).toBe(1.2);
+        const svg = pieceToSvg(p, { attrs: { style: '--w:9' } });
+        expect(svg).toContain('data-piece="bubble"');
+        expect(svg).toContain('preserveAspectRatio="none"');
+        expect(svg).toContain(`style="--w:9;aspect-ratio:${+(p.w * 1.2).toFixed(2)}/${p.h}"`);
+    });
+
+    test('headings keep the original 0; leet wall words can slash it', () => {
+        const plain = pieceToText(renderBubble('0', { drips: 0, overspray: 0 }));
+        const slashed = pieceToText(
+            renderBubble('0', { drips: 0, overspray: 0, slashedZero: true }),
+        );
+        expect(plain).not.toBe(slashed);
+    });
+
+    test('leet words keep their lowercase r (R40); everything else is all caps', () => {
+        const o = { drips: 0, overspray: 0 };
+        const draw = (t: string, leet?: boolean) =>
+            pieceToText(renderPiece(t, { style: 'bubble', ...o, ...(leet && { leet }) }));
+        // Same text, so the same random draws: only the r's glyph differs.
+        expect(draw('r00t', true)).not.toBe(draw('r00t'));
+        expect(draw('r00t', true)).toBe(pieceToText(renderBubble('r00t', { ...o, leet: true })));
+        expect(draw('SUD0', true)).toBe(draw('SUD0'));
+    });
+});
+
+describe('pieceToSvg', () => {
+    const p = renderPiece('SL', { style: 'bubble' });
+    test('one path per class on a unit viewBox, themeable by class', () => {
+        const svg = pieceToSvg(p, { attrs: { 'aria-hidden': 'true' } });
+        expect(svg).toMatch(
+            new RegExp(`^<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${p.w} ${p.h}"`),
+        );
+        expect(svg).toContain('shape-rendering="crispEdges"');
+        expect(svg).toContain('aria-hidden="true"');
+        const classes = [...svg.matchAll(/class="(p-[a-z0-9]+)"/g)].map((m) => m[1]);
+        expect(new Set(classes).size).toBe(classes.length);
+        expect(classes).toContain('p-ol');
+    });
+    test('painted in order, the paths reproduce every opaque unit exactly', () => {
+        for (const piece of [p, renderPiece('Stephen Lyons', { style: 'wild' })]) {
+            const svg = pieceToSvg(piece);
+            const got = new Array<string>(piece.w * piece.h).fill('');
+            for (const [, c, d] of svg.matchAll(/<path class="(p-[a-z0-9]+)" d="([^"]*)"/g)) {
+                if (c === 'p-os') continue; // mist dots, not cells
+                let x = 0;
+                let y = 0;
+                for (const [, op, a, b, w, h] of d!.matchAll(
+                    /([Mm])(-?[\d.]+) (-?[\d.]+)h([\d.]+)v([\d.]+)h-[\d.]+z/g,
+                )) {
+                    [x, y] = op === 'M' ? [+a!, +b!] : [x + +a!, y + +b!];
+                    for (let yy = y; yy < y + +h!; yy++)
+                        for (let xx = x; xx < x + +w!; xx++) got[yy * piece.w + xx] = c!;
+                }
+            }
+            for (let i = 0; i < got.length; i++) {
+                const want = PIECE_CLASSES[piece.cells[i]!]!;
+                if (['p-os', 'p-d1', 'p-d2', 'p-d3', ''].includes(want)) continue;
+                expect(got[i], `unit ${i % piece.w},${Math.floor(i / piece.w)}`).toBe(want);
+            }
+        }
+        expect(pieceToSvg(p, { colors: { 'p-ol': '#fff' } })).not.toContain('class=');
     });
 });
 
 describe('wall tile', () => {
+    const tile = wallPixels(WALL_THEMES['wildstyle']!);
+
     test('is seamless: the brick period divides the tile', () => {
-        const t = renderWallTile();
-        expect(t.cols % BRICK).toBe(0);
-        expect(t.rows % (COURSE * 2)).toBe(0);
+        expect(80 % BRICK).toBe(0);
+        expect(30 % (COURSE * 2)).toBe(0);
+        expect([tile.width, tile.height]).toEqual([80 * CELL_W, 30 * CELL_H]);
+        expect(tile.data.length).toBe(tile.width * tile.height * 4);
     });
 
-    test('one standalone SVG mask per colour layer, deterministic', () => {
-        const a = renderWallTile();
-        expect(Object.keys(a.layers).sort()).toEqual(['w-b', 'w-c', 'w-m']);
-        for (const svg of Object.values(a.layers)) {
-            expect(svg).toMatch(/^<svg xmlns="http:\/\/www\.w3\.org\/2000\/svg"/);
-            expect(svg).toContain(`viewBox="0 0 ${a.cols * CELL_W} ${a.rows * CELL_H}"`);
-        }
-        expect(renderWallTile()).toEqual(a);
-        expect(renderWallTile(80, 30, 2)).not.toEqual(a);
+    test('deterministic, and the seed changes it', () => {
+        // Byte-wise (a deep toEqual of the pixel arrays takes seconds).
+        const same = (a: Uint8Array, b: Uint8Array) => Buffer.from(a).equals(Buffer.from(b));
+        expect(same(wallPixels(WALL_THEMES['wildstyle']!).data, tile.data)).toBe(true);
+        expect(same(wallPixels(WALL_THEMES['wildstyle']!, 80, 30, 2).data, tile.data)).toBe(false);
     });
 
-    test('mask rects match the wall cells (every lit cell drawn once, inside the tile)', () => {
+    test('each cell lights its glyph’s dither, in its layer colour at the wall strength', () => {
         const cells = wallCells();
-        const { layers } = renderWallTile();
-        for (const cls of ['w-b', 'w-m', 'w-c']) {
-            const want = cells.flat().filter((c) => c.c === cls).length;
-            let got = 0;
-            for (const m of layers[cls]!.matchAll(
-                /<rect x="(\d+)" y="(\d+)" width="(\d+)" height="10"/g,
-            )) {
-                got += Number(m[3]) / CELL_W;
-                expect(Number(m[1]) + Number(m[3])).toBeLessThanOrEqual(80 * CELL_W);
-            }
-            expect(got).toBe(want);
+        const dots: Record<string, number> = { '░': 1, '▒': 2, '▓': 3 };
+        const lit = (cx: number, cy: number) => {
+            let n = 0;
+            for (let y = cy * CELL_H; y < (cy + 1) * CELL_H; y++)
+                for (let x = cx * CELL_W; x < (cx + 1) * CELL_W; x++)
+                    if (tile.data[(y * tile.width + x) * 4 + 3]) n++;
+            return n;
+        };
+        for (const [cy, cx] of [
+            [0, 0],
+            [2, 9],
+            [7, 33],
+            [29, 79],
+        ] as const) {
+            const c = cells[cy]![cx]!;
+            expect(lit(cx, cy)).toBe(c.c ? (dots[c.ch]! * CELL_W * CELL_H) / 4 : 0);
         }
+        const firstBrick = tile.data.slice(0, 4);
+        expect([...firstBrick]).toEqual([0x3c, 0xc4, 0xff, Math.round(WALL_ALPHA.b * 255)]);
     });
 
-    test('data URL escapes everything a CSS url() / data URI chokes on', () => {
-        const u = svgDataUrl('<svg a="#x">100%</svg>');
-        expect(u).toBe(`url("data:image/svg+xml,%3Csvg a='%23x'%3E100%25%3C/svg%3E")`);
+    test('WALL_THEMES matches the theme tokens in global.css (b = --ui, m = --ui-3, c = --ui-2)', () => {
+        const css = readFileSync(new URL('../styles/global.css', import.meta.url), 'utf8');
+        const tokens = (sel: string) =>
+            Object.fromEntries(
+                [
+                    ...css
+                        .slice(css.indexOf(sel))
+                        .split('}')[0]!
+                        .matchAll(/(--[\w-]+):\s*([^;]+);/g),
+                ].map((m) => [m[1]!, m[2]!.trim()]),
+            );
+        // The spray cans live in :root; the default theme's slots in `:root, [data-theme='wildstyle']`.
+        const root = { ...tokens(':root {'), ...tokens(":root,\n[data-theme='wildstyle'] {") };
+        const hex = (v: string, theme: Record<string, string>): string => {
+            const ref = /^var\((--[\w-]+)\)$/.exec(v);
+            return ref ? hex(theme[ref[1]!] ?? root[ref[1]!]!, theme) : v.toLowerCase();
+        };
+        for (const [name, want] of Object.entries(WALL_THEMES)) {
+            const theme =
+                name === 'wildstyle' ? root : { ...root, ...tokens(`[data-theme='${name}'] {`) };
+            expect(
+                {
+                    b: hex(theme['--ui']!, theme),
+                    m: hex(theme['--ui-3']!, theme),
+                    c: hex(theme['--ui-2']!, theme),
+                },
+                name,
+            ).toEqual(want);
+        }
     });
 });
 
@@ -225,21 +526,5 @@ describe('drips', () => {
             }, 0);
         const profile = DRIP_BULB.flatMap((r) => [width(r, true), width(r, false)]);
         expect(profile).toEqual([2, 4, 4, 6, 6, 4]);
-    });
-
-    test('title drips are thin 1-cell runs that fade out (no teardrop bulbs)', () => {
-        let drips = 0;
-        for (const t of TITLES) {
-            const art = renderAnsi(t, { style: 'wild', drips: 0.6 });
-            const rows = toPlainText(art).split('\n');
-            expect(rows.join('')).not.toContain(DRIP_BULB[1]);
-            for (const l of art.lines)
-                for (const r of l)
-                    if (r.c === 'a-dr') {
-                        expect(r.t, t).toMatch(/^[█▓▒░]+$/);
-                        drips += r.t.length;
-                    }
-        }
-        expect(drips).toBeGreaterThan(5);
     });
 });

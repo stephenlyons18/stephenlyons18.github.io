@@ -26,15 +26,16 @@ for (const path of PAGES) {
         expect(overflow, 'horizontal overflow (px)').toBeLessThanOrEqual(0);
 
         // ANSI art must fit its own box (it scales by container width, never scrolls or clips).
-        const art = await page.$$eval('.ansi-title pre.ansi', (els) =>
+        const art = await page.$$eval('.ansi-title svg.ansi-svg', (els) =>
             els
-                .filter((e) => (e as HTMLElement).offsetParent)
+                .filter((e) => e.getBoundingClientRect().width > 0)
                 .map(
                     (e) =>
-                        e.scrollWidth -
-                        (e.parentElement!.closest('.ansi-title') as HTMLElement).clientWidth,
+                        e.getBoundingClientRect().width -
+                        (e.closest('.ansi-title') as HTMLElement).clientWidth,
                 ),
         );
+        expect(art.length, 'a visible title piece').toBeGreaterThan(0);
         for (const over of art)
             expect(over, 'ANSI art wider than its container (px)').toBeLessThanOrEqual(1);
         expect(problems).toEqual([]);

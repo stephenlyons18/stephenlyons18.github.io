@@ -61,10 +61,12 @@ const { fixed = false, full = true } = Astro.props;
             </div>
         )}
         <p>
-            &copy; 2026 Stephen Lyons.
-            {full && <>Built with Astro, Tailwind CSS, and Motion. </>}
+            &copy; 2026 Stephen Lyons. {full && <>Built with Astro and Motion. </>}
             <span style="color:var(--ui);">
-                Press <kbd>Ctrl+K</kbd> for terminal.
+                <span class="only-kbd">
+                    Press <kbd>Ctrl+K</kbd> for terminal.
+                </span>
+                <span class="only-touch">Tap &gt;_ for the terminal.</span>
             </span>
         </p>
     </div>

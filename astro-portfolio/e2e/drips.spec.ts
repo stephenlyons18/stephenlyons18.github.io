@@ -3,7 +3,7 @@ import { expect, test, type Page } from '@playwright/test';
 import { PAGES } from './pages';
 
 // Paint drips (AnsiDrips.astro): runs of drips that pour out on hover/focus (CSS, global.css
-// .drip-run), plus fx.ts's taps on touch and tucking dividers below the fold.
+// .drip-run), plus fx.ts's touch focus (the middle of the screen) and tucking dividers below the fold.
 
 test.beforeEach(async ({ context }) => {
     await context.addInitScript(() => sessionStorage.setItem('sl-booted', '1'));
@@ -74,22 +74,38 @@ test('a strip animates as a few run layers, never one animation per drip', async
     expect(await page.locator('.drip__drop').count()).toBe(0);
 });
 
-test('divider drips hang halfway out, and all run out together on hover (or a tap)', async ({
+test('divider drips hang halfway out, and all run out together on hover (or in focus on touch)', async ({
     page,
     isMobile,
 }) => {
-    await page.goto('/about/');
+    await page.goto('/'); // its divider sits mid-page, so it can be out of the touch focus band
     await expect.poll(() => fxLoaded(page), { timeout: 5000 }).toBe(true);
+    // The hero terminal grows as it types its intro, pushing the divider down under a still
+    // mouse; measure once it has finished (its prompt appears).
+    await expect(page.locator('.hero-terminal__input')).toBeAttached({ timeout: 15000 });
     const divider = page.locator('.ansi-divider').first();
-    await divider.scrollIntoViewIfNeeded();
+    // At rest = seen, but below the touch focus band (the middle 30% of the screen).
+    await divider.evaluate((el) =>
+        window.scrollBy(0, el.getBoundingClientRect().top - innerHeight * 0.72),
+    );
     await page.waitForTimeout(2000);
     const rest = await runY(page, '.ansi-divider');
     expect(rest.visible).toBe(true);
     expect(rest.y).toBeLessThan(-rest.h * 0.3);
     expect(rest.y).toBeGreaterThan(-rest.h * 0.6);
-    const box = (await divider.boundingBox())!;
-    if (isMobile) await page.touchscreen.tap(box.x + box.width / 2, box.y + 3);
-    else await page.mouse.move(box.x + box.width / 2, box.y + 3);
+    // Touch: no tap needed; the divider pours as it crosses the middle of the screen. Mouse: hover a
+    // point on the bar that is the divider's (a hovered card's drips above can cover its middle).
+    if (isMobile) await divider.evaluate((el) => el.scrollIntoView({ block: 'center' }));
+    else {
+        const at = await divider.evaluate((el) => {
+            const r = el.getBoundingClientRect();
+            for (let x = r.left + 8; x < r.right; x += 16)
+                if (document.elementFromPoint(x, r.top + 3)?.closest('.ansi-divider') === el)
+                    return { x, y: r.top + 3 };
+            return { x: r.left + r.width / 2, y: r.top + 3 };
+        });
+        await page.mouse.move(at.x, at.y);
+    }
     // Every run is moving out at once (no per-drip pokes).
     await expect
         .poll(
@@ -190,4 +206,38 @@ test('a still pointer over a lifted card keeps it hovered (no flicker at the edg
     await page.mouse.move(b.x + b.width - 1, b.y + b.height - 1);
     await page.waitForTimeout(600);
     expect(await card.evaluate((el) => el.matches(':hover'))).toBe(true);
+});
+
+test('touch: the card scrolling through the middle of the screen animates, not the tapped one', async ({
+    page,
+    isMobile,
+}) => {
+    test.skip(!isMobile, 'touch focus');
+    await page.goto('/');
+    await expect.poll(() => fxLoaded(page), { timeout: 5000 }).toBe(true);
+    const cards = page.locator('.grid-3 .card');
+    // Into the middle band: it lifts, its skin shows and its drips pour.
+    await cards.nth(1).evaluate((el) => el.scrollIntoView({ block: 'center' }));
+    await expect(cards.nth(1)).toHaveClass(/is-focus/);
+    await expect
+        .poll(() => cards.nth(1).evaluate((el) => getComputedStyle(el, '::after').opacity))
+        .toBe('1');
+    await expect
+        .poll(() =>
+            cards
+                .nth(1)
+                .evaluate((el) => getComputedStyle(el.querySelector('.drip-run')!).visibility),
+        )
+        .toBe('visible');
+    // Out of the band again: it lets go.
+    await page.evaluate(() => window.scrollBy(0, innerHeight * 0.6));
+    await expect(cards.nth(1)).not.toHaveClass(/is-focus/);
+    // A tap on a card near the bottom edge (outside the band) does not animate it.
+    const later = cards.last();
+    await later.evaluate((el) => el.scrollIntoView({ block: 'end' }));
+    await page.waitForTimeout(300);
+    const b = (await later.boundingBox())!;
+    await page.touchscreen.tap(b.x + b.width / 2, Math.min(b.y + b.height - 10, 830));
+    await page.waitForTimeout(300);
+    await expect(later).not.toHaveClass(/is-focus|is-poked/);
 });

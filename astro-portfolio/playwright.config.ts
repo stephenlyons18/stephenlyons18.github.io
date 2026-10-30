@@ -32,7 +32,8 @@ export default defineConfig({
     retries: process.env.CI ? 1 : 0,
     reporter: process.env.CI ? [['list'], ['html', { open: 'never' }]] : 'list',
     use: {
-        baseURL: 'http://localhost:4321',
+        // Its own port, so a `pnpm dev` on 4321 is never mistaken for the built site.
+        baseURL: 'http://localhost:4329',
         trace: 'retain-on-failure',
         screenshot: 'only-on-failure',
     },
@@ -58,8 +59,8 @@ export default defineConfig({
         })),
     ],
     webServer: {
-        command: 'pnpm preview --port 4321',
-        url: 'http://localhost:4321',
+        command: 'pnpm preview --port 4329 --ignore-lock',
+        url: 'http://localhost:4329',
         reuseExistingServer: !process.env.CI,
     },
 });

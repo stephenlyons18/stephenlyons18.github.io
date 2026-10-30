@@ -5,6 +5,19 @@
 import projects from '../data/projects';
 import { jobs } from '../data/experience';
 import { CATEGORY_META, skills, type SkillCategory } from '../data/skills';
+import { ROUTES } from '../data/site';
+import {
+    DEFAULT_THEME,
+    DEFAULT_TITLE_STYLE,
+    THEMES,
+    THEME_KEY,
+    TITLE_STYLES,
+    TITLE_STYLE_KEY,
+    findTheme,
+    findTitleStyle,
+} from '../data/themes';
+import { renderDripStrip } from '../lib/ansi/wall';
+import { dripsToHtml } from '../lib/ansi/html';
 
 declare global {
     interface Window {
@@ -56,12 +69,10 @@ const WELCOME_MSG = [
     '',
 ];
 
+/** cd/goto targets, from the one route list (clean directory URLs: /about/, never index.html). */
 const PAGES: Record<string, string> = {
-    home: '/',
+    ...Object.fromEntries(ROUTES.map((r) => [r.name.toLowerCase(), r.path])),
     index: '/',
-    about: '/about',
-    projects: '/projects',
-    contact: '/contact',
 };
 
 let history: string[] = [];
@@ -87,7 +98,8 @@ const COMMANDS: Record<string, CommandDef> = {
     clear: { desc: 'Clear terminal screen', fn: cmdClear },
     exit: { desc: 'Close the terminal', fn: cmdExit },
     close: { desc: 'Close the terminal (alias)', fn: cmdExit },
-    theme: { desc: 'Repaint the wall (wildstyle|bubble|ansi|sunset|green)', fn: cmdTheme },
+    theme: { desc: 'Colours: burner|mint|defcon|sunset|phosphor', fn: cmdTheme },
+    style: { desc: 'Heading letters: bubble|wildstyle', fn: cmdStyle },
     matrix: { desc: 'Trigger Matrix rain easter egg', fn: cmdMatrix },
     sudo: { desc: '???', fn: cmdSudo },
 };
@@ -139,7 +151,7 @@ function streamLines(
 ): void {
     const clsAt = typeof cls === 'function' ? cls : () => cls;
     if (streamTimer) clearTimeout(streamTimer);
-    // Reduced motion (OS or a11y menu): print everything at once instead of typing it out.
+    // Reduced motion (OS or accessibility menu): print everything at once instead of typing it out.
     if (document.documentElement.hasAttribute('data-reduce-motion')) {
         lines.forEach((text, n) => appendLine(outputEl, text, clsAt(n)));
         onDone?.();
@@ -189,6 +201,15 @@ void printHTML; // silence unused warnings — kept for future convenience
 
 // ── Build popup terminal DOM ──────────────────────────────
 
+/** Paint running off the window frame's bottom edge: the same strip as card drips (7px cells,
+ *  clipped to the window's width), poured once when the terminal opens (global.css .term-drips).
+ *  Seeded, so it's the same on every open. Never over the terminal's text. */
+const DRIP_COLS = 220;
+const termDrips = (): string => {
+    const strip = renderDripStrip(DRIP_COLS, 31, { maxStem: 5, minStem: 1, density: 0.09 });
+    return `<div class="drips term-drips" data-drips aria-hidden="true" style="--rows:${strip.rows}"><pre class="ansi" style="--cols:${DRIP_COLS}">${dripsToHtml(strip, false)}</pre></div>`;
+};
+
 function buildTerminal(): void {
     overlay = document.createElement('div');
     overlay.className = 'terminal-overlay';
@@ -196,6 +217,7 @@ function buildTerminal(): void {
     overlay.setAttribute('aria-label', 'Interactive terminal');
 
     overlay.innerHTML = `
+    <div class="terminal-wrap">
     <div class="terminal-panel">
       <div class="terminal-bar">
         <div class="terminal-bar__dots">
@@ -210,6 +232,8 @@ function buildTerminal(): void {
         <span class="terminal-prompt">stephen@lyons:~$&nbsp;</span>
         <input class="terminal-input" id="terminal-input" type="text" autocomplete="off" autocorrect="off" spellcheck="false" aria-label="Terminal input">
       </div>
+    </div>
+    ${termDrips()}
     </div>
   `;
 
@@ -492,7 +516,7 @@ function cmdProjects(_args: string[], outputEl: HTMLElement, onDone?: () => void
         appendHTML(
             outputEl,
             `  <span style="color:var(--ui);font-weight:600;">&gt;</span> ` +
-                `<a href="/projects#${encodeURIComponent(p.id)}" ` +
+                `<a href="/projects/#${encodeURIComponent(p.id)}" ` +
                 `style="color:var(--ui);text-decoration:underline;text-decoration-color:var(--ui-dim);" ` +
                 `title="View on projects page">${escapeHTML(p.title)}</a>`,
         );
@@ -569,36 +593,61 @@ function cmdExit(_args: string[], _outputEl: HTMLElement): void {
     closeTerminal();
 }
 
-/** Themes defined in global.css ([data-theme]); the default (no attribute) is wildstyle. */
-const THEMES: Record<string, string> = {
-    wildstyle: 'magenta + cyan — the default burner',
-    bubble: 'mint + magenta bubble letters',
-    ansi: 'DEFCON-era ANSI blues',
-    sunset: 'yellow → magenta, LA sunset',
-    green: 'the original phosphor terminal',
-};
-
+/** Themes (src/data/themes.ts): by id, menu label or alias. Same attribute and key as the accessibility menu. */
 function cmdTheme(args: string[], outputEl: HTMLElement, onDone?: () => void): void {
-    const t = (args[0] || '').toLowerCase();
-    if (!(t in THEMES)) {
-        const current = document.documentElement.getAttribute('data-theme') || 'wildstyle';
+    const t = args[0] ? findTheme(args[0]) : undefined;
+    if (!t) {
+        const current = document.documentElement.getAttribute('data-theme') || DEFAULT_THEME;
         const lines = [
             '',
             '  Usage: theme <name>',
             '',
-            ...Object.entries(THEMES).map(
-                ([name, desc]) => `  ${name === current ? '▶' : ' '} ${name.padEnd(10)} ${desc}`,
+            ...THEMES.map(
+                (th) =>
+                    `  ${th.id === current ? '▶' : ' '} ${th.label.toLowerCase().padEnd(10)} ${th.desc}`,
             ),
             '',
         ];
         streamLines(lines, 'dim', outputEl, onDone);
         return;
     }
-    if (t === 'wildstyle') document.documentElement.removeAttribute('data-theme');
-    else document.documentElement.setAttribute('data-theme', t);
-    appendLine(outputEl, `Theme switched to ${t}.`, 'accent');
+    if (t.id === DEFAULT_THEME) document.documentElement.removeAttribute('data-theme');
+    else document.documentElement.setAttribute('data-theme', t.id);
+    appendLine(outputEl, `Theme switched to ${t.label}.`, 'accent');
     try {
-        localStorage.setItem('sl-theme', t);
+        localStorage.setItem(THEME_KEY, t.id);
+    } catch {
+        /* noop */
+    }
+    onDone?.();
+}
+
+/** Heading letter style (bubble | wildstyle): the same attribute and key as the accessibility menu. */
+function cmdStyle(args: string[], outputEl: HTMLElement, onDone?: () => void): void {
+    const s = args[0] ? findTitleStyle(args[0]) : undefined;
+    const root = document.documentElement;
+    if (!s) {
+        const current = root.getAttribute('data-title-style') || DEFAULT_TITLE_STYLE;
+        const lines = [
+            '',
+            '  Usage: style <name>',
+            '',
+            ...TITLE_STYLES.map(
+                (st) =>
+                    `  ${st.id === current ? '▶' : ' '} ${st.label.toLowerCase().padEnd(10)} ${st.desc}`,
+            ),
+            '',
+        ];
+        streamLines(lines, 'dim', outputEl, onDone);
+        return;
+    }
+    if (s === 'wild') root.setAttribute('data-title-style', 'wild');
+    else root.removeAttribute('data-title-style');
+    const label = TITLE_STYLES.find((st) => st.id === s)!.label;
+    appendLine(outputEl, `Headings now in ${label}.`, 'accent');
+    try {
+        if (s === 'wild') localStorage.setItem(TITLE_STYLE_KEY, 'wild');
+        else localStorage.removeItem(TITLE_STYLE_KEY);
     } catch {
         /* noop */
     }

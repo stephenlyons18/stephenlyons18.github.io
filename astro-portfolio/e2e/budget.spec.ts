@@ -9,7 +9,7 @@ import { PAGES } from './pages';
 // Pages gzips on the wire, so real transfers are ~3–4× smaller); raise one only with a reason
 // in the PR.
 
-type Kind = 'js' | 'css' | 'font' | 'img' | 'html' | 'other';
+type Kind = 'js' | 'css' | 'font' | 'img' | 'html' | 'data' | 'other';
 interface Budget {
     /** Per page, per device project: max KB of each kind, loaded after a full scroll. */
     pages: Record<string, Partial<Record<Kind, number>>>;
@@ -27,6 +27,8 @@ function kindOf(url: string, initiator: string): Kind {
     const path = new URL(url).pathname;
     if (/\.m?js$/.test(path)) return 'js';
     if (/\.css$/.test(path)) return 'css';
+    // Fetched data, e.g. the wall pieces pool (/art/wall-pieces.json, every visit).
+    if (/\.json$/.test(path)) return 'data';
     if (/\.(woff2?|ttf|otf)$/.test(path)) return 'font';
     if (/\.(png|jpe?g|webp|avif|gif|svg)$/.test(path) || initiator === 'img') return 'img';
     if (initiator === 'navigation' || /\.html$|\/$/.test(path)) return 'html';
@@ -65,7 +67,15 @@ for (const path of PAGES) {
         const project = info.project.name.replace(/^budget-/, '');
         await page.goto(path);
         await loadEverything(page);
-        const totals: Record<Kind, number> = { js: 0, css: 0, font: 0, img: 0, html: 0, other: 0 };
+        const totals: Record<Kind, number> = {
+            js: 0,
+            css: 0,
+            font: 0,
+            img: 0,
+            html: 0,
+            data: 0,
+            other: 0,
+        };
         const files = await weigh(page);
         for (const f of files) totals[kindOf(f.url, f.initiator)] += f.bytes;
         const kb = Object.fromEntries(
