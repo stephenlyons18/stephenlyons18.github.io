@@ -688,7 +688,9 @@ export default function SkillGraph({ height = 700 }: { height?: number }) {
     // ─── Simulation ───────────────────────────────────────────────────────────
 
     function startSimulation(cw: number, ch: number) {
+        // Until the new layout is published, no drag can restart a simulation mid-settle.
         simRef.current?.stop();
+        simRef.current = null;
         const cx = cw / 2,
             cy = ch / 2;
 
@@ -800,8 +802,6 @@ export default function SkillGraph({ height = 700 }: { height?: number }) {
             .alphaDecay(0.012)
             .stop();
 
-        simRef.current = sim;
-
         // Settle the layout in ~6 ms slices, yielding between them, instead of 1200 ticks in one
         // go: that was a 300 ms task on a laptop (over a second on a phone) landing mid-scroll as
         // the graph came into view. Same ticks in the same order, so the layout is identical.
@@ -821,7 +821,8 @@ export default function SkillGraph({ height = 700 }: { height?: number }) {
             // Untangle any last label collisions with only the label/bounds forces running.
             relaxOverlaps(nodes, labelPx, cw, ch, { avoid: ZOOM_ZONE(cw) });
             // Published only now, so nothing (a font-load redraw, a hover) draws a half-settled
-            // layout.
+            // layout, and no drag reheats one (d3's timer would tick alongside these slices).
+            simRef.current = sim;
             nodesRef.current = nodes;
             linksRef.current = links;
             if (mobile) settleCameraMobile(cw, ch);
@@ -901,6 +902,8 @@ export default function SkillGraph({ height = 700 }: { height?: number }) {
         const DRAG_SLOP = 5;
         function maybeStartDrag(cx: number, cy: number) {
             if (!press || draggedRef.current) return;
+            // Not while a new layout settles, nor on a node from the layout it replaced.
+            if (!simRef.current || !nodesRef.current.includes(press.node)) return;
             if (Math.hypot(cx - press.x, cy - press.y) < DRAG_SLOP) return;
             const n = press.node;
             draggedRef.current = n;
@@ -1082,6 +1085,7 @@ export default function SkillGraph({ height = 700 }: { height?: number }) {
 
         return () => {
             ro.disconnect();
+            settleGenRef.current++; // a settle in progress stops at its next slice
             simRef.current?.stop();
             window.removeEventListener('resize', onResize);
             window.removeEventListener('orientationchange', onResize);
