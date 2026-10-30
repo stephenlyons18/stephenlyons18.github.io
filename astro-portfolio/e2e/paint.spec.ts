@@ -56,14 +56,20 @@ test.describe('mouse', () => {
         expect(await page.locator('.spray-ring').evaluate((el) => el.style.transform)).toContain(
             '420px',
         );
-        // Hollow: nothing is drawn in the middle of the ring.
+        // Hollow: the ring's own dots fill nothing at its centre (0, 0 in its viewBox) or just
+        // inside its edge. (Its geometry, not a hit-test: the ring takes no pointer events.)
         expect(
             await art.evaluate((svg) => {
-                const r = svg.getBoundingClientRect();
-                const hit = document.elementsFromPoint(r.x + r.width / 2, r.y + r.height / 2);
-                return hit.some((e) => e.tagName === 'path');
+                const paths = [...svg.querySelectorAll('path')];
+                const at = (x: number) => paths.some((p) => p.isPointInFill(new DOMPoint(x, 0)));
+                const edge = Math.abs(svg.viewBox.baseVal.x) - 2;
+                return {
+                    centre: at(0),
+                    inside: at(edge - 2),
+                    dots: paths.some((p) => p.getAttribute('d')),
+                };
             }),
-        ).toBe(false);
+        ).toEqual({ centre: false, inside: false, dots: true });
         await drag(page, [200, 500], [600, 520]);
         await expect.poll(() => painted(page)).toBeGreaterThan(200);
         // Over the header the normal cursor is back.
