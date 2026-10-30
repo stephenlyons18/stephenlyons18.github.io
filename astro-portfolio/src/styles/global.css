@@ -279,7 +279,7 @@
 }
 /* Both styles are in the page (R30); <html data-title-style> picks one, set before first paint by
    BaseLayout from the a11y menu / terminal choice. Bubble by default. A pinned set always shows. */
-.ansi-title__set[data-set='wild'],
+.ansi-title__set[data-set='wild']:not(.ansi-title__set--pinned),
 html[data-title-style='wild'] .ansi-title__set[data-set='bubble']:not(.ansi-title__set--pinned) {
     display: none;
 }
