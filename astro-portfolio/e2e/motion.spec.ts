@@ -1,4 +1,4 @@
-import { expect, test, type Page } from '@playwright/test';
+import { expect, test, type Page } from './fixtures';
 
 // Interactive motion (fx.ts + global.css): page transitions, card tilt, draggable art.
 
