@@ -116,7 +116,7 @@ pnpm preview        # serve dist/
 
 - **Unit tests** (`src/**/*.test.ts`) cover every data file in `src/data/` and every pure generator in
   `src/lib/`. Add tests for any new data file or generator.
-- **E2E** (`e2e/*.spec.ts`, importing `test`/`expect` from `./fixtures`, which stubs the Cloudflare beacon) runs at desktop 1920×1080, laptop 1366×768 and mobile 390×844 (touch). It covers: no console errors or failed requests, no horizontal overflow, nav and mobile menu,
+- **E2E** (`e2e/*.spec.ts`) runs at desktop 1920×1080, laptop 1366×768 and mobile 390×844 (touch). It covers: no console errors or failed requests, no horizontal overflow, nav and mobile menu,
   terminal, and skill-graph hover/tap cards anchored to their element. A UI change isn't done until it passes at
   all three.
 - **See it, don't assume it.** For any visual change, run `pnpm shots` (or take targeted screenshots) at all
@@ -267,7 +267,8 @@ Commits end with only the `Co-Authored-By:` line. Grep a PR body for `claude.ai/
   DOM with `textContent` wherever possible.
 - **A05 Misconfiguration / A08 Integrity:** least-privilege workflow tokens, SHA-pinned actions, no `${{ }}` in
   `run:`, no third-party runtime scripts or CDN CSS (fonts are self-hosted). The one exception is the
-  Cloudflare Web Analytics tag (R58, end of `BaseLayout`), kept verbatim as Cloudflare gives it. E2E stubs it.
+  Cloudflare Web Analytics tag (end of `BaseLayout`), kept verbatim as Cloudflare gives it and built only by
+  `deploy.yml` (`CF_ANALYTICS=1`), so local builds, dev, e2e and PR CI never load it.
 - **A06 Vulnerable components:** `pnpm audit --audit-level high` before every PR. New advisories become a
   `security` issue on the board.
 - **A02/A09:** no secrets in the repo (TruffleHog scans history), no `console.log` of anything sensitive in

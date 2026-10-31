@@ -1,6 +1,6 @@
 import { readFileSync } from 'node:fs';
 
-import { expect, test, type Page } from './fixtures';
+import { expect, test, type Page } from '@playwright/test';
 
 import { PAGES } from './pages';
 

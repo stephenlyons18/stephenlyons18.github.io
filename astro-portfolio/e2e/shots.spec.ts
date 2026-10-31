@@ -1,4 +1,4 @@
-import { test } from './fixtures';
+import { test } from '@playwright/test';
 
 import { PAGES } from './pages';
 

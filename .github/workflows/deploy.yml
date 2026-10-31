@@ -64,6 +64,9 @@ jobs:
         # Runs: esbuild → astro build → postbuild.mjs (path relativisation)
         run: pnpm build
         working-directory: astro-portfolio
+        env:
+          # Production only: adds the Cloudflare Web Analytics tag to every page (BaseLayout, R59).
+          CF_ANALYTICS: '1'
 
       - name: Upload dist artifact
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
