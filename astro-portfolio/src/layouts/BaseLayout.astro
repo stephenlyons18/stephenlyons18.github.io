@@ -47,8 +47,11 @@ const ld =
               },
           );
 
-// Cloudflare Web Analytics tag, exactly as Cloudflare gives it (R58).
-const CF_ANALYTICS = `<!-- Cloudflare Web Analytics --><script type='module' src='https://static.cloudflareinsights.com/beacon.min.js' data-cf-beacon='{"token": "6096a0cee4684281aa38bcde3a1ae1b7"}'></script><!-- End Cloudflare Web Analytics -->`;
+// Cloudflare Web Analytics tag, exactly as Cloudflare gives it (R58). Only the deploy build (deploy.yml sets
+// CF_ANALYTICS=1) includes it, so local builds, dev, e2e and PR CI never load it (R59).
+const CF_ANALYTICS =
+    process.env.CF_ANALYTICS === '1' &&
+    `<!-- Cloudflare Web Analytics --><script type='module' src='https://static.cloudflareinsights.com/beacon.min.js' data-cf-beacon='{"token": "6096a0cee4684281aa38bcde3a1ae1b7"}'></script><!-- End Cloudflare Web Analytics -->`;
 ---
 
 <!doctype html>
@@ -149,7 +152,6 @@ const CF_ANALYTICS = `<!-- Cloudflare Web Analytics --><script type='module' src
 
         <!-- terminal.js is loaded by site.js on idle (or on first Ctrl+K / terminal button). -->
         <script is:inline src="/scripts/site.js" defer></script>
-        <!-- Cloudflare Web Analytics (R57/R58): Cloudflare's tag, emitted verbatim on every page. -->
-        <Fragment set:html={CF_ANALYTICS} />
+        {CF_ANALYTICS && <Fragment set:html={CF_ANALYTICS} />}
     </body>
 </html>

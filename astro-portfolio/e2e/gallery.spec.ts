@@ -1,5 +1,5 @@
 import AxeBuilder from '@axe-core/playwright';
-import { expect, test, type Page } from './fixtures';
+import { expect, test, type Page } from '@playwright/test';
 
 // The /projects/ lightbox (ProjectGallery.astro + Lightbox.astro): a native modal <dialog>.
 

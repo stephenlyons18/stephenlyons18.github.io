@@ -1,4 +1,4 @@
-import { expect, test, type Locator, type Page } from './fixtures';
+import { expect, test, type Locator, type Page } from '@playwright/test';
 
 test.beforeEach(async ({ context }) => {
     await context.addInitScript(() => sessionStorage.setItem('sl-booted', '1'));
