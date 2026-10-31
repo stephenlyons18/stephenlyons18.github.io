@@ -266,7 +266,8 @@ Commits end with only the `Co-Authored-By:` line. Grep a PR body for `claude.ai/
 - **A03 Injection:** never `innerHTML` untrusted input (the terminal echoes user commands, so escape them). Build
   DOM with `textContent` wherever possible.
 - **A05 Misconfiguration / A08 Integrity:** least-privilege workflow tokens, SHA-pinned actions, no `${{ }}` in
-  `run:`, no third-party runtime scripts or CDN CSS (fonts are self-hosted).
+  `run:`, no third-party runtime scripts or CDN CSS (fonts are self-hosted). The one exception is the
+  Cloudflare Web Analytics beacon (R57, end of `BaseLayout`), which loads only on the live host.
 - **A06 Vulnerable components:** `pnpm audit --audit-level high` before every PR. New advisories become a
   `security` issue on the board.
 - **A02/A09:** no secrets in the repo (TruffleHog scans history), no `console.log` of anything sensitive in
