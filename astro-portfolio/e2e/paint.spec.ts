@@ -1,5 +1,5 @@
 import AxeBuilder from '@axe-core/playwright';
-import { expect, test, type Page } from '@playwright/test';
+import { expect, test, type Page } from './fixtures';
 
 // Spray paint (R53): the spray cursor, paint mode, drips/fade, Shift + wheel, kept paint, touch.
 

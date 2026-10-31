@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test';
+import { expect, test } from './fixtures';
 
 // Scroll progress strip (top) and the touch scrubber (right edge), both in BaseLayout + site.ts.
 
