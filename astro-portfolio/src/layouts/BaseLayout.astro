@@ -146,5 +146,16 @@ const ld =
 
         <!-- terminal.js is loaded by site.js on idle (or on first Ctrl+K / terminal button). -->
         <script is:inline src="/scripts/site.js" defer></script>
+        <!-- Cloudflare Web Analytics (R57): cookieless page views. Only on the live site, so dev,
+             preview and e2e runs neither send hits nor fetch the beacon. -->
+        <script is:inline>
+            if (/(^|\.)stephenlyons\.dev$/.test(location.hostname)) {
+                var cf = document.createElement('script');
+                cf.defer = true;
+                cf.src = 'https://static.cloudflareinsights.com/beacon.min.js';
+                cf.setAttribute('data-cf-beacon', '{"token": "6096a0cee4684281aa38bcde3a1ae1b7"}');
+                document.body.appendChild(cf);
+            }
+        </script>
     </body>
 </html>
